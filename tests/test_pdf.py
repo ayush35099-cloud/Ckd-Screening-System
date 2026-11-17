@@ -54,5 +54,47 @@ class TestPDFReportGenerator(unittest.TestCase):
         self.assertGreater(len(pdf_bytes), 1000)
         self.assertTrue(pdf_bytes.startswith(b'%PDF'))
 
+    def test_pdf_with_missing_parameters(self):
+        sample_data = {
+            'screening_uuid': 'test-uuid-missing-1111',
+            'patient_id': 'PT-DEMO-003',
+            'patient_name': 'Partial Data Patient',
+            'age': 55,
+            'sex': 'Male',
+            'prediction_label': 'CKD Indicators Detected',
+            'prediction_code': 'ckd',
+            'probability': 88.0,
+            'risk_level': 'High',
+            'model_used': 'Random Forest',
+            'formatted_date': 'Nov 17, 2026, 12:00 PM',
+            'missing_parameters': ['bgr', 'bu', 'sod', 'pot'],
+            'findings': [],
+            'parameters': {'age': 55, 'bp': 80, 'sc': 2.1}
+        }
+        pdf_bytes = generate_pdf_report(sample_data)
+        self.assertIsNotNone(pdf_bytes)
+        self.assertTrue(pdf_bytes.startswith(b'%PDF'))
+
+    def test_pdf_handles_none_values(self):
+        sample_data = {
+            'screening_uuid': 'test-uuid-empty-2222',
+            'patient_id': 'PT-DEMO-EMPTY',
+            'patient_name': None,
+            'age': None,
+            'sex': 'Not Specified',
+            'prediction_label': 'CKD Indicators Not Detected',
+            'prediction_code': 'notckd',
+            'probability': 12.0,
+            'risk_level': 'Low',
+            'model_used': 'Decision Tree',
+            'formatted_date': None,
+            'missing_parameters': None,
+            'findings': None,
+            'parameters': None
+        }
+        pdf_bytes = generate_pdf_report(sample_data)
+        self.assertIsNotNone(pdf_bytes)
+        self.assertTrue(pdf_bytes.startswith(b'%PDF'))
+
 if __name__ == '__main__':
     unittest.main()

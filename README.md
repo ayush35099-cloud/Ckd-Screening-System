@@ -194,7 +194,7 @@ python ml/train.py
 ```bash
 python -m unittest discover -s tests -p "test_*.py"
 ```
-*(All 27 unit and integration tests should pass in under 1 second).*
+*(All 35 unit and integration tests should pass in under 1 second).*
 
 ### 6. Start the Development Server
 ```bash

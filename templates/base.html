@@ -80,7 +80,7 @@
     {% if messages %}
       <div class="container-wide" style="margin-top: 1rem;">
         {% for category, message in messages %}
-          <div style="padding: 0.85rem 1.25rem; border-radius: 6px; margin-bottom: 0.75rem; font-size: 0.9rem; background-color: var(--bg-surface); border: 1px solid var(--border-strong);">
+          <div class="flash-alert flash-{{ category }}" style="padding: 0.85rem 1.25rem; border-radius: 6px; margin-bottom: 0.75rem; font-size: 0.9rem; {% if category == 'danger' %}background-color: var(--status-flagged-bg); border: 1px solid var(--status-flagged-border); color: var(--status-flagged-text);{% elif category == 'success' %}background-color: var(--status-clear-bg); border: 1px solid var(--status-clear-border); color: var(--status-clear-text);{% else %}background-color: var(--bg-surface); border: 1px solid var(--border-strong); color: var(--text-main);{% endif %}">
             {{ message }}
           </div>
         {% endfor %}

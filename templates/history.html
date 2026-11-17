@@ -100,10 +100,29 @@
         </tbody>
       </table>
 
-      <!-- Count Summary -->
-      <div style="padding: 1rem 1.25rem; background-color: var(--bg-surface-subtle); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; font-size: 0.8125rem; color: var(--text-subtle);">
-        <span>Showing {{ records|length }} of {{ total_count }} total records</span>
-        <span>All records stored locally in SQLite database</span>
+      <!-- Count Summary & Pagination -->
+      <div style="padding: 1rem 1.25rem; background-color: var(--bg-surface-subtle); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; font-size: 0.8125rem; color: var(--text-subtle); flex-wrap: wrap; gap: 0.75rem;">
+        <span>Showing {{ records|length }} of {{ total_count }} total records (Page {{ page }} of {{ total_pages }})</span>
+        
+        {% if total_pages > 1 %}
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            {% if page > 1 %}
+              <a href="{{ url_for('history_view', page=page-1, q=search_query, status=filter_status) }}" class="btn-renal btn-renal-outline btn-sm">
+                <i data-lucide="chevron-left" style="width: 14px; height: 14px;"></i>
+                <span>Previous</span>
+              </a>
+            {% endif %}
+            
+            <span style="font-weight: 600; color: var(--text-main);">{{ page }} / {{ total_pages }}</span>
+            
+            {% if page < total_pages %}
+              <a href="{{ url_for('history_view', page=page+1, q=search_query, status=filter_status) }}" class="btn-renal btn-renal-outline btn-sm">
+                <span>Next</span>
+                <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+              </a>
+            {% endif %}
+          </div>
+        {% endif %}
       </div>
 
     {% else %}

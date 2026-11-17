@@ -182,5 +182,57 @@ class TestFlaskRoutes(unittest.TestCase):
         response = self.client.get('/non_existent_page_path')
         self.assertEqual(response.status_code, 404)
 
+    def test_api_404_handler(self):
+        response = self.client.get('/api/non_existent_api_endpoint')
+        self.assertEqual(response.status_code, 404)
+        data = json.loads(response.data)
+        self.assertEqual(data.get('status'), 404)
+        self.assertIn('error', data)
+
+    def test_invalid_screening_submission_missing_id(self):
+        # Missing patient_id must trigger redirect with error
+        form_data = {
+            'patient_name': 'Anonymous',
+            'age': '50',
+            'bp': '80'
+        }
+        resp = self.client.post('/screen', data=form_data, follow_redirects=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'Patient Identifier is required', resp.data)
+
+    def test_screen_submission_with_decision_tree(self):
+        form_data = {
+            'patient_id': 'PT-DT-TEST-001',
+            'patient_name': 'Decision Tree Patient',
+            'age': '52',
+            'sex': 'Female',
+            'model_choice': 'Decision Tree',
+            'bp': '75',
+            'sc': '0.8',
+            'hemo': '14.0'
+        }
+        resp = self.client.post('/screen', data=form_data, follow_redirects=False)
+        self.assertEqual(resp.status_code, 302)
+        redirect_url = resp.headers['Location']
+        self.assertIn('/result/', redirect_url)
+
+        res_page = self.client.get(redirect_url)
+        self.assertEqual(res_page.status_code, 200)
+        self.assertIn(b'Decision Tree', res_page.data)
+
+    def test_history_search_and_filters_query(self):
+        # Test searching by patient ID
+        resp = self.client.get('/history?q=PT-DT-TEST-001')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'PT-DT-TEST-001', resp.data)
+
+        # Test filtering by flagged
+        resp_flagged = self.client.get('/history?status=flagged')
+        self.assertEqual(resp_flagged.status_code, 200)
+
+        # Test filtering by non_flagged
+        resp_clear = self.client.get('/history?status=non_flagged')
+        self.assertEqual(resp_clear.status_code, 200)
+
 if __name__ == '__main__':
     unittest.main()

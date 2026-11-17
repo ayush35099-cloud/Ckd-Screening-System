@@ -124,5 +124,29 @@ class TestCKDModelService(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             instance._load_artifacts()
 
+    def test_exact_24_features_schema(self):
+        expected_features = [
+            'age', 'bp', 'sg', 'al', 'su', 'rbc', 'pc', 'pcc', 'ba',
+            'bgr', 'bu', 'sc', 'sod', 'pot', 'hemo', 'pcv', 'wc', 'rc',
+            'htn', 'dm', 'cad', 'appet', 'pe', 'ane'
+        ]
+        actual_features = list(self.service.metadata['features'].keys())
+        self.assertEqual(actual_features, expected_features)
+        self.assertEqual(len(actual_features), 24)
+
+    def test_administrative_fields_ignored_by_model(self):
+        # Administrative fields (patient_id, patient_name, sex) should not pollute the 24-feature ML matrix
+        sample_with_admin = dict(self.healthy_sample)
+        sample_with_admin['patient_id'] = 'PT-ADMIN-IGNORE'
+        sample_with_admin['patient_name'] = 'Confidential Name'
+        sample_with_admin['sex'] = 'Female'
+        
+        result = self.service.predict(sample_with_admin, model_choice='Random Forest')
+        self.assertIn('evaluated_parameters', result)
+        self.assertNotIn('patient_id', result['evaluated_parameters'])
+        self.assertNotIn('patient_name', result['evaluated_parameters'])
+        self.assertNotIn('sex', result['evaluated_parameters'])
+        self.assertEqual(len(result['evaluated_parameters']), 24)
+
 if __name__ == '__main__':
     unittest.main()

@@ -120,13 +120,16 @@ def create_app(config_class=Config):
             offset=offset
         )
 
+        total_pages = max(1, (total_count + per_page - 1) // per_page)
+
         return render_template(
             'history.html',
             records=records,
             total_count=total_count,
             search_query=search_query,
             filter_status=filter_status,
-            page=page
+            page=page,
+            total_pages=total_pages
         )
 
     @app.route('/research')

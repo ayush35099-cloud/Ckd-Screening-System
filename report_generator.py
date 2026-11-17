@@ -242,7 +242,7 @@ def generate_pdf_report(screening_data, feature_meta=None):
 
     # 6. Complete Parameters Table (Clean 2-column breakdown)
     story.append(Paragraph("Submitted Laboratory Parameters (UCI Standard 24-Feature Schema)", section_heading))
-    raw_params = screening_data.get('parameters', {})
+    raw_params = screening_data.get('parameters') or {}
 
     param_meta = {
         'age': ('Age', '18 - 65 yrs'),
