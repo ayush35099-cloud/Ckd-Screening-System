@@ -5,7 +5,7 @@ import numpy as np
 
 # Ensure project root is in path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from ml.model import model_service
+from ml.model import model_service, CKDModelService
 
 class TestCKDModelService(unittest.TestCase):
     def setUp(self):
@@ -33,7 +33,7 @@ class TestCKDModelService(unittest.TestCase):
         self.assertEqual(len(self.service.metadata['features']), 24)
 
     def test_ckd_model_pkl_compatibility(self):
-        # Verify ckd_model.pkl exists and is directly loadable
+        # Verify ckd_model.pkl exists in ml/models and root
         pkl_path = os.path.join(self.service.models_dir, 'ckd_model.pkl')
         self.assertTrue(os.path.exists(pkl_path))
         import joblib
@@ -68,7 +68,7 @@ class TestCKDModelService(unittest.TestCase):
         self.assertEqual(result['prediction_code'], 'ckd')
 
     def test_missing_values_handled(self):
-        # A partial sample with several missing parameters
+        # Partial sample with several missing parameters
         partial_sample = {
             'age': 55, 'bp': 80,
             'hemo': 10.1, 'sc': 2.4,
@@ -77,6 +77,44 @@ class TestCKDModelService(unittest.TestCase):
         result = self.service.predict(partial_sample, model_choice='Random Forest')
         self.assertIn('is_flagged', result)
         self.assertIn('probability_ckd', result)
+
+    def test_invalid_numerical_inputs(self):
+        # Pass non-numeric string values to numeric columns
+        invalid_sample = {
+            'age': 'not_a_number',
+            'sc': 'unknown_text',
+            'hemo': '---',
+            'htn': 'no'
+        }
+        # Pipeline must impute invalid values rather than crashing
+        result = self.service.predict(invalid_sample, model_choice='Random Forest')
+        self.assertIn('is_flagged', result)
+        self.assertIn('probability_ckd', result)
+
+    def test_unknown_categorical_values(self):
+        # Pass unexpected category values
+        weird_sample = {
+            'htn': 'maybe',
+            'dm': 'borderline',
+            'rbc': 'uncertain',
+            'appet': 'neutral'
+        }
+        result = self.service.predict(weird_sample, model_choice='Random Forest')
+        self.assertIn('is_flagged', result)
+        self.assertIn('probability_ckd', result)
+
+    def test_model_loading_missing_file_raises_error(self):
+        # Testing constructor behavior when artifact paths do not exist
+        instance = CKDModelService.__new__(CKDModelService)
+        instance.models_dir = '/non_existent_directory_path'
+        instance.rf_pipeline_path = '/non_existent_directory_path/ckd_pipeline.joblib'
+        instance.rf_pkl_path = '/non_existent_directory_path/ckd_model.pkl'
+        instance.root_pkl_path = '/non_existent_directory_path/root_ckd.pkl'
+        instance.dt_pipeline_path = '/non_existent_directory_path/dt.joblib'
+        instance.metrics_path = '/non_existent_directory_path/metrics.json'
+        instance.meta_path = '/non_existent_directory_path/meta.json'
+        with self.assertRaises(FileNotFoundError):
+            instance._load_artifacts()
 
 if __name__ == '__main__':
     unittest.main()

@@ -5,14 +5,17 @@ import json
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app import create_app
+from database import get_screenings_history
 
 class TestFlaskRoutes(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Use an isolated test database
         test_db_path = os.path.join(os.path.dirname(__file__), 'test_renalcare.db')
         if os.path.exists(test_db_path):
-            os.remove(test_db_path)
+            try:
+                os.remove(test_db_path)
+            except Exception:
+                pass
         os.environ['DATABASE_PATH'] = test_db_path
         os.environ['TESTING'] = '1'
 
@@ -52,10 +55,12 @@ class TestFlaskRoutes(unittest.TestCase):
         data = json.loads(response.data)
         self.assertEqual(data['status'], 'healthy')
         self.assertTrue(data['models_loaded']['random_forest'])
+        self.assertTrue(data['models_loaded']['decision_tree'])
 
-    def test_api_predict(self):
+    def test_api_predict_valid(self):
         payload = {
-            'patient_id': 'PT-TEST-API',
+            'patient_id': 'PT-TEST-API-01',
+            'patient_name': 'Test User',
             'parameters': {
                 'age': 55, 'bp': 85, 'hemo': 10.5, 'sc': 2.5, 'htn': 'yes'
             }
@@ -64,8 +69,19 @@ class TestFlaskRoutes(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertTrue(data['success'])
+        self.assertIsNotNone(data['screening_uuid'])
         self.assertIn('prediction', data)
-        self.assertIn('is_flagged', data['prediction'])
+        self.assertTrue(data['prediction']['is_flagged'])
+
+    def test_api_predict_invalid_parameters(self):
+        payload = {
+            'patient_id': 'PT-INVALID',
+            'parameters': "this should be a dictionary not string"
+        }
+        response = self.client.post('/api/predict', json=payload)
+        self.assertEqual(response.status_code, 400)
+        data = json.loads(response.data)
+        self.assertIn('error', data)
 
     def test_screen_submission_and_report_download(self):
         form_data = {
@@ -90,7 +106,6 @@ class TestFlaskRoutes(unittest.TestCase):
             'pe': 'no',
             'ane': 'no'
         }
-        # Post form -> should redirect
         post_resp = self.client.post('/screen', data=form_data, follow_redirects=False)
         self.assertEqual(post_resp.status_code, 302)
         redirect_url = post_resp.headers['Location']
@@ -110,6 +125,39 @@ class TestFlaskRoutes(unittest.TestCase):
         self.assertEqual(pdf_resp.mimetype, 'application/pdf')
         self.assertTrue(pdf_resp.data.startswith(b'%PDF'))
 
+    def test_api_history_and_item(self):
+        # Fetch history list
+        resp = self.client.get('/api/history')
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.data)
+        self.assertIn('records', data)
+        self.assertGreater(data['total_count'], 0)
+
+        # Fetch single record
+        first_uuid = data['records'][0]['screening_uuid']
+        item_resp = self.client.get(f'/api/history/{first_uuid}')
+        self.assertEqual(item_resp.status_code, 200)
+        item_data = json.loads(item_resp.data)
+        self.assertEqual(item_data['screening_uuid'], first_uuid)
+
+    def test_api_history_item_not_found(self):
+        resp = self.client.get('/api/history/non-existent-uuid-999')
+        self.assertEqual(resp.status_code, 404)
+
+    def test_api_dashboard(self):
+        resp = self.client.get('/api/dashboard')
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.data)
+        self.assertIn('total', data)
+        self.assertIn('flagged', data)
+
+    def test_api_metrics(self):
+        resp = self.client.get('/api/metrics')
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.data)
+        self.assertIn('champion_model', data)
+        self.assertIn('models', data)
+
     def test_history_view(self):
         response = self.client.get('/history')
         self.assertEqual(response.status_code, 200)
@@ -119,6 +167,10 @@ class TestFlaskRoutes(unittest.TestCase):
         response = self.client.get('/research')
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'Machine Learning Pipeline Architecture', response.data)
+
+    def test_404_handler(self):
+        response = self.client.get('/non_existent_page_path')
+        self.assertEqual(response.status_code, 404)
 
 if __name__ == '__main__':
     unittest.main()
