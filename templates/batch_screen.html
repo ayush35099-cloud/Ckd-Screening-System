@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+
+{% block title %}Batch Camp Screening (CSV) — RenalCare{% endblock %}
+
+{% block content %}
+<div class="form-page-layout">
+  
+  <!-- Hero Header -->
+  <div class="form-hero-header">
+    <span class="section-eyebrow">Community Diagnostic Camp Workflow</span>
+    <h1>Batch Patient Screening</h1>
+    <p style="max-width: 680px; margin: 0 auto; color: var(--text-muted);">
+      Screen up to 100 rural or diagnostic camp patients simultaneously from a single laboratory CSV file. Each record is processed through the standardized 24-feature machine learning pipeline.
+    </p>
+
+    <div class="quick-fill-bar" style="margin-top: 1.5rem;">
+      <a href="{{ url_for('batch_template') }}" class="btn-renal btn-renal-secondary btn-sm" title="Download standard CSV template with 24 feature headers">
+        <i data-lucide="download"></i>
+        <span>Download CSV Template</span>
+      </a>
+      <a href="{{ url_for('screen_view') }}" class="btn-renal btn-renal-outline btn-sm">
+        <i data-lucide="user"></i>
+        <span>Single Patient Form</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Upload Form Card -->
+  <div style="background-color: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 2rem; box-shadow: var(--shadow-sm); margin-bottom: 2.5rem;">
+    <form action="{{ url_for('batch_screen_submit') }}" method="POST" enctype="multipart/form-data" id="batchUploadForm">
+      
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: start;">
+        
+        <!-- File Input Dropzone -->
+        <div>
+          <label for="file" class="renal-label" style="margin-bottom: 0.5rem; display: block;">Select Patient Laboratory CSV File (.csv)</label>
+          <div style="border: 2px dashed var(--border-strong); border-radius: 8px; padding: 1.75rem; text-align: center; background-color: var(--bg-surface-subtle); transition: border-color 0.2s ease;">
+            <i data-lucide="file-spreadsheet" style="width: 36px; height: 36px; color: var(--color-primary); margin-bottom: 0.5rem;"></i>
+            <input type="file" id="file" name="file" accept=".csv" required style="display: block; width: 100%; font-size: 0.875rem; color: var(--text-main); margin-top: 0.5rem;">
+            <span class="input-hint" style="display: block; margin-top: 0.5rem;">Maximum 100 patient rows per upload &bull; File size up to 2MB</span>
+          </div>
+        </div>
+
+        <!-- Algorithm Selector & Submission -->
+        <div>
+          <label for="model_choice" class="renal-label" style="margin-bottom: 0.5rem; display: block;">Evaluation Algorithm</label>
+          <select id="model_choice" name="model_choice" class="renal-select" style="margin-bottom: 1rem;">
+            <option value="Random Forest" selected>Random Forest (Champion Ensemble)</option>
+            <option value="Decision Tree">Decision Tree (Single Tree Model)</option>
+          </select>
+          <span class="input-hint" style="display: block; margin-bottom: 1.5rem;">Selected model will evaluate all valid records in the batch.</span>
+
+          <button type="submit" id="btnBatchSubmit" class="btn-renal btn-renal-primary" style="width: 100%; justify-content: center; padding: 0.85rem 1.5rem;">
+            <i data-lucide="play"></i>
+            <span>Process Batch Evaluation</span>
+          </button>
+        </div>
+
+      </div>
+
+    </form>
+
+    <!-- Schema Guidance Accordion / Box -->
+    <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle); font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5;">
+      <strong>Expected CSV Columns:</strong> 
+      <code style="background-color: var(--bg-surface-subtle); padding: 2px 6px; border-radius: 4px; color: var(--color-primary);">patient_id, patient_name, age, sex, bp, sg, al, su, rbc, pc, pcc, ba, bgr, bu, sc, sod, pot, hemo, pcv, wc, rc, htn, dm, cad, appet, pe, ane</code>.
+      <br/>
+      <span style="font-size: 0.78125rem; color: var(--text-subtle);">
+        Missing values are automatically imputed using population baselines. Patient administrative fields are excluded from model inference.
+      </span>
+    </div>
+  </div>
+
+  <!-- Batch Results Summary (when available) -->
+  {% if summary %}
+    <div style="margin-bottom: 3rem;">
+      
+      <!-- Summary Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h2 style="font-family: var(--font-serif); font-size: 1.4rem; margin-bottom: 0.25rem;">Batch Evaluation Summary</h2>
+          <span style="font-size: 0.85rem; color: var(--text-subtle);">Processed file: <strong>{{ summary.filename }}</strong> via <strong>{{ summary.model_used }}</strong></span>
+        </div>
+        <div>
+          <a href="{{ url_for('batch_export') }}" class="btn-renal btn-renal-primary btn-sm">
+            <i data-lucide="download"></i>
+            <span>Download Batch Results (CSV)</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Metrics Grid -->
+      <div class="metrics-summary-grid" style="margin-bottom: 2rem;">
+        <div class="metric-stat-card">
+          <div class="stat-label"><span>Total Uploaded</span><i data-lucide="file-text"></i></div>
+          <div class="stat-value">{{ summary.total }}</div>
+          <div class="stat-context">Rows detected in file</div>
+        </div>
+
+        <div class="metric-stat-card">
+          <div class="stat-label"><span>Successfully Screened</span><i data-lucide="check-circle" style="color: var(--status-clear-text);"></i></div>
+          <div class="stat-value" style="color: var(--status-clear-text);">{{ summary.success }}</div>
+          <div class="stat-context">Saved to database</div>
+        </div>
+
+        <div class="metric-stat-card">
+          <div class="stat-label"><span>CKD Indicators Flagged</span><i data-lucide="alert-triangle" style="color: var(--status-flagged-text);"></i></div>
+          <div class="stat-value" style="color: var(--status-flagged-text);">{{ summary.flagged }}</div>
+          <div class="stat-context">Clinical follow-up advised</div>
+        </div>
+
+        <div class="metric-stat-card">
+          <div class="stat-label"><span>Baseline Screenings</span><i data-lucide="shield-check"></i></div>
+          <div class="stat-value">{{ summary.non_flagged }}</div>
+          <div class="stat-context">Indicators not detected</div>
+        </div>
+      </div>
+
+      <!-- Failed Rows Alert (if any) -->
+      {% if failed and failed|length > 0 %}
+        <div style="background-color: var(--status-flagged-bg); border: 1px solid var(--status-flagged-border); border-radius: 8px; padding: 1.25rem; margin-bottom: 2rem;">
+          <strong style="color: var(--status-flagged-text); font-size: 0.95rem;">Validation Notices ({{ failed|length }} Failed Rows)</strong>
+          <p style="font-size: 0.8125rem; color: var(--status-flagged-text); margin-top: 0.25rem; margin-bottom: 0.75rem;">
+            The following rows could not be parsed and were skipped without database insertion:
+          </p>
+          <ul style="font-size: 0.8125rem; color: var(--status-flagged-text); margin-left: 1.25rem;">
+            {% for f in failed %}
+              <li>Row {{ f.row }} ({{ f.patient_id }}): {{ f.error }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <!-- Successful Records Table -->
+      <div class="history-table-container">
+        <table class="renal-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Patient ID</th>
+              <th>Patient Name</th>
+              <th>Age / Sex</th>
+              <th>Screening Outcome</th>
+              <th>Risk Tier</th>
+              <th>Confidence %</th>
+              <th style="text-align: right;">Clinical Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in results %}
+              <tr>
+                <td>{{ r.row }}</td>
+                <td><strong>{{ r.patient_id }}</strong></td>
+                <td>{{ r.patient_name or 'N/A' }}</td>
+                <td>{{ r.age or 'N/A' }} / {{ r.sex }}</td>
+                <td>
+                  {% if r.prediction_code == 'ckd' %}
+                    <span class="badge-status badge-flagged">
+                      <i data-lucide="alert-circle" style="width: 12px; height: 12px;"></i>
+                      <span>Indicators Detected</span>
+                    </span>
+                  {% else %}
+                    <span class="badge-status badge-clear">
+                      <i data-lucide="check" style="width: 12px; height: 12px;"></i>
+                      <span>Not Detected</span>
+                    </span>
+                  {% endif %}
+                </td>
+                <td><strong>{{ r.risk_level }}</strong></td>
+                <td>{{ r.probability_ckd }}%</td>
+                <td style="text-align: right;">
+                  <a href="{{ url_for('result_view', screening_uuid=r.screening_uuid) }}" class="btn-renal btn-renal-secondary btn-sm" target="_blank" title="View detailed report">
+                    <i data-lucide="eye" style="width: 13px; height: 13px;"></i>
+                    <span>View</span>
+                  </a>
+                  <a href="{{ url_for('download_report', screening_uuid=r.screening_uuid) }}" class="btn-renal btn-renal-outline btn-sm" title="Download PDF Report">
+                    <i data-lucide="download" style="width: 13px; height: 13px;"></i>
+                    <span>PDF</span>
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('batchUploadForm');
+    const btn = document.getElementById('btnBatchSubmit');
+    if (form && btn) {
+      form.addEventListener('submit', () => {
+        btn.disabled = true;
+        btn.innerHTML = '<span>Processing Batch Records...</span>';
+      });
+    }
+  });
+</script>
+{% endblock %}

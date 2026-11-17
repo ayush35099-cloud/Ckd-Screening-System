@@ -103,6 +103,8 @@ Because missing a CKD-positive patient can delay life-saving medical management,
 6. **Printable PDF Reports:** Clinical summaries generated via ReportLab with institutional branding, patient demographics, parameter comparison tables, and disclaimers.
 7. **Screening History:** Searchable and filterable database table (by Patient ID, Name, Outcome) with pagination and direct PDF export.
 8. **REST API Suite:** Endpoints for health checks, model inference, dashboard statistics, history queries, and PDF streaming.
+9. **Batch CSV Screening:** Community health camp feature supporting batch uploads of up to 100 patient records in a single CSV file, with downloadable result summaries.
+10. **CSV History Export:** Export filtered clinical logs to CSV with built-in protection against spreadsheet formula injection.
 
 ---
 
@@ -194,7 +196,7 @@ python ml/train.py
 ```bash
 python -m unittest discover -s tests -p "test_*.py"
 ```
-*(All 35 unit and integration tests should pass in under 1 second).*
+*(All 46 unit and integration tests should pass in under 1 second).*
 
 ### 6. Start the Development Server
 ```bash

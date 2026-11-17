@@ -37,6 +37,11 @@
         <span>Apply Filters</span>
       </button>
 
+      <a href="{{ url_for('history_export', q=search_query, status=filter_status) }}" class="btn-renal btn-renal-primary btn-sm" title="Export current filtered history to CSV">
+        <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+        <span>Export CSV</span>
+      </a>
+
       {% if search_query or filter_status != 'all' %}
         <a href="{{ url_for('history_view') }}" class="btn-renal btn-renal-outline btn-sm">Clear</a>
       {% endif %}

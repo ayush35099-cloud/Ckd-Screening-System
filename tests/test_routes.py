@@ -2,6 +2,7 @@ import unittest
 import os
 import sys
 import json
+import io
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app import create_app
@@ -233,6 +234,126 @@ class TestFlaskRoutes(unittest.TestCase):
         # Test filtering by non_flagged
         resp_clear = self.client.get('/history?status=non_flagged')
         self.assertEqual(resp_clear.status_code, 200)
+
+    # -----------------------------------------------------------------------
+    # Phase 3 Tests: Batch Screening, CSV Export, Formula Injection & Warnings
+    # -----------------------------------------------------------------------
+    def test_batch_template_download(self):
+        resp = self.client.get('/screen/batch/template')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('text/csv', resp.headers.get('Content-Type'))
+        self.assertIn(b'patient_id,patient_name,age,sex,bp,sg,al,su', resp.data)
+        self.assertIn(b'PT-CAMP-001', resp.data)
+
+    def test_batch_screen_get_view(self):
+        resp = self.client.get('/screen/batch')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'Batch Patient Screening', resp.data)
+        self.assertIn(b'Maximum 100 patient rows per upload', resp.data)
+
+    def test_batch_screen_post_valid_csv(self):
+        csv_content = (
+            "patient_id,patient_name,age,sex,bp,sg,al,su,rbc,pc,pcc,ba,bgr,bu,sc,sod,pot,hemo,pcv,wc,rc,htn,dm,cad,appet,pe,ane\n"
+            "PT-BATCH-VALID-1,Normal Patient,38,Female,75,1.025,0,0,normal,normal,notpresent,notpresent,100,28,0.8,140,4.2,15.0,45,6900,5.1,no,no,no,good,no,no\n"
+            "PT-BATCH-VALID-2,HighRisk Patient,65,Male,95,1.010,3,2,abnormal,abnormal,present,present,220,85,3.2,130,5.5,9.2,28,11500,3.2,yes,yes,yes,poor,yes,yes\n"
+        )
+        data = {
+            'file': (io.BytesIO(csv_content.encode('utf-8')), 'test_patients.csv'),
+            'model_choice': 'Random Forest'
+        }
+        resp = self.client.post('/screen/batch', data=data, content_type='multipart/form-data')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'Batch Evaluation Summary', resp.data)
+        self.assertIn(b'PT-BATCH-VALID-1', resp.data)
+        self.assertIn(b'PT-BATCH-VALID-2', resp.data)
+
+    def test_batch_screen_post_invalid_headers(self):
+        # CSV missing critical clinical columns like 'sc' and 'hemo'
+        bad_csv = "patient_id,patient_name,age\nPT-01,Test,45\n"
+        data = {
+            'file': (io.BytesIO(bad_csv.encode('utf-8')), 'bad_headers.csv'),
+            'model_choice': 'Random Forest'
+        }
+        resp = self.client.post('/screen/batch', data=data, content_type='multipart/form-data', follow_redirects=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'missing required feature columns', resp.data)
+
+    def test_batch_screen_post_over_100_rows(self):
+        # Create CSV with 105 rows
+        header = "patient_id,patient_name,age,sex,bp,sg,al,su,rbc,pc,pcc,ba,bgr,bu,sc,sod,pot,hemo,pcv,wc,rc,htn,dm,cad,appet,pe,ane\n"
+        row_template = "PT-OVR-{0},Test,45,Male,80,1.020,0,0,normal,normal,notpresent,notpresent,100,30,0.9,138,4.2,14.5,44,7000,5.0,no,no,no,good,no,no\n"
+        rows = [row_template.format(i) for i in range(105)]
+        large_csv = header + "".join(rows)
+
+        data = {
+            'file': (io.BytesIO(large_csv.encode('utf-8')), 'large.csv'),
+            'model_choice': 'Random Forest'
+        }
+        resp = self.client.post('/screen/batch', data=data, content_type='multipart/form-data', follow_redirects=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'Batch limit exceeded', resp.data)
+
+    def test_batch_screen_post_decision_tree(self):
+        csv_content = (
+            "patient_id,patient_name,age,sex,bp,sg,al,su,rbc,pc,pcc,ba,bgr,bu,sc,sod,pot,hemo,pcv,wc,rc,htn,dm,cad,appet,pe,ane\n"
+            "PT-BATCH-DT-1,DT Patient,50,Male,80,1.020,0,0,normal,normal,notpresent,notpresent,105,32,0.9,138,4.3,14.2,43,7100,4.9,no,no,no,good,no,no\n"
+        )
+        data = {
+            'file': (io.BytesIO(csv_content.encode('utf-8')), 'dt_batch.csv'),
+            'model_choice': 'Decision Tree'
+        }
+        resp = self.client.post('/screen/batch', data=data, content_type='multipart/form-data')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'Decision Tree', resp.data)
+
+    def test_batch_export_download(self):
+        # First submit a batch to populate session
+        csv_content = (
+            "patient_id,patient_name,age,sex,bp,sg,al,su,rbc,pc,pcc,ba,bgr,bu,sc,sod,pot,hemo,pcv,wc,rc,htn,dm,cad,appet,pe,ane\n"
+            "PT-EXP-01,Export Patient,55,Female,85,1.015,1,0,normal,normal,notpresent,notpresent,110,35,1.1,137,4.4,13.8,41,7400,4.7,no,no,no,good,no,no\n"
+        )
+        data = {
+            'file': (io.BytesIO(csv_content.encode('utf-8')), 'export_test.csv'),
+            'model_choice': 'Random Forest'
+        }
+        self.client.post('/screen/batch', data=data, content_type='multipart/form-data')
+
+        # Now download batch export
+        resp = self.client.get('/screen/batch/export')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('text/csv', resp.headers.get('Content-Type'))
+        self.assertIn(b'PT-EXP-01', resp.data)
+
+    def test_history_csv_export(self):
+        resp = self.client.get('/history/export')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('text/csv', resp.headers.get('Content-Type'))
+        self.assertIn(b'Screening UUID,Patient ID,Patient Name', resp.data)
+
+    def test_history_csv_export_filters_preserved(self):
+        resp = self.client.get('/history/export?status=flagged')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('text/csv', resp.headers.get('Content-Type'))
+
+    def test_csv_formula_injection_protection(self):
+        from app import sanitize_csv_field
+        # Values starting with formula operators must be escaped with a leading single quote
+        self.assertEqual(sanitize_csv_field('=SUM(1,2)'), "'=SUM(1,2)")
+        self.assertEqual(sanitize_csv_field('+cmd|'), "'+cmd|")
+        self.assertEqual(sanitize_csv_field('-10'), "'-10")
+        self.assertEqual(sanitize_csv_field('@evil'), "'@evil")
+        self.assertEqual(sanitize_csv_field('normal text'), 'normal text')
+        self.assertEqual(sanitize_csv_field(None), '')
+
+    def test_clinical_warnings_in_screen_view(self):
+        resp = self.client.get('/screen')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'warning-sc', resp.data)
+        self.assertIn(b'warning-bp', resp.data)
+        self.assertIn(b'warning-pot', resp.data)
+        self.assertIn(b'warning-hemo', resp.data)
+        self.assertIn(b'Batch CSV Screening', resp.data)
+        self.assertIn(b'CSV Template', resp.data)
 
 if __name__ == '__main__':
     unittest.main()

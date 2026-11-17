@@ -50,7 +50,7 @@
         <li><a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Home</a></li>
         <li><a href="{{ url_for('index') }}#about-ckd" class="nav-link">About CKD</a></li>
         <li><a href="{{ url_for('index') }}#how-it-works" class="nav-link">How It Works</a></li>
-        <li><a href="{{ url_for('screen_view') }}" class="nav-link {% if request.endpoint == 'screen_view' %}active{% endif %}">Screening</a></li>
+        <li><a href="{{ url_for('screen_view') }}" class="nav-link {% if request.endpoint in ['screen_view', 'batch_screen_view'] %}active{% endif %}">Screening</a></li>
         <li><a href="{{ url_for('research_view') }}" class="nav-link {% if request.endpoint == 'research_view' %}active{% endif %}">Research & ML</a></li>
         <li><a href="{{ url_for('dashboard_view') }}" class="nav-link {% if request.endpoint == 'dashboard_view' %}active{% endif %}">Dashboard</a></li>
         <li><a href="{{ url_for('history_view') }}" class="nav-link {% if request.endpoint == 'history_view' %}active{% endif %}">History</a></li>

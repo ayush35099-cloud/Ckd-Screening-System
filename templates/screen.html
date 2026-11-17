@@ -27,6 +27,24 @@
         <span>Reset Form</span>
       </button>
     </div>
+
+    <!-- Community Camp Batch Screening Switch Card -->
+    <div style="background-color: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 0.85rem 1.25rem; margin: 1.25rem auto 0 auto; max-width: 760px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+      <div style="text-align: left;">
+        <strong style="color: var(--color-primary); font-size: 0.9rem;">Community Diagnostic Camp Mode:</strong>
+        <span style="font-size: 0.8125rem; color: var(--text-muted); display: block;">Evaluating multiple patients? Upload a batch CSV of up to 100 records.</span>
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <a href="{{ url_for('batch_screen_view') }}" class="btn-renal btn-renal-secondary btn-sm">
+          <i data-lucide="upload-cloud"></i>
+          <span>Batch CSV Screening</span>
+        </a>
+        <a href="{{ url_for('batch_template') }}" class="btn-renal btn-renal-outline btn-sm" title="Download standard CSV template">
+          <i data-lucide="download"></i>
+          <span>CSV Template</span>
+        </a>
+      </div>
+    </div>
   </div>
 
   <form id="ckdScreeningForm" action="{{ url_for('screen_submit') }}" method="POST">
@@ -85,6 +103,7 @@
             <span class="ref-pill">Normal: 70 - 80 mm/Hg</span>
           </div>
           <input type="number" id="bp" name="bp" class="renal-input" min="40" max="200" step="5" placeholder="80" value="80">
+          <div id="warning-bp" class="clinical-input-warning" style="display: none; margin-top: 0.35rem; font-size: 0.75rem; color: var(--status-flagged-text); background-color: var(--status-flagged-bg); border: 1px solid var(--status-flagged-border); border-radius: 4px; padding: 4px 8px;"></div>
           <span class="input-hint">Resting diastolic pressure in mm/Hg</span>
         </div>
 
@@ -214,6 +233,7 @@
             <span class="ref-pill">0.6 - 1.2 mg/dL</span>
           </div>
           <input type="number" id="sc" name="sc" class="renal-input" step="0.1" min="0.1" max="25" placeholder="0.9" value="0.9">
+          <div id="warning-sc" class="clinical-input-warning" style="display: none; margin-top: 0.35rem; font-size: 0.75rem; color: var(--status-flagged-text); background-color: var(--status-flagged-bg); border: 1px solid var(--status-flagged-border); border-radius: 4px; padding: 4px 8px;"></div>
           <span class="input-hint">Critical GFR filtration surrogate</span>
         </div>
 
@@ -252,6 +272,7 @@
             <span class="ref-pill">3.5 - 5.0 mEq/L</span>
           </div>
           <input type="number" id="pot" name="pot" class="renal-input" step="0.1" min="1.5" max="12.0" placeholder="4.2" value="4.2">
+          <div id="warning-pot" class="clinical-input-warning" style="display: none; margin-top: 0.35rem; font-size: 0.75rem; color: var(--status-flagged-text); background-color: var(--status-flagged-bg); border: 1px solid var(--status-flagged-border); border-radius: 4px; padding: 4px 8px;"></div>
           <span class="input-hint">Elevated in tubular excretion failure</span>
         </div>
       </div>
@@ -271,6 +292,7 @@
             <span class="ref-pill">13.0 - 17.0 g/dL</span>
           </div>
           <input type="number" id="hemo" name="hemo" class="renal-input" step="0.1" min="3.0" max="22.0" placeholder="14.5" value="14.5">
+          <div id="warning-hemo" class="clinical-input-warning" style="display: none; margin-top: 0.35rem; font-size: 0.75rem; color: var(--status-flagged-text); background-color: var(--status-flagged-bg); border: 1px solid var(--status-flagged-border); border-radius: 4px; padding: 4px 8px;"></div>
           <span class="input-hint">Erythropoietin deficiency marker</span>
         </div>
 

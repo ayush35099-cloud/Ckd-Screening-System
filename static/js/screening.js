@@ -86,6 +86,7 @@ function initScreeningForm() {
                 el.value = val;
             }
         }
+        checkClinicalWarnings();
     }
 
     if (btnFillNormal) {
@@ -103,7 +104,77 @@ function initScreeningForm() {
     if (btnReset) {
         btnReset.addEventListener('click', () => {
             form.reset();
+            setTimeout(checkClinicalWarnings, 50);
         });
+    }
+
+    // Clinical Input Warnings Logic (Educational & Non-Diagnostic)
+    function checkClinicalWarnings() {
+        if (!form) return;
+
+        // 1. Serum Creatinine (> 5.0 mg/dL)
+        const scEl = form.elements['sc'];
+        const scWarn = document.getElementById('warning-sc');
+        if (scEl && scWarn) {
+            const val = parseFloat(scEl.value);
+            if (!isNaN(val) && val > 5.0) {
+                scWarn.innerHTML = '<strong>Lab Check:</strong> Creatinine > 5.0 mg/dL indicates severe elevation. Please verify test report values and laboratory calibration before submitting (does not prevent submission).';
+                scWarn.style.display = 'block';
+            } else {
+                scWarn.style.display = 'none';
+            }
+        }
+
+        // 2. Diastolic Blood Pressure (> 120 mm/Hg)
+        const bpEl = form.elements['bp'];
+        const bpWarn = document.getElementById('warning-bp');
+        if (bpEl && bpWarn) {
+            const val = parseFloat(bpEl.value);
+            if (!isNaN(val) && val > 120) {
+                bpWarn.innerHTML = '<strong>Vitals Check:</strong> Diastolic BP > 120 mm/Hg represents severe hypertensive outlier. Please verify patient vitals reading.';
+                bpWarn.style.display = 'block';
+            } else {
+                bpWarn.style.display = 'none';
+            }
+        }
+
+        // 3. Potassium (> 6.0 or < 2.8 mEq/L)
+        const potEl = form.elements['pot'];
+        const potWarn = document.getElementById('warning-pot');
+        if (potEl && potWarn) {
+            const val = parseFloat(potEl.value);
+            if (!isNaN(val) && val > 0 && (val > 6.0 || val < 2.8)) {
+                potWarn.innerHTML = '<strong>Electrolyte Check:</strong> Potassium outside 2.8 – 6.0 mEq/L is a critical outlier threshold. Please double-check lab assay report.';
+                potWarn.style.display = 'block';
+            } else {
+                potWarn.style.display = 'none';
+            }
+        }
+
+        // 4. Hemoglobin (< 7.0 g/dL)
+        const hemoEl = form.elements['hemo'];
+        const hemoWarn = document.getElementById('warning-hemo');
+        if (hemoEl && hemoWarn) {
+            const val = parseFloat(hemoEl.value);
+            if (!isNaN(val) && val > 0 && val < 7.0) {
+                hemoWarn.innerHTML = '<strong>Hematology Check:</strong> Hemoglobin < 7.0 g/dL represents severe anemia outlier. Please verify complete blood count panel.';
+                hemoWarn.style.display = 'block';
+            } else {
+                hemoWarn.style.display = 'none';
+            }
+        }
+    }
+
+    // Attach listeners for real-time typing/changes
+    if (form) {
+        ['sc', 'bp', 'pot', 'hemo'].forEach(field => {
+            const el = form.elements[field];
+            if (el) {
+                el.addEventListener('input', checkClinicalWarnings);
+                el.addEventListener('change', checkClinicalWarnings);
+            }
+        });
+        checkClinicalWarnings();
     }
 
     // Modal Confirmation Step
