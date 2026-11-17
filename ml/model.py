@@ -10,6 +10,8 @@ class CKDModelService:
     def __init__(self):
         self.models_dir = os.path.join(os.path.dirname(__file__), 'models')
         self.rf_pipeline_path = os.path.join(self.models_dir, 'ckd_pipeline.joblib')
+        self.rf_pkl_path = os.path.join(self.models_dir, 'ckd_model.pkl')
+        self.root_pkl_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'ckd_model.pkl')
         self.dt_pipeline_path = os.path.join(self.models_dir, 'ckd_dt_pipeline.joblib')
         self.metrics_path = os.path.join(self.models_dir, 'metrics.json')
         self.meta_path = os.path.join(self.models_dir, 'feature_meta.json')
@@ -28,10 +30,15 @@ class CKDModelService:
         return cls._instance
 
     def _load_artifacts(self):
+        # Support ckd_pipeline.joblib, ml/models/ckd_model.pkl, or root ckd_model.pkl
         if os.path.exists(self.rf_pipeline_path):
             self.rf_pipeline = joblib.load(self.rf_pipeline_path)
+        elif os.path.exists(self.rf_pkl_path):
+            self.rf_pipeline = joblib.load(self.rf_pkl_path)
+        elif os.path.exists(self.root_pkl_path):
+            self.rf_pipeline = joblib.load(self.root_pkl_path)
         else:
-            raise FileNotFoundError(f"Pipeline not found at {self.rf_pipeline_path}. Run ml/train.py first.")
+            raise FileNotFoundError(f"Champion pipeline not found at {self.rf_pipeline_path} or {self.rf_pkl_path}. Run ml/train.py first.")
 
         if os.path.exists(self.dt_pipeline_path):
             self.dt_pipeline = joblib.load(self.dt_pipeline_path)

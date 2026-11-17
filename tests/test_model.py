@@ -32,6 +32,16 @@ class TestCKDModelService(unittest.TestCase):
         self.assertIsNotNone(self.service.metrics)
         self.assertEqual(len(self.service.metadata['features']), 24)
 
+    def test_ckd_model_pkl_compatibility(self):
+        # Verify ckd_model.pkl exists and is directly loadable
+        pkl_path = os.path.join(self.service.models_dir, 'ckd_model.pkl')
+        self.assertTrue(os.path.exists(pkl_path))
+        import joblib
+        loaded_pkl = joblib.load(pkl_path)
+        self.assertIsNotNone(loaded_pkl)
+        self.assertTrue(hasattr(loaded_pkl, 'predict'))
+        self.assertTrue(hasattr(loaded_pkl, 'predict_proba'))
+
     def test_healthy_prediction_rf(self):
         result = self.service.predict(self.healthy_sample, model_choice='Random Forest')
         self.assertFalse(result['is_flagged'])

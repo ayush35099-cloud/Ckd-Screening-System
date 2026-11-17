@@ -195,12 +195,15 @@ def run_training():
     models_dir = os.path.join(os.path.dirname(__file__), 'models')
     os.makedirs(models_dir, exist_ok=True)
 
-    # Save models and pipelines
+    # Save models and pipelines (both .joblib and .pkl for maximum compatibility)
     pipeline_save_path = os.path.join(models_dir, 'ckd_pipeline.joblib')
+    pkl_save_path = os.path.join(models_dir, 'ckd_model.pkl')
     dt_pipeline_save_path = os.path.join(models_dir, 'ckd_dt_pipeline.joblib')
     joblib.dump(champion_pipeline, pipeline_save_path)
+    joblib.dump(champion_pipeline, pkl_save_path)
     joblib.dump(dt_pipeline, dt_pipeline_save_path)
     print(f"\nSaved Champion Model Pipeline to: {pipeline_save_path}")
+    print(f"Saved Champion Model (PKL) to:     {pkl_save_path}")
     print(f"Saved Decision Tree Pipeline to:   {dt_pipeline_save_path}")
 
     # Feature Metadata
