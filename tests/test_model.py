@@ -46,16 +46,20 @@ class TestCKDModelService(unittest.TestCase):
         result = self.service.predict(self.healthy_sample, model_choice='Random Forest')
         self.assertFalse(result['is_flagged'])
         self.assertEqual(result['prediction_code'], 'notckd')
-        self.assertIn("Not Detected", result['result_label'])
+        self.assertIn("not detected", result['result_label'].lower())
         self.assertLess(result['probability_ckd'], 50.0)
+        self.assertIn('missing_parameters', result)
+        self.assertIn('probability_explanation', result)
 
     def test_ckd_prediction_rf(self):
         result = self.service.predict(self.ckd_sample, model_choice='Random Forest')
         self.assertTrue(result['is_flagged'])
         self.assertEqual(result['prediction_code'], 'ckd')
-        self.assertIn("Detected", result['result_label'])
+        self.assertIn("detected", result['result_label'].lower())
         self.assertGreater(result['probability_ckd'], 50.0)
         self.assertGreater(len(result['key_findings']), 0)
+        self.assertIn('missing_parameters', result)
+        self.assertIn('probability_explanation', result)
 
     def test_healthy_prediction_dt(self):
         result = self.service.predict(self.healthy_sample, model_choice='Decision Tree')
@@ -77,6 +81,10 @@ class TestCKDModelService(unittest.TestCase):
         result = self.service.predict(partial_sample, model_choice='Random Forest')
         self.assertIn('is_flagged', result)
         self.assertIn('probability_ckd', result)
+        self.assertIn('missing_parameters', result)
+        self.assertGreater(len(result['missing_parameters']), 0)
+        self.assertIn('bgr', result['missing_parameters'])
+        self.assertIn('probability_explanation', result)
 
     def test_invalid_numerical_inputs(self):
         # Pass non-numeric string values to numeric columns

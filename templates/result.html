@@ -11,15 +11,15 @@
     <!-- Dynamic Outcome Banner -->
     <div class="result-banner {% if result.prediction_code == 'ckd' %}flagged{% else %}clear{% endif %}">
       <div class="result-eyebrow">
-        Screening Assessment Outcome &bull; Reference: {{ result.screening_uuid[:12] }}...
+        Screening Assessment &bull; ID: {{ result.screening_uuid }}
       </div>
-      <h1 class="result-headline">
+      <h1 class="result-headline" style="font-size: 1.85rem;">
         {{ result.prediction_label }}
       </h1>
       <p class="result-subline">
-        Clinical Risk Tier: <strong>{{ result.risk_level }}</strong> &nbsp;|&nbsp;
-        Calibrated Probability: <strong>{{ result.probability }}%</strong> &nbsp;|&nbsp;
-        Evaluated by: <strong>{{ result.model_used }}</strong>
+        Statistical Tier: <strong>{{ result.risk_level }}</strong> &nbsp;|&nbsp;
+        Evaluated by: <strong>{{ result.model_used }}</strong> &nbsp;|&nbsp;
+        Date: <strong>{{ result.formatted_date }}</strong>
       </p>
     </div>
 
@@ -29,7 +29,7 @@
       <!-- Patient & Screening Metadata Grid -->
       <div class="result-meta-grid">
         <div class="meta-item">
-          <span class="meta-label">Patient ID</span>
+          <span class="meta-label">Patient Identifier</span>
           <span class="meta-val">{{ result.patient_id }}</span>
         </div>
         <div class="meta-item">
@@ -41,10 +41,24 @@
           <span class="meta-val">{{ result.age or 'N/A' }} yrs / {{ result.sex }}</span>
         </div>
         <div class="meta-item">
-          <span class="meta-label">Evaluation Timestamp</span>
+          <span class="meta-label">Screening Timestamp</span>
           <span class="meta-val">{{ result.formatted_date }}</span>
         </div>
       </div>
+
+      <!-- Missing Information Warning Banner -->
+      {% if result.missing_parameters and result.missing_parameters|length > 0 %}
+        <div style="background-color: var(--status-moderate-bg); border: 1px solid var(--status-moderate-border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.75rem; display: flex; gap: 0.75rem; align-items: flex-start;">
+          <i data-lucide="info" style="color: var(--status-moderate-text); flex-shrink: 0; margin-top: 2px;"></i>
+          <div>
+            <strong style="color: var(--status-moderate-text); font-size: 0.9rem;">Missing Information Notice ({{ result.missing_parameters|length }} Parameters Imputed)</strong>
+            <p style="font-size: 0.8125rem; color: var(--status-moderate-text); margin-top: 0.25rem; line-height: 1.5;">
+              The following parameters were not supplied in this screening session and were statistically estimated using training set medians/modes:
+              <strong>{{ result.missing_parameters|join(', ') }}</strong>. While the model is resilient to missing data, omitting key biomarkers (such as Creatinine or Hemoglobin) may reduce screening precision.
+            </p>
+          </div>
+        </div>
+      {% endif %}
 
       <!-- Clinical Guidance & Recommendations -->
       <div style="margin-bottom: 2rem;">
@@ -55,6 +69,11 @@
           <p style="color: var(--text-main); font-size: 0.9375rem; line-height: 1.6;">
             {{ result.recommendation }}
           </p>
+          {% if result.probability_explanation %}
+            <p style="font-size: 0.8125rem; color: var(--text-subtle); margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed var(--border-subtle);">
+              <strong>Statistical Note:</strong> {{ result.probability_explanation }}
+            </p>
+          {% endif %}
         </div>
       </div>
 
@@ -80,7 +99,7 @@
       <!-- Parameter Matrix -->
       <div style="margin-bottom: 2rem;">
         <h3 style="font-family: var(--font-serif); font-size: 1.25rem; margin-bottom: 0.75rem;">
-          Screened Laboratory Parameters
+          Submitted Laboratory Parameters (24 Features)
         </h3>
         <div style="overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: 8px;">
           <table class="renal-table">
@@ -89,13 +108,14 @@
                 <th>Biomarker / Variable</th>
                 <th>Entered Value</th>
                 <th>Standard Reference Range</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
               {% for key, val in result.parameters.items() %}
                 <tr>
                   <td><strong>{{ key.upper() }}</strong></td>
-                  <td>{{ val if val is not none and val != '' else 'Not Tested' }}</td>
+                  <td>{{ val if val is not none and val != '' else 'Unmeasured (Imputed)' }}</td>
                   <td style="color: var(--text-subtle); font-size: 0.8125rem;">
                     {% if key == 'sc' %}0.6 - 1.2 mg/dL
                     {% elif key == 'hemo' %}13.0 - 17.0 g/dL
@@ -113,6 +133,13 @@
                     {% else %}Negative / Normal
                     {% endif %}
                   </td>
+                  <td>
+                    {% if val is none or val == '' %}
+                      <span style="font-size: 0.75rem; color: var(--text-subtle);">Imputed</span>
+                    {% else %}
+                      <span style="font-size: 0.75rem; color: var(--color-primary);">Supplied</span>
+                    {% endif %}
+                  </td>
                 </tr>
               {% endfor %}
             </tbody>
@@ -126,7 +153,7 @@
         <div>
           <div class="disclaimer-title">Decision-Support & Screening Regulatory Notice</div>
           <div class="disclaimer-text">
-            This report was computed by an automated machine learning screening pipeline for educational and risk-stratification purposes in primary care settings. It does NOT constitute a clinical diagnosis, medical certification, or treatment plan. A licensed medical doctor or nephrologist must independently evaluate all patient symptoms and order confirmatory diagnostic investigations (including formal eGFR calculation, 24-hour urine collection, and renal imaging).
+            This report was computed by an automated machine learning screening pipeline for educational and risk-stratification purposes in primary care settings. It does NOT constitute a clinical diagnosis, medical certification, or treatment plan. A licensed medical doctor or nephrologist must independently evaluate all patient symptoms and order confirmatory diagnostic investigations (including formal eGFR calculation, 24-hour urine collection, and renal imaging). Independent prospective clinical validation has not been performed.
           </div>
         </div>
       </div>

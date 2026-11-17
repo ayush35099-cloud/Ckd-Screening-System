@@ -39,25 +39,15 @@ def generate_pdf_report(screening_data, feature_meta=None):
     C_ALERT = colors.HexColor('#B91C1C')        # Deep Red/Amber
     C_SUCCESS = colors.HexColor('#15803D')      # Deep Emerald
 
-    # Styles
     styles = getSampleStyleSheet()
 
     title_style = ParagraphStyle(
         'DocTitle',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=20,
-        leading=24,
+        fontSize=18,
+        leading=22,
         textColor=C_PRIMARY
-    )
-
-    tagline_style = ParagraphStyle(
-        'DocTagline',
-        parent=styles['Normal'],
-        fontName='Helvetica',
-        fontSize=9,
-        leading=12,
-        textColor=C_MUTED
     )
 
     academic_header_style = ParagraphStyle(
@@ -74,8 +64,8 @@ def generate_pdf_report(screening_data, feature_meta=None):
         'SectionHeading',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=11,
-        leading=14,
+        fontSize=10.5,
+        leading=13,
         textColor=C_PRIMARY,
         spaceAfter=4
     )
@@ -84,8 +74,8 @@ def generate_pdf_report(screening_data, feature_meta=None):
         'BodyDark',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=9,
-        leading=12,
+        fontSize=8.5,
+        leading=11.5,
         textColor=C_TEXT
     )
 
@@ -99,14 +89,18 @@ def generate_pdf_report(screening_data, feature_meta=None):
         'DisclaimerText',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=7.5,
-        leading=10,
+        fontSize=7,
+        leading=9.5,
         textColor=C_MUTED,
         alignment=TA_JUSTIFY
     )
 
     # 1. Header Table (Brand on left, Academic metadata on right)
-    brand_p = Paragraph("<b>RenalCare</b> &nbsp;<font size=9 color='#4D7260'>| CKD Screening Platform</font><br/><font size=8 color='#5A655F'>Smarter Screening. Earlier Awareness.</font>", title_style)
+    brand_p = Paragraph(
+        "<b>RenalCare</b> &nbsp;<font size=9 color='#4D7260'>| Clinical Decision Support</font><br/>"
+        "<font size=7.5 color='#5A655F'>Smarter Screening. Earlier Awareness.</font>",
+        title_style
+    )
     academic_p = Paragraph(
         "<b>Dayananda Sagar College of Engineering, Bengaluru</b><br/>"
         "Dept. of AI & Machine Learning | BCP308 Community Project<br/>"
@@ -114,13 +108,13 @@ def generate_pdf_report(screening_data, feature_meta=None):
         academic_header_style
     )
 
-    header_table = Table([[brand_p, academic_p]], colWidths=[3.6 * inch, 3.8 * inch])
+    header_table = Table([[brand_p, academic_p]], colWidths=[3.7 * inch, 3.7 * inch])
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
     ]))
     story.append(header_table)
-    story.append(HRFlowable(width="100%", thickness=1.5, color=C_PRIMARY, spaceBefore=2, spaceAfter=8))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=C_PRIMARY, spaceBefore=2, spaceAfter=6))
 
     # 2. Patient Demographics & Report Meta Grid
     pt_id = screening_data.get('patient_id', 'Unknown')
@@ -131,63 +125,90 @@ def generate_pdf_report(screening_data, feature_meta=None):
     screening_uuid = screening_data.get('screening_uuid', 'N/A')[:18] + '...'
 
     pt_info_data = [
-        [Paragraph("<b>Patient ID:</b>", body_style), Paragraph(str(pt_id), body_bold),
+        [Paragraph("<b>Patient Identifier:</b>", body_style), Paragraph(str(pt_id), body_bold),
          Paragraph("<b>Screening Date:</b>", body_style), Paragraph(str(report_date), body_style)],
         [Paragraph("<b>Patient Name:</b>", body_style), Paragraph(str(pt_name), body_style),
-         Paragraph("<b>Record Reference:</b>", body_style), Paragraph(str(screening_uuid), body_style)],
+         Paragraph("<b>Screening ID:</b>", body_style), Paragraph(str(screening_uuid), body_style)],
         [Paragraph("<b>Age / Sex:</b>", body_style), Paragraph(f"{pt_age} / {pt_sex}", body_style),
-         Paragraph("<b>Evaluation Model:</b>", body_style), Paragraph(str(screening_data.get('model_used', 'Random Forest')), body_style)]
+         Paragraph("<b>Model Evaluated:</b>", body_style), Paragraph(str(screening_data.get('model_used', 'Random Forest')), body_style)]
     ]
-    pt_table = Table(pt_info_data, colWidths=[1.3 * inch, 2.4 * inch, 1.4 * inch, 2.3 * inch])
+    pt_table = Table(pt_info_data, colWidths=[1.4 * inch, 2.3 * inch, 1.4 * inch, 2.3 * inch])
     pt_table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), C_LIGHT_BG),
         ('BOX', (0,0), (-1,-1), 0.5, C_BORDER),
         ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#ECEEEC')),
-        ('TOPPADDING', (0,0), (-1,-1), 4),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+        ('TOPPADDING', (0,0), (-1,-1), 3),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
         ('LEFTPADDING', (0,0), (-1,-1), 6),
         ('RIGHTPADDING', (0,0), (-1,-1), 6),
     ]))
     story.append(pt_table)
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 8))
 
-    # 3. Screening Outcome Banner
+    # 3. Screening Outcome Banner (Nuanced Wording)
     is_flagged = screening_data.get('prediction_code') == 'ckd' or 'Detected' in screening_data.get('prediction_label', '')
-    result_text = screening_data.get('prediction_label', 'CKD Indicators Detected' if is_flagged else 'CKD Indicators Not Detected')
+    if is_flagged:
+        result_text = "CKD INDICATORS DETECTED — Further Clinical Evaluation Recommended"
+        banner_bg = colors.HexColor('#FEF2F2')
+        banner_border = colors.HexColor('#F87171')
+        banner_text_color = C_ALERT
+    else:
+        result_text = "CKD INDICATORS NOT DETECTED BY THIS MODEL — Does Not Rule Out CKD"
+        banner_bg = colors.HexColor('#F0FDF4')
+        banner_border = colors.HexColor('#86EFAC')
+        banner_text_color = C_SUCCESS
+
     prob_val = screening_data.get('probability', 0.0)
     risk_level = screening_data.get('risk_level', 'Moderate' if is_flagged else 'Low')
 
-    banner_bg = colors.HexColor('#FEF2F2') if is_flagged else colors.HexColor('#F0FDF4')
-    banner_border = colors.HexColor('#F87171') if is_flagged else colors.HexColor('#86EFAC')
-    banner_text_color = C_ALERT if is_flagged else C_SUCCESS
-
     outcome_p1 = Paragraph(
-        f"<font size=12 color='{banner_text_color.hexval()}'><b>RESULT: {result_text.upper()}</b></font><br/>"
-        f"<font size=8.5 color='#334155'>Clinical Risk Tier: <b>{risk_level.upper()}</b> &nbsp;|&nbsp; Calibrated Probability: <b>{prob_val}%</b></font>",
+        f"<font size=10 color='{banner_text_color.hexval()}'><b>RESULT: {result_text}</b></font><br/>"
+        f"<font size=8 color='#334155'>Statistical Stratification: <b>{risk_level}</b> &nbsp;|&nbsp; "
+        f"Model Confidence: <b>{prob_val}%</b> (retrospective training distribution)</font>",
         styles['Normal']
     )
     outcome_table = Table([[outcome_p1]], colWidths=[7.4 * inch])
     outcome_table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), banner_bg),
-        ('BOX', (0,0), (-1,-1), 1.2, banner_border),
-        ('TOPPADDING', (0,0), (-1,-1), 8),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
-        ('LEFTPADDING', (0,0), (-1,-1), 12),
+        ('BOX', (0,0), (-1,-1), 1.0, banner_border),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('LEFTPADDING', (0,0), (-1,-1), 10),
     ]))
     story.append(outcome_table)
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 8))
 
-    # 4. Clinical Interpretation & Recommendations
+    # Missing Values Warning (if any)
+    missing_params = screening_data.get('missing_parameters') or []
+    if missing_params:
+        missing_text = (
+            f"<b>Missing Information Notice:</b> {len(missing_params)} routine parameter(s) were unmeasured in this screening "
+            f"({', '.join(missing_params)}). Statistical imputation was applied based on training data distributions. "
+            f"Missing laboratory values can impact screening sensitivity."
+        )
+        missing_p = Paragraph(f"<font size=7.5 color='#92400E'>{missing_text}</font>", styles['Normal'])
+        missing_table = Table([[missing_p]], colWidths=[7.4 * inch])
+        missing_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#FFFBEB')),
+            ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#FDE68A')),
+            ('TOPPADDING', (0,0), (-1,-1), 4),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+            ('LEFTPADDING', (0,0), (-1,-1), 8),
+        ]))
+        story.append(missing_table)
+        story.append(Spacer(1, 6))
+
+    # 4. Clinical Guidance & Recommendations
     rec_text = screening_data.get('recommendation', '')
     if not rec_text:
         if is_flagged:
-            rec_text = "The machine learning screening pipeline has detected markers indicative of Chronic Kidney Disease. Urgent clinical correlation is advised: arrange formal laboratory evaluation including eGFR, 24-hour urinary protein quantification, serum electrolytes, and renal ultrasonography."
+            rec_text = "The machine learning screening pipeline has detected markers indicative of Chronic Kidney Disease. Further clinical correlation by a medical professional or nephrologist is recommended, including formal diagnostic tests (eGFR, 24-hour urine collection, and renal ultrasound)."
         else:
-            rec_text = "Screening indicators show values within non-CKD baseline ranges. Annual wellness monitoring is advised."
+            rec_text = "Routine screening indicators show values within non-CKD baseline ranges. Note that this result does not rule out Chronic Kidney Disease or other renal disorders."
 
     story.append(Paragraph("Clinical Screening Guidance & Next Steps", section_heading))
     story.append(Paragraph(rec_text, body_style))
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 6))
 
     # 5. Key Abnormal Findings (if any)
     findings = screening_data.get('findings') or []
@@ -211,20 +232,20 @@ def generate_pdf_report(screening_data, feature_meta=None):
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#F1F5F9')),
             ('BOX', (0,0), (-1,-1), 0.5, C_BORDER),
             ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
-            ('TOPPADDING', (0,0), (-1,-1), 3),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+            ('TOPPADDING', (0,0), (-1,-1), 2.5),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 2.5),
             ('LEFTPADDING', (0,0), (-1,-1), 5),
             ('RIGHTPADDING', (0,0), (-1,-1), 5),
         ]))
         story.append(f_table)
-        story.append(Spacer(1, 10))
+        story.append(Spacer(1, 8))
 
-    # 6. Complete Parameters Table (Clean 2-column or 3-column breakdown)
-    story.append(Paragraph("Recorded Laboratory Parameters (UCI Standard 24-Feature Schema)", section_heading))
+    # 6. Complete Parameters Table (Clean 2-column breakdown)
+    story.append(Paragraph("Submitted Laboratory Parameters (UCI Standard 24-Feature Schema)", section_heading))
     raw_params = screening_data.get('parameters', {})
 
-    # Feature definitions for reporting
     param_meta = {
+        'age': ('Age', '18 - 65 yrs'),
         'bp': ('Blood Pressure', '70 - 80 mm/Hg'),
         'sg': ('Specific Gravity', '1.015 - 1.025'),
         'al': ('Albumin (Protein)', '0 (Negative)'),
@@ -250,7 +271,6 @@ def generate_pdf_report(screening_data, feature_meta=None):
         'ane': ('Anemia', 'no')
     }
 
-    # Split into 2 columns for compact, clean layout
     items = list(param_meta.items())
     half = (len(items) + 1) // 2
 
@@ -263,16 +283,16 @@ def generate_pdf_report(screening_data, feature_meta=None):
         k1, (name1, ref1) = items[i]
         val1 = raw_params.get(k1, 'N/A')
         if val1 is None or val1 == '' or str(val1).lower() == 'nan':
-            val1 = 'Not Tested'
+            val1 = 'Unmeasured'
 
         k2, (name2, ref2) = items[i + half] if (i + half) < len(items) else (None, ('', ''))
         val2 = raw_params.get(k2, 'N/A') if k2 else ''
         if val2 is None or val2 == '' or str(val2).lower() == 'nan':
-            val2 = 'Not Tested'
+            val2 = 'Unmeasured'
 
         table_rows.append([
-            Paragraph(name1, body_style), Paragraph(str(val1), body_bold), Paragraph(f"<font size=7.5 color='#5A655F'>{ref1}</font>", body_style),
-            Paragraph(name2, body_style), Paragraph(str(val2), body_bold), Paragraph(f"<font size=7.5 color='#5A655F'>{ref2}</font>", body_style)
+            Paragraph(name1, body_style), Paragraph(str(val1), body_bold), Paragraph(f"<font size=7 color='#5A655F'>{ref1}</font>", body_style),
+            Paragraph(name2, body_style), Paragraph(str(val2), body_bold), Paragraph(f"<font size=7 color='#5A655F'>{ref2}</font>", body_style)
         ])
 
     param_table = Table(table_rows, colWidths=[1.4 * inch, 0.8 * inch, 1.4 * inch, 1.5 * inch, 0.8 * inch, 1.5 * inch])
@@ -280,31 +300,31 @@ def generate_pdf_report(screening_data, feature_meta=None):
         ('BACKGROUND', (0,0), (-1,0), C_LIGHT_BG),
         ('BOX', (0,0), (-1,-1), 0.5, C_BORDER),
         ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#EEF0EE')),
-        ('TOPPADDING', (0,0), (-1,-1), 2.5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2.5),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
         ('LEFTPADDING', (0,0), (-1,-1), 4),
         ('RIGHTPADDING', (0,0), (-1,-1), 4),
     ]))
     story.append(param_table)
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 8))
 
-    # 7. Model Performance & Legal Disclaimer Footer
+    # 7. Model Performance & Regulatory Disclaimer Footer
     disclaimer_block = [
         Paragraph(
             "<b>IMPORTANT REGULATORY AND MEDICAL DISCLAIMER:</b><br/>"
-            "This document is an automated screening and risk stratification report produced by an educational machine learning model "
-            "trained on the UCI Chronic Kidney Disease benchmark dataset. <b>This report does NOT constitute a formal medical diagnosis, "
-            "clinical certification, or therapeutic prescription.</b> Kidney disease pathology is multifactorial and requires comprehensive "
-            "investigation by a licensed medical practitioner. Any elevated or abnormal findings must be confirmed via definitive nephrological "
-            "investigation (e.g., inulin clearance, formal estimated GFR, renal biopsy, renal ultrasonography).",
+            "This document is an automated decision-support screening report produced by an educational machine learning model "
+            "trained on the UCI Chronic Kidney Disease benchmark dataset. <b>This report does NOT constitute a clinical diagnosis, "
+            "medical certificate, or treatment prescription.</b> The model does not diagnose or definitively rule out kidney disease. "
+            "Kidney disease is multifactorial; any abnormal indicator must be investigated through comprehensive clinical nephrological evaluation "
+            "(e.g. formal eGFR calculation, inulin clearance, renal ultrasound). Independent prospective clinical validation has not been performed.",
             disclaimer_style
         ),
-        Spacer(1, 6),
+        Spacer(1, 4),
         Paragraph(
-            "<b>Model Specification:</b> Random Forest Classifier / Decision Tree Pipeline &bull; "
-            "<b>Held-out Test Sensitivity:</b> 100.0% &bull; <b>Specificity:</b> 100.0% &bull; "
-            "<b>Institutional Affiliation:</b> Department of AIML, Dayananda Sagar College of Engineering, Bengaluru.",
-            ParagraphStyle('DocFooterMeta', parent=styles['Normal'], fontSize=7.5, textColor=C_MUTED)
+            "<b>Model Specification:</b> Random Forest / Decision Tree Pipeline &bull; "
+            "<b>Academic Benchmark Testing:</b> 100.0% sensitivity on held-out UCI test split (N=80) &bull; "
+            "<b>Institutional Affiliation:</b> Dept. of AIML, Dayananda Sagar College of Engineering, Bengaluru.",
+            ParagraphStyle('DocFooterMeta', parent=styles['Normal'], fontSize=7, textColor=C_MUTED)
         )
     ]
 
@@ -312,14 +332,13 @@ def generate_pdf_report(screening_data, feature_meta=None):
     disclaimer_table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), C_LIGHT_BG),
         ('BOX', (0,0), (-1,-1), 0.5, C_BORDER),
-        ('TOPPADDING', (0,0), (-1,-1), 6),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
         ('LEFTPADDING', (0,0), (-1,-1), 8),
         ('RIGHTPADDING', (0,0), (-1,-1), 8),
     ]))
     story.append(KeepTogether(disclaimer_table))
 
-    # Build document
     doc.build(story)
     buffer.seek(0)
     return buffer.getvalue()

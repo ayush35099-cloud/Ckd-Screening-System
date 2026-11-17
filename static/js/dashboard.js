@@ -5,6 +5,7 @@
 
 let outcomeChartInstance = null;
 let modelChartInstance = null;
+let trendChartInstance = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     window.renderDashboardCharts();
@@ -125,6 +126,69 @@ window.renderDashboardCharts = function() {
                         callbacks: {
                             label: function(context) {
                                 return context.dataset.label + ': ' + context.parsed.y + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 3. Screening Trend Over Time Chart
+    const trendCanvas = document.getElementById('screeningTrendChart');
+    if (trendCanvas) {
+        if (trendChartInstance) {
+            trendChartInstance.destroy();
+        }
+
+        let trendData = [];
+        try {
+            trendData = JSON.parse(trendCanvas.getAttribute('data-trend') || '[]');
+        } catch (e) {
+            trendData = [];
+        }
+
+        const labels = trendData.length > 0 ? trendData.map(item => item.date) : ['No Screenings Yet'];
+        const counts = trendData.length > 0 ? trendData.map(item => item.count) : [0];
+
+        trendChartInstance = new Chart(trendCanvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Screenings Evaluated',
+                    data: counts,
+                    backgroundColor: isDark ? '#88B39F' : '#174D3A',
+                    borderRadius: 4,
+                    maxBarThickness: 36
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: mutedColor,
+                            stepSize: 1,
+                            precision: 0
+                        },
+                        grid: { color: gridColor }
+                    },
+                    x: {
+                        ticks: { color: textColor, font: { weight: '600' } },
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ` Screenings: ${context.parsed.y}`;
                             }
                         }
                     }

@@ -2,26 +2,35 @@ import os
 import json
 import sqlite3
 import uuid
+import logging
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 DATABASE_PATH = os.environ.get('DATABASE_PATH') or os.path.join(os.path.dirname(__file__), 'renalcare.db')
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 def get_connection():
-    # If DATABASE_URL is set and starts with postgres, use psycopg2
+    """
+    Returns (connection, db_type).
+    Tries PostgreSQL if DATABASE_URL is set; falls back cleanly to local SQLite.
+    """
     if DATABASE_URL and DATABASE_URL.startswith(('postgres://', 'postgresql://')):
-        import psycopg2
-        import psycopg2.extras
-        # Handle Render postgres URI schema if needed (postgres:// -> postgresql://)
-        pg_url = DATABASE_URL
-        if pg_url.startswith('postgres://'):
-            pg_url = pg_url.replace('postgres://', 'postgresql://', 1)
-        conn = psycopg2.connect(pg_url)
-        return conn, 'postgres'
-    else:
-        conn = sqlite3.connect(DATABASE_PATH)
-        conn.row_factory = sqlite3.Row
-        return conn, 'sqlite'
+        try:
+            import psycopg2
+            import psycopg2.extras
+            pg_url = DATABASE_URL
+            if pg_url.startswith('postgres://'):
+                pg_url = pg_url.replace('postgres://', 'postgresql://', 1)
+            conn = psycopg2.connect(pg_url, connect_timeout=5)
+            return conn, 'postgres'
+        except Exception as e:
+            logger.warning(f"Could not connect to PostgreSQL ({e}). Falling back to local SQLite.")
+
+    # SQLite fallback
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn, 'sqlite'
 
 def init_db():
     conn, db_type = get_connection()
@@ -37,16 +46,22 @@ def init_db():
                 age INTEGER,
                 sex VARCHAR(16),
                 parameters_json TEXT NOT NULL,
-                prediction_label VARCHAR(64) NOT NULL,
+                prediction_label VARCHAR(128) NOT NULL,
                 prediction_code VARCHAR(32) NOT NULL,
                 probability REAL NOT NULL,
-                risk_level VARCHAR(32) NOT NULL,
+                risk_level VARCHAR(64) NOT NULL,
                 model_used VARCHAR(64) NOT NULL,
+                missing_params_json TEXT,
                 findings_json TEXT,
                 recommendation TEXT,
+                probability_explanation TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenings_uuid ON screenings(screening_uuid);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenings_patient ON screenings(patient_id);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenings_code ON screenings(prediction_code);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenings_created ON screenings(created_at);")
     else:
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS screenings (
@@ -62,14 +77,32 @@ def init_db():
                 probability REAL NOT NULL,
                 risk_level TEXT NOT NULL,
                 model_used TEXT NOT NULL,
+                missing_params_json TEXT,
                 findings_json TEXT,
                 recommendation TEXT,
+                probability_explanation TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
-        # Index on screening_uuid and patient_id for fast queries
+        # Indexes for fast querying & security
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenings_uuid ON screenings(screening_uuid);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenings_patient ON screenings(patient_id);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenings_code ON screenings(prediction_code);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenings_created ON screenings(created_at);")
+
+    # Ensure schema migrations for existing databases
+    migration_columns = [
+        ("missing_params_json", "TEXT"),
+        ("findings_json", "TEXT"),
+        ("recommendation", "TEXT"),
+        ("probability_explanation", "TEXT"),
+    ]
+    for col_name, col_type in migration_columns:
+        try:
+            cursor.execute(f"ALTER TABLE screenings ADD COLUMN {col_name} {col_type};")
+            conn.commit()
+        except Exception:
+            pass  # Column already exists
 
     conn.commit()
     conn.close()
@@ -91,22 +124,26 @@ def save_screening(patient_data, prediction_result):
 
     sex = patient_data.get('sex', 'Not Specified')
     params_json = json.dumps(patient_data.get('parameters', {}))
+    missing_json = json.dumps(prediction_result.get('missing_parameters', []))
     findings_json = json.dumps(prediction_result.get('key_findings', []))
+    prob_explanation = prediction_result.get('probability_explanation', '')
 
     if db_type == 'postgres':
         query = """
             INSERT INTO screenings (
                 screening_uuid, patient_id, patient_name, age, sex,
                 parameters_json, prediction_label, prediction_code,
-                probability, risk_level, model_used, findings_json, recommendation
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                probability, risk_level, model_used, missing_params_json,
+                findings_json, recommendation, probability_explanation
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id;
         """
         cursor.execute(query, (
             screening_uuid, patient_id, patient_name, age, sex,
             params_json, prediction_result['result_label'], prediction_result['prediction_code'],
             prediction_result['probability_ckd'], prediction_result['risk_level'],
-            prediction_result['model_used'], findings_json, prediction_result['recommendation']
+            prediction_result['model_used'], missing_json, findings_json,
+            prediction_result['recommendation'], prob_explanation
         ))
         row = cursor.fetchone()
         screening_id = row[0]
@@ -115,14 +152,16 @@ def save_screening(patient_data, prediction_result):
             INSERT INTO screenings (
                 screening_uuid, patient_id, patient_name, age, sex,
                 parameters_json, prediction_label, prediction_code,
-                probability, risk_level, model_used, findings_json, recommendation
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                probability, risk_level, model_used, missing_params_json,
+                findings_json, recommendation, probability_explanation
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
         cursor.execute(query, (
             screening_uuid, patient_id, patient_name, age, sex,
             params_json, prediction_result['result_label'], prediction_result['prediction_code'],
             prediction_result['probability_ckd'], prediction_result['risk_level'],
-            prediction_result['model_used'], findings_json, prediction_result['recommendation']
+            prediction_result['model_used'], missing_json, findings_json,
+            prediction_result['recommendation'], prob_explanation
         ))
         screening_id = cursor.lastrowid
 
@@ -155,6 +194,8 @@ def get_screening_by_uuid(screening_uuid):
     if result:
         result['parameters'] = json.loads(result['parameters_json']) if result.get('parameters_json') else {}
         result['findings'] = json.loads(result['findings_json']) if result.get('findings_json') else []
+        result['missing_parameters'] = json.loads(result['missing_params_json']) if result.get('missing_params_json') else []
+        result['missing_count'] = len(result['missing_parameters'])
         if isinstance(result['created_at'], datetime):
             result['formatted_date'] = result['created_at'].strftime('%b %d, %Y, %I:%M %p')
         else:
@@ -171,10 +212,10 @@ def get_screenings_history(search='', filter_status='all', limit=50, offset=0):
     if search:
         search_pattern = f"%{search.strip()}%"
         if db_type == 'postgres':
-            where_clauses.append("(patient_id ILIKE %s OR patient_name ILIKE %s OR screening_uuid ILIKE %s)")
+            where_clauses.append("(patient_id ILIKE %s OR screening_uuid ILIKE %s)")
         else:
-            where_clauses.append("(patient_id LIKE ? OR patient_name LIKE ? OR screening_uuid LIKE ?)")
-        params.extend([search_pattern, search_pattern, search_pattern])
+            where_clauses.append("(patient_id LIKE ? OR screening_uuid LIKE ?)")
+        params.extend([search_pattern, search_pattern])
 
     if filter_status == 'flagged':
         where_clauses.append("prediction_code = %s" if db_type == 'postgres' else "prediction_code = ?")
@@ -190,7 +231,7 @@ def get_screenings_history(search='', filter_status='all', limit=50, offset=0):
     cursor.execute(count_sql, tuple(params))
     total_count = cursor.fetchone()[0]
 
-    # Select records
+    # Select records (excluding sensitive parameters from list views)
     if db_type == 'postgres':
         import psycopg2.extras
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -229,6 +270,10 @@ def get_screenings_history(search='', filter_status='all', limit=50, offset=0):
     return rows, total_count
 
 def get_dashboard_summary():
+    """
+    Computes real operational statistics from the database.
+    Separates actual patient screenings from model benchmark figures.
+    """
     conn, db_type = get_connection()
     cursor = conn.cursor()
 
@@ -240,6 +285,34 @@ def get_dashboard_summary():
 
     cursor.execute("SELECT COUNT(*) FROM screenings WHERE prediction_code = 'notckd';")
     non_flagged = cursor.fetchone()[0]
+
+    # Algorithm usage breakdown from database
+    cursor.execute("SELECT model_used, COUNT(*) FROM screenings GROUP BY model_used;")
+    algo_rows = cursor.fetchall()
+    algorithm_usage = {}
+    for row in algo_rows:
+        algorithm_usage[row[0]] = int(row[1])
+
+    # Screening activity trends (last 7 recorded days)
+    if db_type == 'postgres':
+        trend_sql = """
+            SELECT TO_CHAR(created_at, 'YYYY-MM-DD') AS day, COUNT(*) AS count
+            FROM screenings
+            GROUP BY day
+            ORDER BY day DESC
+            LIMIT 7;
+        """
+    else:
+        trend_sql = """
+            SELECT SUBSTR(created_at, 1, 10) AS day, COUNT(*) AS count
+            FROM screenings
+            GROUP BY day
+            ORDER BY day DESC
+            LIMIT 7;
+        """
+    cursor.execute(trend_sql)
+    trend_rows = cursor.fetchall()
+    screening_trend = [{'date': r[0], 'count': int(r[1])} for r in reversed(trend_rows)]
 
     # Recent 5 screenings
     if db_type == 'postgres':
@@ -278,5 +351,7 @@ def get_dashboard_summary():
         'flagged': flagged,
         'non_flagged': non_flagged,
         'flagged_percentage': round((flagged / total * 100), 1) if total > 0 else 0,
+        'algorithm_usage': algorithm_usage,
+        'screening_trend': screening_trend,
         'recent_screenings': recent
     }

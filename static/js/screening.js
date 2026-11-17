@@ -110,6 +110,11 @@ function initScreeningForm() {
     if (form) {
         form.addEventListener('submit', (e) => {
             e.preventDefault();
+            // Client-side HTML5 constraint validation
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
             buildReviewSummary();
             if (reviewModal) {
                 reviewModal.style.display = 'flex';
@@ -121,7 +126,7 @@ function initScreeningForm() {
         btnConfirmSubmit.addEventListener('click', () => {
             if (form) {
                 btnConfirmSubmit.disabled = true;
-                btnConfirmSubmit.innerHTML = '<span>Processing Screening...</span>';
+                btnConfirmSubmit.innerHTML = '<span>Evaluating Laboratory Data...</span>';
                 form.submit();
             }
         });

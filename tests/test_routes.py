@@ -72,6 +72,14 @@ class TestFlaskRoutes(unittest.TestCase):
         self.assertIsNotNone(data['screening_uuid'])
         self.assertIn('prediction', data)
         self.assertTrue(data['prediction']['is_flagged'])
+        self.assertIn('probability_explanation', data['prediction'])
+        self.assertIn('missing_parameters', data['prediction'])
+
+    def test_security_headers_present(self):
+        response = self.client.get('/')
+        self.assertEqual(response.headers.get('X-Content-Type-Options'), 'nosniff')
+        self.assertEqual(response.headers.get('X-Frame-Options'), 'SAMEORIGIN')
+        self.assertIn('Referrer-Policy', response.headers)
 
     def test_api_predict_invalid_parameters(self):
         payload = {
@@ -150,6 +158,8 @@ class TestFlaskRoutes(unittest.TestCase):
         data = json.loads(resp.data)
         self.assertIn('total', data)
         self.assertIn('flagged', data)
+        self.assertIn('screening_trend', data)
+        self.assertIn('algorithm_usage', data)
 
     def test_api_metrics(self):
         resp = self.client.get('/api/metrics')

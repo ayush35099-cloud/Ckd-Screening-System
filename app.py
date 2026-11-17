@@ -1,26 +1,42 @@
 import os
 import json
+import logging
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    flash, jsonify, send_file, Response, abort
+    flash, jsonify, send_file, abort
 )
 import io
 
 from config import Config
 from database import (
     init_db, save_screening, get_screening_by_uuid,
-    get_screenings_history, get_dashboard_summary
+    get_screenings_history, get_dashboard_summary, get_connection
 )
 from ml.model import model_service
 from report_generator import generate_pdf_report
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # Initialize database
+    # Initialize database tables & indexes safely
     with app.app_context():
-        init_db()
+        try:
+            init_db()
+        except Exception as e:
+            logger.error(f"Database initialization error: {e}")
+
+    # Security Headers Middleware
+    @app.after_request
+    def set_security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        return response
 
     # -----------------------------------------------------------------------
     # Web Page Routes
@@ -32,7 +48,8 @@ def create_app(config_class=Config):
     @app.route('/dashboard')
     def dashboard_view():
         summary = get_dashboard_summary()
-        return render_template('dashboard.html', summary=summary)
+        metrics = model_service.get_metrics()
+        return render_template('dashboard.html', summary=summary, metrics=metrics)
 
     @app.route('/screen', methods=['GET'])
     def screen_view():
@@ -45,12 +62,12 @@ def create_app(config_class=Config):
 
         patient_id = form_data.get('patient_id', '').strip()
         if not patient_id:
-            flash("Patient ID is required for screening record tracking.", "danger")
+            flash("Patient Identifier is required for clinical record keeping.", "danger")
             return redirect(url_for('screen_view'))
 
         model_choice = form_data.get('model_choice', 'Random Forest')
 
-        # Medical parameter dictionary
+        # The 24 UCI dataset features strictly separated from patient administrative metadata
         param_keys = [
             'age', 'bp', 'sg', 'al', 'su', 'rbc', 'pc', 'pcc', 'ba',
             'bgr', 'bu', 'sc', 'sod', 'pot', 'hemo', 'pcv', 'wc', 'rc',
@@ -59,13 +76,13 @@ def create_app(config_class=Config):
         input_params = {}
         for key in param_keys:
             val = form_data.get(key, '').strip()
-            input_params[key] = val if val else None
+            input_params[key] = val if val != '' else None
 
         # Execute machine learning model prediction
         try:
             pred_result = model_service.predict(input_params, model_choice=model_choice)
         except Exception as e:
-            app.logger.error(f"Prediction failed: {e}")
+            logger.error(f"Prediction failed: {e}")
             flash(f"Screening evaluation error: {str(e)}", "danger")
             return redirect(url_for('screen_view'))
 
@@ -139,11 +156,12 @@ def create_app(config_class=Config):
     # -----------------------------------------------------------------------
     @app.route('/api/health')
     def health_check():
+        _, db_type = get_connection()
         return jsonify({
             'status': 'healthy',
             'application': 'RenalCare CKD Screening System',
-            'version': '1.0.0',
-            'champion_model': 'Random Forest Classifier',
+            'version': '1.1.0',
+            'database_backend': db_type,
             'models_loaded': {
                 'random_forest': model_service.rf_pipeline is not None,
                 'decision_tree': model_service.dt_pipeline is not None
@@ -167,12 +185,11 @@ def create_app(config_class=Config):
         try:
             prediction = model_service.predict(parameters, model_choice=model_choice)
             
-            # Save if patient_id is provided
             saved_uuid = None
             if data.get('patient_id'):
                 patient_record = {
-                    'patient_id': data.get('patient_id'),
-                    'patient_name': data.get('patient_name'),
+                    'patient_id': str(data.get('patient_id')).strip(),
+                    'patient_name': str(data.get('patient_name', '')).strip() or None,
                     'age': data.get('age'),
                     'sex': data.get('sex', 'Not Specified'),
                     'parameters': parameters

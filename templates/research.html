@@ -58,8 +58,16 @@
       2. Comparative Evaluation: Decision Tree vs Random Forest
     </h2>
     <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
-      Because this is a medical screening application, the optimization objective prioritizes <strong>Sensitivity (Recall)</strong> to eliminate False Negatives (cases where a CKD-positive patient is falsely labeled as healthy).
+      Because this is a medical screening application, the optimization objective prioritizes <strong>Sensitivity (Recall)</strong> to minimize False Negatives (cases where a CKD-positive patient is falsely labeled as healthy).
     </p>
+
+    <!-- Academic Notice Banner -->
+    <div style="background-color: var(--bg-surface-subtle); border: 1px solid var(--border-subtle); border-left: 4px solid var(--color-primary); padding: 1rem 1.25rem; border-radius: 6px; margin-bottom: 1.5rem;">
+      <strong style="color: var(--text-main); font-size: 0.9rem;">Academic Benchmark Evaluation Scope</strong>
+      <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.25rem; line-height: 1.5;">
+        The evaluation metrics presented below reflect retrospective testing on the 400-record UCI benchmark dataset (80-sample stratified held-out test split). While the Random Forest model achieved perfect sensitivity on this specific test partition, this reflects academic benchmark performance on standardized data and does <strong>not</strong> prove 100% real-world diagnostic certainty. Independent prospective clinical trials on diverse patient populations have not been performed.
+      </p>
+    </div>
 
     <div style="overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: 8px; margin-bottom: 1.5rem;">
       <table class="renal-table">
@@ -118,7 +126,7 @@
           </div>
           <div style="background-color: var(--bg-surface); padding: 0.75rem; border-radius: 6px;">
             <span class="meta-label">False Negatives</span>
-            <div style="font-size: 1.5rem; font-weight: 700; color: var(--status-clear-text);">0 (Zero Misses)</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--status-clear-text);">0 (on test partition)</div>
           </div>
           <div style="background-color: var(--bg-surface); padding: 0.75rem; border-radius: 6px;">
             <span class="meta-label">True Positives</span>

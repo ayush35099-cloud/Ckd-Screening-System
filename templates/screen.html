@@ -35,7 +35,10 @@
     <fieldset class="clinical-fieldset">
       <div class="fieldset-header">
         <i data-lucide="user" style="color: var(--color-primary);"></i>
-        <h2>1. Patient Demographics & Vitals</h2>
+        <div>
+          <h2 style="margin-bottom: 0.15rem;">1. Patient Demographics & Vitals</h2>
+          <span style="font-size: 0.8125rem; color: var(--text-subtle); display: block;">Patient ID, Patient Name, and Biological Sex are strictly administrative metadata for clinical record-keeping and PDF reports; they are not passed to the 24-feature ML model.</span>
+        </div>
       </div>
 
       <div class="form-row-grid-4">

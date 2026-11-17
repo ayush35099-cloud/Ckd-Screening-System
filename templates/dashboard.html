@@ -8,7 +8,7 @@
   <div class="dashboard-header">
     <div class="dashboard-title-group">
       <h1>Primary Care Screening Dashboard</h1>
-      <p>Operational decision-support metrics and recent screening activity.</p>
+      <p>Operational decision-support metrics and recent screening activity from the active database.</p>
     </div>
     <div style="display: flex; gap: 0.75rem;">
       <a href="{{ url_for('screen_view') }}" class="btn-renal btn-renal-primary">
@@ -18,7 +18,7 @@
     </div>
   </div>
 
-  <!-- Real Metric Summary Cards (No Fake Statistics!) -->
+  <!-- Real Metric Summary Cards (Live Database Metrics — Never Fake) -->
   <div class="metrics-summary-grid">
     <div class="metric-stat-card">
       <div class="stat-label">
@@ -49,43 +49,52 @@
 
     <div class="metric-stat-card">
       <div class="stat-label">
-        <span>Model Sensitivity</span>
-        <i data-lucide="shield-check" style="width: 16px; height: 16px; color: var(--color-primary);"></i>
+        <span>Algorithms Used</span>
+        <i data-lucide="cpu" style="width: 16px; height: 16px; color: var(--color-primary);"></i>
       </div>
-      <div class="stat-value">100.0%</div>
-      <div class="stat-context">Held-out test set (Zero false negatives)</div>
+      <div class="stat-value" style="font-size: 1.25rem; font-family: var(--font-sans); margin-top: 0.25rem;">
+        {% if summary.total > 0 %}
+          RF: {{ summary.algorithm_usage.get('Random Forest', 0) }} &bull; DT: {{ summary.algorithm_usage.get('Decision Tree', 0) }}
+        {% else %}
+          0 Active
+        {% endif %}
+      </div>
+      <div class="stat-context">Random Forest vs Decision Tree</div>
     </div>
   </div>
 
-  <!-- Analytics & Visualizations Grid -->
+  <!-- Live Screening Analytics Grid -->
   <div class="dashboard-main-grid">
     <!-- Screening Distribution Doughnut -->
     <div class="chart-card">
       <div class="card-head">
-        <h2>Screening Outcomes Distribution</h2>
-        <span style="font-size: 0.8125rem; color: var(--text-subtle);">Current Session Records</span>
+        <h2>Live Screening Outcomes Breakdown</h2>
+        <span style="font-size: 0.8125rem; color: var(--text-subtle);">From Active Records</span>
       </div>
-      <div style="height: 260px; position: relative;">
+      <div style="height: 250px; position: relative;">
         <canvas id="screeningOutcomeChart" data-flagged="{{ summary.flagged }}" data-clear="{{ summary.non_flagged }}"></canvas>
       </div>
     </div>
 
-    <!-- Model Comparison Benchmark Chart -->
+    <!-- Screening Volume Trends / Activity -->
     <div class="chart-card">
       <div class="card-head">
-        <h2>Algorithm Benchmark (UCI Dataset)</h2>
-        <a href="{{ url_for('research_view') }}" style="font-size: 0.8125rem;">View Metrics &rarr;</a>
+        <h2>Screening Activity Over Time</h2>
+        <span style="font-size: 0.8125rem; color: var(--text-subtle);">Daily Screenings</span>
       </div>
-      <div style="height: 260px; position: relative;">
-        <canvas id="modelComparisonChart"></canvas>
+      <div style="height: 250px; position: relative;">
+        <canvas id="screeningTrendChart" data-trend='{{ summary.screening_trend|tojson }}'></canvas>
       </div>
     </div>
   </div>
 
   <!-- Recent Screenings Section -->
-  <div class="history-table-container">
+  <div class="history-table-container" style="margin-bottom: 2.5rem;">
     <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
-      <h2 style="font-size: 1.15rem; font-family: var(--font-serif);">Recent Screening Activity</h2>
+      <div>
+        <h2 style="font-size: 1.15rem; font-family: var(--font-serif); margin-bottom: 0.2rem;">Recent Patient Screening Activity</h2>
+        <span style="font-size: 0.8125rem; color: var(--text-subtle);">Latest evaluations stored in database</span>
+      </div>
       <a href="{{ url_for('history_view') }}" class="btn-renal btn-renal-secondary btn-sm">
         <span>View Full History</span>
         <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
@@ -99,10 +108,10 @@
             <th>Patient ID</th>
             <th>Screening Date</th>
             <th>Age / Sex</th>
-            <th>Outcome</th>
-            <th>Risk Level</th>
+            <th>Screening Outcome</th>
+            <th>Statistical Tier</th>
             <th>Model</th>
-            <th style="text-align: right;">Action</th>
+            <th style="text-align: right;">Clinical Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -147,7 +156,7 @@
         </tbody>
       </table>
     {% else %}
-      <!-- Proper Empty State when 0 screenings recorded (NO FAKE DATA) -->
+      <!-- Clean Empty State when 0 screenings recorded (NO FAKE DATA) -->
       <div class="empty-state-box">
         <div class="empty-state-icon">
           <i data-lucide="inbox"></i>
@@ -162,6 +171,27 @@
         </a>
       </div>
     {% endif %}
+  </div>
+
+  <!-- Separated Academic Reference Benchmark Section -->
+  <div style="background-color: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1.75rem; box-shadow: var(--shadow-sm);">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem;">
+      <div>
+        <h2 style="font-size: 1.15rem; font-family: var(--font-serif); margin-bottom: 0.2rem;">Academic Benchmark Performance (UCI Dataset N=400)</h2>
+        <span style="font-size: 0.8125rem; color: var(--text-subtle);">Retrospective benchmark testing on standardized laboratory data</span>
+      </div>
+      <a href="{{ url_for('research_view') }}" class="btn-renal btn-renal-secondary btn-sm">
+        <span>View Full ML Methodology</span>
+        <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+      </a>
+    </div>
+
+    <div style="height: 250px; position: relative;">
+      <canvas id="modelComparisonChart"></canvas>
+    </div>
+    <p style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 0.75rem;">
+      * Academic benchmark testing evaluated on held-out test split (N=80). Real-world diagnostic performance may vary; prospective clinical validation has not been performed.
+    </p>
   </div>
 </div>
 {% endblock %}

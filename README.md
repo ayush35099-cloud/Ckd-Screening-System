@@ -80,7 +80,9 @@ Because missing a CKD-positive patient can delay life-saving medical management,
 | **Precision** | **100.0%** | 100.0% |
 | **F1-Score** | **1.0000** | 0.9691 |
 | **ROC-AUC** | **1.0000** | 0.9890 |
-| **False Negatives (Held-Out)** | **0 (Zero Misses)** | 3 |
+| **False Negatives (Held-Out)** | **0 (on held-out test split N=80)** | 3 |
+
+> **Academic Evaluation Note:** The 100% evaluation metrics reflect retrospective benchmark testing on the standardized UCI held-out test split (N=80). They do not constitute prospective clinical validation or guaranteed real-world diagnostic certainty. In real-world clinical practice, no screening model achieves 100% sensitivity across heterogeneous patient cohorts.
 
 ### Top Predictive Features
 1. **Packed Cell Volume (`pcv` - 17.4%):** Directly mirrors impaired renal erythropoietin production.
@@ -163,8 +165,8 @@ ckd-screening-system/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/<your-username>/ckd-screening-system.git
-cd ckd-screening-system
+git clone https://github.com/ayush35099-cloud/Ckd-Screening-System.git
+cd Ckd-Screening-System
 ```
 
 ### 2. Create and Activate Virtual Environment
@@ -192,7 +194,7 @@ python ml/train.py
 ```bash
 python -m unittest discover -s tests -p "test_*.py"
 ```
-*(All 16 unit and integration tests should pass in under 1 second).*
+*(All 27 unit and integration tests should pass in under 1 second).*
 
 ### 6. Start the Development Server
 ```bash
@@ -253,9 +255,11 @@ Content-Type: application/json
   "screening_uuid": "e8d7c2a1-...",
   "prediction": {
     "is_flagged": true,
-    "result_label": "CKD Indicators Detected",
+    "result_label": "CKD indicators detected – further clinical evaluation recommended.",
     "probability_ckd": 98.2,
     "risk_level": "High",
+    "probability_explanation": "Statistical model output; does not represent guaranteed clinical certainty.",
+    "missing_parameters": [],
     "key_findings": [
       {
         "parameter": "Serum Creatinine",

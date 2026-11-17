@@ -65,8 +65,10 @@ class CKDModelService:
             confidence / probability,
             risk_level ('Low', 'Moderate', 'High'),
             model_used,
+            missing_parameters list,
             key_findings list,
-            recommendation string.
+            recommendation string,
+            disclaimer string.
         """
         if model_choice.lower() in ['decision tree', 'decisiontree', 'dt'] and self.dt_pipeline is not None:
             pipeline = self.dt_pipeline
@@ -77,18 +79,21 @@ class CKDModelService:
 
         features_def = self.metadata['features']
         row_data = {}
+        missing_params = []
 
-        # Parse and sanitize each feature according to schema
+        # Parse and sanitize strictly the 24 ML features (ignore demographics like patient_name, patient_id, sex)
         for feat_name, meta in features_def.items():
             val = input_dict.get(feat_name, None)
-            if val is None or val == '' or val == '?':
+            if val is None or val == '' or str(val).strip() == '?' or str(val).strip().lower() == 'nan':
                 row_data[feat_name] = np.nan
+                missing_params.append(feat_name)
             else:
                 if meta['type'] == 'numerical':
                     try:
                         row_data[feat_name] = float(val)
                     except (ValueError, TypeError):
                         row_data[feat_name] = np.nan
+                        missing_params.append(feat_name)
                 else:
                     # Categorical: lowercase stripped string
                     val_str = str(val).strip().lower()
@@ -96,8 +101,9 @@ class CKDModelService:
                         row_data[feat_name] = val_str
                     else:
                         row_data[feat_name] = np.nan
+                        missing_params.append(feat_name)
 
-        # Convert to single-row DataFrame with expected columns
+        # Convert to single-row DataFrame with expected column order
         input_df = pd.DataFrame([row_data])
 
         # Prediction and probabilities
@@ -107,17 +113,22 @@ class CKDModelService:
         prob_notckd = float(probabilities[0])
 
         is_flagged = bool(pred_label_idx == 1)
-        result_label = "CKD Indicators Detected" if is_flagged else "CKD Indicators Not Detected"
 
-        # Risk stratification based on model probability
+        # Exact, responsible medical phrasing
+        if is_flagged:
+            result_label = "CKD indicators detected – further clinical evaluation recommended."
+        else:
+            result_label = "CKD indicators not detected by this model – this result does not rule out CKD."
+
+        # Risk tier stratification based on model statistical probability
         if prob_ckd >= 0.70:
-            risk_level = "High"
+            risk_level = "High Statistical Indication"
             risk_badge = "risk-high"
         elif prob_ckd >= 0.35:
-            risk_level = "Moderate"
+            risk_level = "Moderate Statistical Indication"
             risk_badge = "risk-moderate"
         else:
-            risk_level = "Low"
+            risk_level = "Low Statistical Indication"
             risk_badge = "risk-low"
 
         # Analyze key contributing abnormal flags from entered laboratory parameters
@@ -194,17 +205,24 @@ class CKDModelService:
         # Clinical Guidance / Action Recommendation
         if is_flagged:
             recommendation = (
-                "The machine learning screening pipeline has detected markers indicative of Chronic Kidney Disease. "
-                "Urgent clinical correlation is advised: arrange formal laboratory evaluation including eGFR, "
-                "24-hour urinary protein quantification, serum electrolytes, and renal ultrasonography with a qualified healthcare professional. "
-                "Note: This tool is an automated educational screening and decision-support aid, not a clinical diagnosis."
+                "The machine learning screening pipeline has identified laboratory indicators consistent with Chronic Kidney Disease. "
+                "Further clinical correlation by a qualified healthcare professional or nephrologist is recommended, "
+                "including formal diagnostic tests (e.g. measured eGFR, 24-hour urinary protein quantification, serum electrolytes, and renal ultrasonography). "
+                "This tool provides decision-support screening and does not constitute a definitive medical diagnosis."
             )
         else:
             recommendation = (
-                "Routine screening indicators show values within non-CKD baseline ranges. "
-                "Routine health maintenance and annual wellness monitoring are advised. If the patient has persistent symptoms "
-                "or risk factors such as longstanding hypertension or diabetes, ongoing clinical oversight is recommended."
+                "Routine screening indicators show values within non-CKD baseline ranges for this model. "
+                "Note that this result does not rule out Chronic Kidney Disease or other renal disorders. "
+                "Routine wellness monitoring is advised, and any persistent symptoms (such as unexplained fatigue, changes in urination, or edema) warrant clinical evaluation."
             )
+
+        probability_explanation = (
+            f"The computed probability score ({round(prob_ckd * 100, 1)}%) reflects the mathematical confidence "
+            f"of the {model_name} ensemble on the retrospective UCI training distribution. "
+            f"It does NOT represent an individual patient's medically validated CKD risk percentage. "
+            f"Independent prospective clinical validation has not been performed."
+        )
 
         return {
             'is_flagged': is_flagged,
@@ -216,8 +234,11 @@ class CKDModelService:
             'risk_level': risk_level,
             'risk_badge': risk_badge,
             'model_used': model_name,
+            'missing_parameters': missing_params,
+            'missing_count': len(missing_params),
             'key_findings': key_findings,
             'recommendation': recommendation,
+            'probability_explanation': probability_explanation,
             'evaluated_parameters': row_data
         }
 
