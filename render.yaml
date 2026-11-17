@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: ckd-screening-system
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: "pip install -r requirements.txt && python ml/train.py"
+    startCommand: "gunicorn app:app"
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: "0"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        value: ""

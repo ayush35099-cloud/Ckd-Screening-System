@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}Screening Result: {{ result.patient_id }} — RenalCare{% endblock %}
+
+{% block content %}
+<div class="result-page-layout">
+
+  <!-- Main Result Card -->
+  <div class="result-card-main">
+    
+    <!-- Dynamic Outcome Banner -->
+    <div class="result-banner {% if result.prediction_code == 'ckd' %}flagged{% else %}clear{% endif %}">
+      <div class="result-eyebrow">
+        Screening Assessment Outcome &bull; Reference: {{ result.screening_uuid[:12] }}...
+      </div>
+      <h1 class="result-headline">
+        {{ result.prediction_label }}
+      </h1>
+      <p class="result-subline">
+        Clinical Risk Tier: <strong>{{ result.risk_level }}</strong> &nbsp;|&nbsp;
+        Calibrated Probability: <strong>{{ result.probability }}%</strong> &nbsp;|&nbsp;
+        Evaluated by: <strong>{{ result.model_used }}</strong>
+      </p>
+    </div>
+
+    <!-- Body Information -->
+    <div class="result-body">
+      
+      <!-- Patient & Screening Metadata Grid -->
+      <div class="result-meta-grid">
+        <div class="meta-item">
+          <span class="meta-label">Patient ID</span>
+          <span class="meta-val">{{ result.patient_id }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Patient Name</span>
+          <span class="meta-val">{{ result.patient_name or 'Not Recorded' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Age / Sex</span>
+          <span class="meta-val">{{ result.age or 'N/A' }} yrs / {{ result.sex }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Evaluation Timestamp</span>
+          <span class="meta-val">{{ result.formatted_date }}</span>
+        </div>
+      </div>
+
+      <!-- Clinical Guidance & Recommendations -->
+      <div style="margin-bottom: 2rem;">
+        <h3 style="font-family: var(--font-serif); font-size: 1.25rem; margin-bottom: 0.75rem;">
+          Clinical Screening Guidance
+        </h3>
+        <div style="background-color: var(--bg-surface-subtle); border-left: 4px solid var(--color-primary); padding: 1.25rem 1.5rem; border-radius: 6px;">
+          <p style="color: var(--text-main); font-size: 0.9375rem; line-height: 1.6;">
+            {{ result.recommendation }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Identified Abnormal Findings -->
+      {% if result.findings %}
+        <div class="findings-container">
+          <h3 style="font-family: var(--font-serif); font-size: 1.25rem; margin-bottom: 0.75rem;">
+            Identified Laboratory Anomalies
+          </h3>
+          {% for f in result.findings %}
+            <div class="finding-item danger">
+              <i data-lucide="alert-circle" style="color: var(--status-flagged-text); flex-shrink: 0; margin-top: 2px;"></i>
+              <div>
+                <strong style="color: var(--text-main);">{{ f.parameter }}: {{ f.value }}</strong> 
+                <span class="team-lead-badge" style="background-color: var(--status-flagged-bg); color: var(--status-flagged-text); margin-left: 0.5rem;">{{ f.status }}</span>
+                <p style="font-size: 0.84rem; margin-top: 0.25rem; color: var(--text-muted);">{{ f.detail }}</p>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Parameter Matrix -->
+      <div style="margin-bottom: 2rem;">
+        <h3 style="font-family: var(--font-serif); font-size: 1.25rem; margin-bottom: 0.75rem;">
+          Screened Laboratory Parameters
+        </h3>
+        <div style="overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: 8px;">
+          <table class="renal-table">
+            <thead>
+              <tr>
+                <th>Biomarker / Variable</th>
+                <th>Entered Value</th>
+                <th>Standard Reference Range</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for key, val in result.parameters.items() %}
+                <tr>
+                  <td><strong>{{ key.upper() }}</strong></td>
+                  <td>{{ val if val is not none and val != '' else 'Not Tested' }}</td>
+                  <td style="color: var(--text-subtle); font-size: 0.8125rem;">
+                    {% if key == 'sc' %}0.6 - 1.2 mg/dL
+                    {% elif key == 'hemo' %}13.0 - 17.0 g/dL
+                    {% elif key == 'bp' %}70 - 80 mm/Hg
+                    {% elif key == 'sg' %}1.015 - 1.025
+                    {% elif key == 'al' %}0 (Negative)
+                    {% elif key == 'su' %}0 (Negative)
+                    {% elif key == 'bgr' %}70 - 140 mg/dL
+                    {% elif key == 'bu' %}15 - 45 mg/dL
+                    {% elif key == 'sod' %}135 - 145 mEq/L
+                    {% elif key == 'pot' %}3.5 - 5.0 mEq/L
+                    {% elif key == 'pcv' %}38 - 50 %
+                    {% elif key == 'wc' %}4,000 - 11,000 /cumm
+                    {% elif key == 'rc' %}4.2 - 5.9 M/cmm
+                    {% else %}Negative / Normal
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Regulatory Medical Disclaimer -->
+      <div class="disclaimer-card">
+        <i data-lucide="shield-alert"></i>
+        <div>
+          <div class="disclaimer-title">Decision-Support & Screening Regulatory Notice</div>
+          <div class="disclaimer-text">
+            This report was computed by an automated machine learning screening pipeline for educational and risk-stratification purposes in primary care settings. It does NOT constitute a clinical diagnosis, medical certification, or treatment plan. A licensed medical doctor or nephrologist must independently evaluate all patient symptoms and order confirmatory diagnostic investigations (including formal eGFR calculation, 24-hour urine collection, and renal imaging).
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Strip -->
+      <div class="result-actions-strip">
+        <a href="{{ url_for('download_report', screening_uuid=result.screening_uuid) }}" class="btn-renal btn-renal-primary" style="padding: 0.8rem 1.5rem;">
+          <i data-lucide="download"></i>
+          <span>Download Official PDF Report</span>
+        </a>
+        <a href="{{ url_for('screen_view') }}" class="btn-renal btn-renal-outline" style="padding: 0.8rem 1.5rem;">
+          <i data-lucide="plus-circle"></i>
+          <span>New Patient Screening</span>
+        </a>
+        <a href="{{ url_for('dashboard_view') }}" class="btn-renal btn-renal-secondary">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Return to Dashboard</span>
+        </a>
+        <a href="{{ url_for('history_view') }}" class="btn-renal btn-renal-secondary">
+          <i data-lucide="clock"></i>
+          <span>Screening History</span>
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

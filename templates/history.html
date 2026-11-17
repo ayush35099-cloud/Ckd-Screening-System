@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Screening History — RenalCare{% endblock %}
+
+{% block content %}
+<div class="history-layout">
+  
+  <div class="dashboard-header">
+    <div class="dashboard-title-group">
+      <h1>Patient Screening Records</h1>
+      <p>Search, filter, and audit past clinical screening evaluations and PDF reports.</p>
+    </div>
+    <div>
+      <a href="{{ url_for('screen_view') }}" class="btn-renal btn-renal-primary">
+        <i data-lucide="plus-circle"></i>
+        <span>New Patient Screening</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Search & Filter Controls -->
+  <form method="GET" action="{{ url_for('history_view') }}" class="filter-bar">
+    <div class="search-input-wrap">
+      <input type="text" name="q" value="{{ search_query }}" class="renal-input" placeholder="Search by Patient ID, Name, or UUID...">
+    </div>
+
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+      <label for="filterStatus" style="font-size: 0.8125rem; font-weight: 600; color: var(--text-muted);">Outcome:</label>
+      <select id="filterStatus" name="status" class="renal-select" style="width: auto;">
+        <option value="all" {% if filter_status == 'all' %}selected{% endif %}>All Records</option>
+        <option value="flagged" {% if filter_status == 'flagged' %}selected{% endif %}>Flagged (CKD Indicators)</option>
+        <option value="non_flagged" {% if filter_status == 'non_flagged' %}selected{% endif %}>Non-Flagged (Baseline)</option>
+      </select>
+
+      <button type="submit" class="btn-renal btn-renal-secondary">
+        <i data-lucide="filter" style="width: 14px; height: 14px;"></i>
+        <span>Apply Filters</span>
+      </button>
+
+      {% if search_query or filter_status != 'all' %}
+        <a href="{{ url_for('history_view') }}" class="btn-renal btn-renal-outline btn-sm">Clear</a>
+      {% endif %}
+    </div>
+  </form>
+
+  <!-- Records Table -->
+  <div class="history-table-container">
+    {% if records %}
+      <table class="renal-table">
+        <thead>
+          <tr>
+            <th>Patient ID</th>
+            <th>Screening Date</th>
+            <th>Age / Sex</th>
+            <th>Screening Outcome</th>
+            <th>Risk Tier</th>
+            <th>Model</th>
+            <th style="text-align: right;">Clinical Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in records %}
+            <tr>
+              <td>
+                <strong>{{ r.patient_id }}</strong>
+                {% if r.patient_name %}<br/><span style="font-size: 0.78125rem; color: var(--text-subtle);">{{ r.patient_name }}</span>{% endif %}
+              </td>
+              <td>{{ r.formatted_date }}</td>
+              <td>{{ r.age or 'N/A' }} / {{ r.sex }}</td>
+              <td>
+                {% if r.prediction_code == 'ckd' %}
+                  <span class="badge-status badge-flagged">
+                    <i data-lucide="alert-circle" style="width: 12px; height: 12px;"></i>
+                    <span>CKD Indicators Detected</span>
+                  </span>
+                {% else %}
+                  <span class="badge-status badge-clear">
+                    <i data-lucide="check" style="width: 12px; height: 12px;"></i>
+                    <span>Indicators Not Detected</span>
+                  </span>
+                {% endif %}
+              </td>
+              <td>
+                <strong>{{ r.risk_level }}</strong>
+                <span style="font-size: 0.75rem; color: var(--text-subtle);">({{ r.probability }}%)</span>
+              </td>
+              <td>{{ r.model_used }}</td>
+              <td style="text-align: right;">
+                <a href="{{ url_for('result_view', screening_uuid=r.screening_uuid) }}" class="btn-renal btn-renal-secondary btn-sm" title="View Result Summary">
+                  <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                  <span>View</span>
+                </a>
+                <a href="{{ url_for('download_report', screening_uuid=r.screening_uuid) }}" class="btn-renal btn-renal-outline btn-sm" title="Download Official PDF">
+                  <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                  <span>PDF</span>
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Count Summary -->
+      <div style="padding: 1rem 1.25rem; background-color: var(--bg-surface-subtle); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; font-size: 0.8125rem; color: var(--text-subtle);">
+        <span>Showing {{ records|length }} of {{ total_count }} total records</span>
+        <span>All records stored locally in SQLite database</span>
+      </div>
+
+    {% else %}
+      <div class="empty-state-box">
+        <div class="empty-state-icon">
+          <i data-lucide="search-x"></i>
+        </div>
+        <h3 class="empty-state-title">No Matching Screening Records Found</h3>
+        <p class="empty-state-text">
+          {% if search_query or filter_status != 'all' %}
+            No records matched your search query or filter criteria. Try resetting the filters.
+          {% else %}
+            The patient screening database is currently empty. Start a screening to begin building clinical records.
+          {% endif %}
+        </p>
+        <a href="{{ url_for('screen_view') }}" class="btn-renal btn-renal-primary">
+          <i data-lucide="stethoscope"></i>
+          <span>Perform New Screening</span>
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

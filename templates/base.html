@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}RenalCare — Chronic Kidney Disease Screening{% endblock %}</title>
+  
+  <!-- Google Fonts: Editorial Serif + Modern Clean Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <!-- Top Academic & Institution Notice Bar -->
+  <div class="top-notice-bar">
+    <div>
+      <strong>Dayananda Sagar College of Engineering, Bengaluru</strong> &nbsp;|&nbsp;
+      <span>Dept. of Artificial Intelligence & Machine Learning &bull; BCP308 Community Project &bull; Team A-12</span>
+    </div>
+    <div>
+      <span style="opacity: 0.85;">For Primary Health Centres & Community Diagnostic Camps</span>
+    </div>
+  </div>
+
+  <!-- Primary Navigation Bar -->
+  <nav class="site-navbar">
+    <div class="nav-container">
+      <a href="{{ url_for('index') }}" class="brand-wrapper" title="RenalCare Home">
+        <div class="brand-logo-icon">
+          <i data-lucide="activity"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">RenalCare</span>
+          <span class="brand-subtitle">Smarter Screening &bull; Earlier Awareness</span>
+        </div>
+      </a>
+
+      <!-- Navigation Links -->
+      <ul class="nav-links" id="navLinks">
+        <li><a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Home</a></li>
+        <li><a href="{{ url_for('index') }}#about-ckd" class="nav-link">About CKD</a></li>
+        <li><a href="{{ url_for('index') }}#how-it-works" class="nav-link">How It Works</a></li>
+        <li><a href="{{ url_for('screen_view') }}" class="nav-link {% if request.endpoint == 'screen_view' %}active{% endif %}">Screening</a></li>
+        <li><a href="{{ url_for('research_view') }}" class="nav-link {% if request.endpoint == 'research_view' %}active{% endif %}">Research & ML</a></li>
+        <li><a href="{{ url_for('dashboard_view') }}" class="nav-link {% if request.endpoint == 'dashboard_view' %}active{% endif %}">Dashboard</a></li>
+        <li><a href="{{ url_for('history_view') }}" class="nav-link {% if request.endpoint == 'history_view' %}active{% endif %}">History</a></li>
+      </ul>
+
+      <!-- Action Area: Theme Toggle & Primary Button -->
+      <div class="nav-actions">
+        <button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="Toggle light or dark theme" title="Toggle theme">
+          <i data-lucide="moon" class="icon-sun"></i>
+          <i data-lucide="sun" class="icon-moon"></i>
+        </button>
+
+        <a href="{{ url_for('screen_view') }}" class="btn-renal btn-renal-primary">
+          <i data-lucide="stethoscope"></i>
+          <span>Start Screening</span>
+        </a>
+
+        <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open mobile menu">
+          <i data-lucide="menu"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="container-wide" style="margin-top: 1rem;">
+        {% for category, message in messages %}
+          <div style="padding: 0.85rem 1.25rem; border-radius: 6px; margin-bottom: 0.75rem; font-size: 0.9rem; background-color: var(--bg-surface); border: 1px solid var(--border-strong);">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Main View Content -->
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Professional Healthcare Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-col">
+        <div class="brand-wrapper" style="margin-bottom: 1rem;">
+          <div class="brand-logo-icon">
+            <i data-lucide="activity"></i>
+          </div>
+          <div class="brand-text">
+            <span class="brand-title">RenalCare</span>
+            <span class="brand-subtitle">Community Health Initiative</span>
+          </div>
+        </div>
+        <p style="font-size: 0.875rem; line-height: 1.6; margin-bottom: 1.25rem;">
+          A machine learning decision-support platform designed to assist healthcare workers in Primary Health Centres (PHCs) and rural camps in detecting early physiological markers of Chronic Kidney Disease.
+        </p>
+        <p style="font-size: 0.78125rem; color: var(--text-subtle);">
+          BCP308 Community Project &bull; Team A-12<br/>
+          Department of Artificial Intelligence & Machine Learning<br/>
+          Dayananda Sagar College of Engineering, Bengaluru.
+        </p>
+      </div>
+
+      <div class="footer-col">
+        <h3>Platform Navigation</h3>
+        <ul class="footer-links">
+          <li><a href="{{ url_for('index') }}">Overview & Landing</a></li>
+          <li><a href="{{ url_for('screen_view') }}">Patient Screening Form</a></li>
+          <li><a href="{{ url_for('dashboard_view') }}">Healthcare Analytics Dashboard</a></li>
+          <li><a href="{{ url_for('history_view') }}">Patient Screening History</a></li>
+          <li><a href="{{ url_for('research_view') }}">Machine Learning Methodology</a></li>
+          <li><a href="{{ url_for('health_check') }}">System Health Status</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h3>Project Team Members</h3>
+        <ul class="footer-links" style="color: var(--text-main); font-size: 0.875rem;">
+          <li><strong>Ayush Anjan Choudhary</strong> &nbsp;<span class="team-lead-badge">Team Lead</span></li>
+          <li>Harsh Kumawat</li>
+          <li>Krishna Arora</li>
+          <li>Kunal Kumar Singh</li>
+        </ul>
+        <div style="margin-top: 1.25rem;">
+          <h4 style="font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); margin-bottom: 0.35rem;">Training Dataset</h4>
+          <p style="font-size: 0.8125rem;">UCI Chronic Kidney Disease Benchmark (400 cases, 24 laboratory attributes).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mandatory Medical Disclaimer -->
+    <div class="footer-bottom">
+      <div style="max-width: 800px; text-align: left;">
+        <strong style="color: var(--text-main);">Educational & Screening Disclaimer:</strong>
+        This application is an educational decision-support screening aid and is <strong>NOT</strong> a medical diagnostic device. It does not diagnose, cure, mitigate, or treat Chronic Kidney Disease. Any flagged indicator must be independently verified by a licensed medical practitioner through standard diagnostic nephrology protocols.
+      </div>
+      <div>
+        &copy; 2026 RenalCare &bull; DSCE AIML
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

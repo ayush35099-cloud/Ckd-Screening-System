@@ -1,0 +1,407 @@
+{% extends 'base.html' %}
+
+{% block title %}Patient CKD Screening Form — RenalCare{% endblock %}
+
+{% block content %}
+<div class="form-page-layout">
+  <!-- Form Hero Header -->
+  <div class="form-hero-header">
+    <span class="section-eyebrow">Decision-Support Workflow</span>
+    <h1>Patient Screening Evaluation</h1>
+    <p style="max-width: 620px; margin: 0 auto; color: var(--text-muted);">
+      Enter routine blood and urine laboratory findings below. All parameters map directly to the standardized UCI Chronic Kidney Disease clinical schema.
+    </p>
+
+    <!-- Fast Testing / Camp Demonstration Bar -->
+    <div class="quick-fill-bar">
+      <button type="button" class="btn-renal btn-renal-secondary btn-sm" id="btnFillNormal" title="Pre-populate with representative healthy laboratory values">
+        <i data-lucide="check"></i>
+        <span>Sample: Normal Baseline</span>
+      </button>
+      <button type="button" class="btn-renal btn-renal-secondary btn-sm" id="btnFillHighRisk" title="Pre-populate with representative high-risk / CKD indicators">
+        <i data-lucide="alert-triangle"></i>
+        <span>Sample: High-Risk CKD Profile</span>
+      </button>
+      <button type="button" class="btn-renal btn-renal-outline btn-sm" id="btnResetForm">
+        <i data-lucide="rotate-ccw"></i>
+        <span>Reset Form</span>
+      </button>
+    </div>
+  </div>
+
+  <form id="ckdScreeningForm" action="{{ url_for('screen_submit') }}" method="POST">
+    
+    <!-- 1. Patient Demographics & Vitals -->
+    <fieldset class="clinical-fieldset">
+      <div class="fieldset-header">
+        <i data-lucide="user" style="color: var(--color-primary);"></i>
+        <h2>1. Patient Demographics & Vitals</h2>
+      </div>
+
+      <div class="form-row-grid-4">
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="patient_id" class="renal-label">Patient ID</label>
+          </div>
+          <input type="text" id="patient_id" name="patient_id" class="renal-input" placeholder="e.g. PT-2026-081" required>
+          <span class="input-hint">Unique PHC or camp record number</span>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="patient_name" class="renal-label">Patient Name (Optional)</label>
+          </div>
+          <input type="text" id="patient_name" name="patient_name" class="renal-input" placeholder="e.g. R. Sharma">
+          <span class="input-hint">Confidential local display</span>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="age" class="renal-label">Age (Years)</label>
+            <span class="ref-pill">1 - 100</span>
+          </div>
+          <input type="number" id="age" name="age" class="renal-input" min="1" max="100" step="1" placeholder="48" required>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="sex" class="renal-label">Biological Sex</label>
+          </div>
+          <select id="sex" name="sex" class="renal-select">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row-grid-2" style="margin-top: 1.25rem;">
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="bp" class="renal-label">Blood Pressure (Diastolic)</label>
+            <span class="ref-pill">Normal: 70 - 80 mm/Hg</span>
+          </div>
+          <input type="number" id="bp" name="bp" class="renal-input" min="40" max="200" step="5" placeholder="80" value="80">
+          <span class="input-hint">Resting diastolic pressure in mm/Hg</span>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="model_choice" class="renal-label">Evaluation Algorithm</label>
+          </div>
+          <select id="model_choice" name="model_choice" class="renal-select">
+            <option value="Random Forest" selected>Random Forest (Champion — 100% Sensitivity)</option>
+            <option value="Decision Tree">Decision Tree (Interpretable — 96.2% Accuracy)</option>
+          </select>
+          <span class="input-hint">Random Forest prioritized for zero false-negatives</span>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- 2. Urinalysis Parameters -->
+    <fieldset class="clinical-fieldset">
+      <div class="fieldset-header">
+        <i data-lucide="droplet" style="color: var(--color-primary);"></i>
+        <h2>2. Urinalysis Biomarkers</h2>
+      </div>
+
+      <div class="form-row-grid">
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="sg" class="renal-label">Specific Gravity (sg)</label>
+            <span class="ref-pill">Normal: 1.015 - 1.025</span>
+          </div>
+          <select id="sg" name="sg" class="renal-select">
+            <option value="1.005">1.005 (Severely dilute)</option>
+            <option value="1.010">1.010 (Hyposthenuria)</option>
+            <option value="1.015">1.015 (Moderate)</option>
+            <option value="1.020" selected>1.020 (Normal)</option>
+            <option value="1.025">1.025 (Concentrated)</option>
+          </select>
+          <span class="input-hint">Tubular concentrating capability</span>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="al" class="renal-label">Urine Albumin / Protein (al)</label>
+            <span class="ref-pill">Normal: Grade 0</span>
+          </div>
+          <select id="al" name="al" class="renal-select">
+            <option value="0" selected>0 (Negative)</option>
+            <option value="1">1 (Trace / 30 mg/dL)</option>
+            <option value="2">2 (100 mg/dL)</option>
+            <option value="3">3 (300 mg/dL)</option>
+            <option value="4">4 (1000 mg/dL)</option>
+            <option value="5">5 (Severe nephrotic)</option>
+          </select>
+          <span class="input-hint">Indicator of glomerular leakage</span>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="su" class="renal-label">Urine Sugar / Glucose (su)</label>
+            <span class="ref-pill">Normal: Grade 0</span>
+          </div>
+          <select id="su" name="su" class="renal-select">
+            <option value="0" selected>0 (Negative)</option>
+            <option value="1">1 (Trace)</option>
+            <option value="2">2 (Mild glycosuria)</option>
+            <option value="3">3 (Moderate)</option>
+            <option value="4">4 (High)</option>
+            <option value="5">5 (Severe)</option>
+          </select>
+          <span class="input-hint">Renal threshold overflow</span>
+        </div>
+      </div>
+
+      <div class="form-row-grid-4" style="margin-top: 1.25rem;">
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="rbc" class="renal-label">Red Blood Cells (rbc)</label>
+          </div>
+          <select id="rbc" name="rbc" class="renal-select">
+            <option value="normal" selected>normal</option>
+            <option value="abnormal">abnormal (hematuria)</option>
+          </select>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="pc" class="renal-label">Pus Cells (pc)</label>
+          </div>
+          <select id="pc" name="pc" class="renal-select">
+            <option value="normal" selected>normal</option>
+            <option value="abnormal">abnormal (pyuria)</option>
+          </select>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="pcc" class="renal-label">Pus Cell Clumps (pcc)</label>
+          </div>
+          <select id="pcc" name="pcc" class="renal-select">
+            <option value="notpresent" selected>notpresent</option>
+            <option value="present">present</option>
+          </select>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="ba" class="renal-label">Bacteria (ba)</label>
+          </div>
+          <select id="ba" name="ba" class="renal-select">
+            <option value="notpresent" selected>notpresent</option>
+            <option value="present">present</option>
+          </select>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- 3. Renal Chemistry & Electrolytes -->
+    <fieldset class="clinical-fieldset">
+      <div class="fieldset-header">
+        <i data-lucide="activity" style="color: var(--color-primary);"></i>
+        <h2>3. Renal Function & Chemistry Panel</h2>
+      </div>
+
+      <div class="form-row-grid">
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="sc" class="renal-label">Serum Creatinine (sc)</label>
+            <span class="ref-pill">0.6 - 1.2 mg/dL</span>
+          </div>
+          <input type="number" id="sc" name="sc" class="renal-input" step="0.1" min="0.1" max="25" placeholder="0.9" value="0.9">
+          <span class="input-hint">Critical GFR filtration surrogate</span>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="bu" class="renal-label">Blood Urea (bu)</label>
+            <span class="ref-pill">15 - 45 mg/dL</span>
+          </div>
+          <input type="number" id="bu" name="bu" class="renal-input" step="1" min="5" max="400" placeholder="30" value="30">
+          <span class="input-hint">Protein nitrogenous byproduct</span>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="bgr" class="renal-label">Blood Glucose Random (bgr)</label>
+            <span class="ref-pill">70 - 140 mg/dL</span>
+          </div>
+          <input type="number" id="bgr" name="bgr" class="renal-input" step="1" min="40" max="600" placeholder="105" value="105">
+          <span class="input-hint">Plasma glucose level</span>
+        </div>
+      </div>
+
+      <div class="form-row-grid-2" style="margin-top: 1.25rem;">
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="sod" class="renal-label">Sodium (sod)</label>
+            <span class="ref-pill">135 - 145 mEq/L</span>
+          </div>
+          <input type="number" id="sod" name="sod" class="renal-input" step="0.5" min="100" max="180" placeholder="138" value="138">
+          <span class="input-hint">Electrolyte fluid balance</span>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="pot" class="renal-label">Potassium (pot)</label>
+            <span class="ref-pill">3.5 - 5.0 mEq/L</span>
+          </div>
+          <input type="number" id="pot" name="pot" class="renal-input" step="0.1" min="1.5" max="12.0" placeholder="4.2" value="4.2">
+          <span class="input-hint">Elevated in tubular excretion failure</span>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- 4. Complete Blood Count (Hematology) -->
+    <fieldset class="clinical-fieldset">
+      <div class="fieldset-header">
+        <i data-lucide="disc" style="color: var(--color-primary);"></i>
+        <h2>4. Hematology / Complete Blood Count</h2>
+      </div>
+
+      <div class="form-row-grid-4">
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="hemo" class="renal-label">Hemoglobin (hemo)</label>
+            <span class="ref-pill">13.0 - 17.0 g/dL</span>
+          </div>
+          <input type="number" id="hemo" name="hemo" class="renal-input" step="0.1" min="3.0" max="22.0" placeholder="14.5" value="14.5">
+          <span class="input-hint">Erythropoietin deficiency marker</span>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="pcv" class="renal-label">Packed Cell Vol (pcv)</label>
+            <span class="ref-pill">38 - 50 %</span>
+          </div>
+          <input type="number" id="pcv" name="pcv" class="renal-input" step="1" min="10" max="65" placeholder="44" value="44">
+          <span class="input-hint">Hematocrit %</span>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="wc" class="renal-label">WBC Count (wc)</label>
+            <span class="ref-pill">4k - 11k /cumm</span>
+          </div>
+          <input type="number" id="wc" name="wc" class="renal-input" step="100" min="1000" max="35000" placeholder="7200" value="7200">
+          <span class="input-hint">Leukocyte count</span>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="rc" class="renal-label">RBC Count (rc)</label>
+            <span class="ref-pill">4.2 - 5.9 M/cmm</span>
+          </div>
+          <input type="number" id="rc" name="rc" class="renal-input" step="0.1" min="1.0" max="9.0" placeholder="5.0" value="5.0">
+          <span class="input-hint">Circulating erythrocytes</span>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- 5. Clinical Comorbidities & Symptoms -->
+    <fieldset class="clinical-fieldset">
+      <div class="fieldset-header">
+        <i data-lucide="file-text" style="color: var(--color-primary);"></i>
+        <h2>5. Clinical Comorbidities & Symptoms</h2>
+      </div>
+
+      <div class="form-row-grid">
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="htn" class="renal-label">Hypertension (htn)</label>
+          </div>
+          <select id="htn" name="htn" class="renal-select">
+            <option value="no" selected>no</option>
+            <option value="yes">yes (diagnosed / chronic)</option>
+          </select>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="dm" class="renal-label">Diabetes Mellitus (dm)</label>
+          </div>
+          <select id="dm" name="dm" class="renal-select">
+            <option value="no" selected>no</option>
+            <option value="yes">yes (Type 1 or Type 2)</option>
+          </select>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="cad" class="renal-label">Coronary Artery Disease (cad)</label>
+          </div>
+          <select id="cad" name="cad" class="renal-select">
+            <option value="no" selected>no</option>
+            <option value="yes">yes</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row-grid" style="margin-top: 1.25rem;">
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="appet" class="renal-label">Appetite (appet)</label>
+          </div>
+          <select id="appet" name="appet" class="renal-select">
+            <option value="good" selected>good</option>
+            <option value="poor">poor (uremic symptom)</option>
+          </select>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="pe" class="renal-label">Pedal Edema (pe)</label>
+          </div>
+          <select id="pe" name="pe" class="renal-select">
+            <option value="no" selected>no</option>
+            <option value="yes">yes (extremity fluid retention)</option>
+          </select>
+        </div>
+
+        <div class="input-group-renal">
+          <div class="input-label-row">
+            <label for="ane" class="renal-label">Anemia Manifestation (ane)</label>
+          </div>
+          <select id="ane" name="ane" class="renal-select">
+            <option value="no" selected>no</option>
+            <option value="yes">yes</option>
+          </select>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- Submission Bar -->
+    <div class="form-actions-bar">
+      <a href="{{ url_for('dashboard_view') }}" class="btn-renal btn-renal-secondary">
+        <span>Cancel</span>
+      </a>
+      <button type="submit" class="btn-renal btn-renal-primary" style="padding: 0.85rem 2rem; font-size: 1rem;">
+        <i data-lucide="check-circle-2"></i>
+        <span>Review & Evaluate Screening</span>
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Pre-submission Confirmation Modal -->
+<div id="reviewModal" style="display: none; position: fixed; inset: 0; background-color: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 1.5rem;">
+  <div style="background-color: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px; max-width: 540px; width: 100%; padding: 2rem; box-shadow: var(--shadow-lg);">
+    <h3 style="font-family: var(--font-serif); font-size: 1.4rem; margin-bottom: 0.75rem;">Confirm Clinical Screening Submission</h3>
+    
+    <div id="reviewSummaryContent">
+      <!-- Injected by screening.js -->
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+      <button type="button" class="btn-renal btn-renal-secondary" id="btnCloseModal">Edit Values</button>
+      <button type="button" class="btn-renal btn-renal-primary" id="btnConfirmSubmit">Confirm & Evaluate</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/screening.js') }}"></script>
+{% endblock %}

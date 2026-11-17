@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+
+{% block title %}Research & ML Methodology — RenalCare{% endblock %}
+
+{% block content %}
+<div class="history-layout">
+  
+  <div class="dashboard-header">
+    <div class="dashboard-title-group">
+      <span class="section-eyebrow">Academic Methodology & Validation</span>
+      <h1>Machine Learning Pipeline Architecture</h1>
+      <p>Technical evaluation, exploratory data analysis, cross-validation metrics, and clinical feature importance.</p>
+    </div>
+    <div>
+      <a href="{{ url_for('screen_view') }}" class="btn-renal btn-renal-primary">
+        <i data-lucide="stethoscope"></i>
+        <span>Test Model Live</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- 1. Dataset & Source Information -->
+  <div class="editorial-card" style="margin-bottom: 2rem;">
+    <h2 style="font-family: var(--font-serif); font-size: 1.4rem; margin-bottom: 1rem; color: var(--color-primary);">
+      1. Dataset Provenance & Preprocessing Pipeline
+    </h2>
+    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.7; margin-bottom: 1rem;">
+      The model is trained on the authentic <strong>UCI Chronic Kidney Disease Dataset</strong>, originally contributed by Dr. P. Soundarapandian (Senior Consultant Nephrologist, Apollo Hospitals, Karaikudi, Tamil Nadu, India) and Dr. P. Eswaran (Alagappa University). The dataset comprises <strong>400 patient records</strong> with 24 input laboratory and clinical variables (11 numerical, 13 categorical/ordinal) and 1 target classification column (250 CKD, 150 Not CKD).
+    </p>
+
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.25rem;">
+      <div style="background-color: var(--bg-surface-subtle); padding: 1rem; border-radius: 8px;">
+        <span class="meta-label">Data Cleaning & Parsing</span>
+        <p style="font-size: 0.85rem; color: var(--text-main); margin-top: 0.25rem;">
+          Resolved non-standard whitespace, tabs ('\t'), trailing commas, and standardized nominal labels (e.g. 'dm', 'cad', 'class').
+        </p>
+      </div>
+
+      <div style="background-color: var(--bg-surface-subtle); padding: 1rem; border-radius: 8px;">
+        <span class="meta-label">Missing Value Handling</span>
+        <p style="font-size: 0.85rem; color: var(--text-main); margin-top: 0.25rem;">
+          Quantitative metrics imputed with <code>SimpleImputer(strategy='median')</code>. Categorical variables imputed with <code>SimpleImputer(strategy='most_frequent')</code>.
+        </p>
+      </div>
+
+      <div style="background-color: var(--bg-surface-subtle); padding: 1rem; border-radius: 8px;">
+        <span class="meta-label">Data Leakage Prevention</span>
+        <p style="font-size: 0.85rem; color: var(--text-main); margin-top: 0.25rem;">
+          Strict <code>Pipeline</code> encapsulation: preprocessing transforms are fit strictly on training folds and applied to test sets without leakage.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Model Performance Benchmark Table -->
+  <div class="editorial-card" style="margin-bottom: 2rem;">
+    <h2 style="font-family: var(--font-serif); font-size: 1.4rem; margin-bottom: 0.75rem; color: var(--color-primary);">
+      2. Comparative Evaluation: Decision Tree vs Random Forest
+    </h2>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
+      Because this is a medical screening application, the optimization objective prioritizes <strong>Sensitivity (Recall)</strong> to eliminate False Negatives (cases where a CKD-positive patient is falsely labeled as healthy).
+    </p>
+
+    <div style="overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: 8px; margin-bottom: 1.5rem;">
+      <table class="renal-table">
+        <thead>
+          <tr>
+            <th>Evaluated Algorithm</th>
+            <th>5-Fold CV Accuracy</th>
+            <th>5-Fold CV Recall</th>
+            <th>Held-Out Accuracy</th>
+            <th>Held-Out Sensitivity</th>
+            <th>Specificity</th>
+            <th>Precision</th>
+            <th>F1-Score</th>
+            <th>ROC-AUC</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background-color: var(--color-primary-subtle); font-weight: 600;">
+            <td><strong>Random Forest (Champion)</strong></td>
+            <td>98.75% (&plusmn;1.17%)</td>
+            <td>99.00% (&plusmn;1.22%)</td>
+            <td><strong>100.0%</strong></td>
+            <td><span class="badge-status badge-clear">100.0%</span></td>
+            <td>100.0%</td>
+            <td>100.0%</td>
+            <td><strong>1.0000</strong></td>
+            <td><strong>1.0000</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Decision Tree</strong></td>
+            <td>95.63% (&plusmn;1.82%)</td>
+            <td>95.50% (&plusmn;1.87%)</td>
+            <td>96.25%</td>
+            <td><span class="badge-status badge-clear">94.00%</span></td>
+            <td>100.0%</td>
+            <td>100.0%</td>
+            <td>0.9691</td>
+            <td>0.9890</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Confusion Matrix Breakdown -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+      <div style="background-color: var(--bg-surface-subtle); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">Random Forest Confusion Matrix (N=80)</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; text-align: center;">
+          <div style="background-color: var(--bg-surface); padding: 0.75rem; border-radius: 6px;">
+            <span class="meta-label">True Negatives</span>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--color-primary);">30</div>
+          </div>
+          <div style="background-color: var(--bg-surface); padding: 0.75rem; border-radius: 6px;">
+            <span class="meta-label">False Positives</span>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-subtle);">0</div>
+          </div>
+          <div style="background-color: var(--bg-surface); padding: 0.75rem; border-radius: 6px;">
+            <span class="meta-label">False Negatives</span>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--status-clear-text);">0 (Zero Misses)</div>
+          </div>
+          <div style="background-color: var(--bg-surface); padding: 0.75rem; border-radius: 6px;">
+            <span class="meta-label">True Positives</span>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--color-primary);">50</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background-color: var(--bg-surface-subtle); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">Decision Tree Confusion Matrix (N=80)</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; text-align: center;">
+          <div style="background-color: var(--bg-surface); padding: 0.75rem; border-radius: 6px;">
+            <span class="meta-label">True Negatives</span>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--color-primary);">30</div>
+          </div>
+          <div style="background-color: var(--bg-surface); padding: 0.75rem; border-radius: 6px;">
+            <span class="meta-label">False Positives</span>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-subtle);">0</div>
+          </div>
+          <div style="background-color: var(--bg-surface); padding: 0.75rem; border-radius: 6px;">
+            <span class="meta-label">False Negatives</span>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--status-flagged-text);">3</div>
+          </div>
+          <div style="background-color: var(--bg-surface); padding: 0.75rem; border-radius: 6px;">
+            <span class="meta-label">True Positives</span>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--color-primary);">47</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Top Feature Importance & Clinical Correlation -->
+  <div class="editorial-card">
+    <h2 style="font-family: var(--font-serif); font-size: 1.4rem; margin-bottom: 0.75rem; color: var(--color-primary);">
+      3. Top Feature Importance & Clinical Nephrology Correlates
+    </h2>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
+      Feature importance rankings extracted from the ensemble Random Forest trees closely mirror established renal pathology:
+    </p>
+
+    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background-color: var(--bg-surface-subtle); border-radius: 6px;">
+        <div>
+          <strong>Packed Cell Volume (pcv) &bull; 17.4%</strong>
+          <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.2rem;">
+            Hematocrit percentage. Decreased renal synthesis of erythropoietin directly induces normocytic normochromic anemia.
+          </p>
+        </div>
+        <span class="team-lead-badge">Top Predictor</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background-color: var(--bg-surface-subtle); border-radius: 6px;">
+        <div>
+          <strong>Hemoglobin (hemo) &bull; 16.7%</strong>
+          <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.2rem;">
+            Circulating hemoglobin. Strongly correlated with progressive decline in estimated glomerular filtration rate.
+          </p>
+        </div>
+        <span class="team-lead-badge">Top Predictor</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background-color: var(--bg-surface-subtle); border-radius: 6px;">
+        <div>
+          <strong>Serum Creatinine (sc) &bull; 13.2%</strong>
+          <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.2rem;">
+            Endogenous filtration marker. Creatinine retention is the hallmark clinical indicator of nephron filtration failure.
+          </p>
+        </div>
+        <span class="team-lead-badge">Filtration Marker</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background-color: var(--bg-surface-subtle); border-radius: 6px;">
+        <div>
+          <strong>Specific Gravity (sg) &bull; 11.1%</strong>
+          <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.2rem;">
+            Urine density reflection. Inability to concentrate urine reflects early medullary and tubular interstitial compromise.
+          </p>
+        </div>
+        <span class="team-lead-badge">Urinalysis</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background-color: var(--bg-surface-subtle); border-radius: 6px;">
+        <div>
+          <strong>Hypertension (htn) &bull; 10.5%</strong>
+          <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.2rem;">
+            Systemic comorbidity. Both a leading cause and a prominent consequence of chronic renal insufficiency.
+          </p>
+        </div>
+        <span class="team-lead-badge">Vascular Risk</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

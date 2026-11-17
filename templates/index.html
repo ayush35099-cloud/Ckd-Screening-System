@@ -1,0 +1,405 @@
+{% extends 'base.html' %}
+
+{% block title %}RenalCare — Smarter Screening. Earlier Awareness.{% endblock %}
+
+{% block content %}
+<!-- ========================================================================
+     1. Hero Section (Editorial Layout Inspired by Cedars-Sinai)
+     ======================================================================== -->
+<section class="hero-section">
+  <div class="hero-container">
+    <div class="hero-content">
+      <div class="hero-eyebrow">
+        <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+        <span>Clinical Decision-Support &bull; Community Screening</span>
+      </div>
+      <h1 class="hero-title">
+        Better Kidney Health Starts With Early Awareness.
+      </h1>
+      <p class="hero-subtitle">
+        An intelligent screening platform that helps healthcare workers identify potential kidney health concerns using routine laboratory parameters in primary health centres and diagnostic camps.
+      </p>
+
+      <div class="hero-actions">
+        <a href="{{ url_for('screen_view') }}" class="btn-renal btn-renal-primary" style="padding: 0.85rem 1.75rem; font-size: 1rem;">
+          <i data-lucide="clipboard-plus"></i>
+          <span>Start Screening</span>
+        </a>
+        <a href="#how-it-works" class="btn-renal btn-renal-outline" style="padding: 0.85rem 1.75rem; font-size: 1rem;">
+          <span>Explore How It Works</span>
+          <i data-lucide="arrow-down" style="width: 16px; height: 16px;"></i>
+        </a>
+      </div>
+
+      <div class="hero-badges">
+        <div class="hero-badge-item">
+          <i data-lucide="check-circle-2"></i>
+          <span><strong>100.0% Test Sensitivity</strong> (Zero False Negatives)</span>
+        </div>
+        <div class="hero-badge-item">
+          <i data-lucide="database"></i>
+          <span>Validated on <strong>UCI Benchmark Data</strong></span>
+        </div>
+        <div class="hero-badge-item">
+          <i data-lucide="file-text"></i>
+          <span>Instant <strong>PDF Clinical Reports</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Editorial Hero Visual -->
+    <div class="hero-visual-card">
+      <div class="hero-image-wrapper">
+        <img src="{{ url_for('static', filename='img/hero-doctor.jpg') }}" alt="Physician and patient reviewing diagnostic laboratory charts in a warm healthcare setting">
+      </div>
+      <div class="hero-floating-badge">
+        <div>
+          <div class="floating-stat-num">24 Routine Biomarkers</div>
+          <div class="floating-stat-lbl">Blood, Urine & Vital Parameters Evaluated</div>
+        </div>
+        <div style="text-align: right;">
+          <span class="team-lead-badge" style="background-color: var(--status-clear-bg); color: var(--status-clear-text); border: 1px solid var(--status-clear-border);">
+            Decision Support Active
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     2. About Chronic Kidney Disease Section
+     ======================================================================== -->
+<section class="section section-alt" id="about-ckd">
+  <div class="container-wide">
+    <div class="section-header">
+      <span class="section-eyebrow">Medical Context</span>
+      <h2 class="section-title">Understanding Chronic Kidney Disease</h2>
+      <p class="section-description">
+        Chronic Kidney Disease (CKD) represents a gradual, irreversible decline in renal filtration capacity. Often called a "silent condition," symptoms rarely emerge until advanced stages.
+      </p>
+    </div>
+
+    <div class="editorial-grid">
+      <div class="editorial-card">
+        <div class="card-icon-box">
+          <i data-lucide="alert-octagon"></i>
+        </div>
+        <h3 class="card-title">The Silent Progression</h3>
+        <p class="card-text">
+          Nephrons gradually lose function over months or years. Up to 90% of renal function can be compromised before overt clinical symptoms such as severe fatigue or peripheral edema present.
+        </p>
+      </div>
+
+      <div class="editorial-card">
+        <div class="card-icon-box">
+          <i data-lucide="heart-pulse"></i>
+        </div>
+        <h3 class="card-title">Key Risk Precursors</h3>
+        <p class="card-text">
+          Hypertension and Diabetes Mellitus are the leading drivers of microvascular renal injury. Prolonged elevated arterial pressure and hyperglycemia degrade glomerular capillaries.
+        </p>
+      </div>
+
+      <div class="editorial-card">
+        <div class="card-icon-box">
+          <i data-lucide="crosshair"></i>
+        </div>
+        <h3 class="card-title">Early Intervention Window</h3>
+        <p class="card-text">
+          When detected in Stages 1–3, dietary modification, blood pressure control, and ACE-inhibitor therapies can dramatically slow disease progression, preventing end-stage dialysis.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     3. Why Early Screening Matters
+     ======================================================================== -->
+<section class="section">
+  <div class="container-wide">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3.5rem; align-items: center;">
+      <div>
+        <span class="section-eyebrow">Community Impact</span>
+        <h2 class="section-title" style="font-size: 2.25rem;">
+          Why Routine Screening Matters in Primary Care
+        </h2>
+        <p style="font-size: 1.05rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.7;">
+          In rural Primary Health Centres (PHCs) and community diagnostic camps, access to nephrologists is severely constrained. Routine laboratory workups—such as dipstick urinalysis, serum creatinine, and complete blood counts—are frequently gathered but difficult to interpret holistically.
+        </p>
+        <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.6;">
+          RenalCare bridges this diagnostic gap by aggregating 24 standard routine parameters through a trained machine learning pipeline. It flags high-risk patterns immediately, generating actionable clinical documentation for physician referral.
+        </p>
+        <div style="display: flex; gap: 1rem;">
+          <a href="{{ url_for('screen_view') }}" class="btn-renal btn-renal-primary">
+            <span>Launch Screening Tool</span>
+            <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+          </a>
+        </div>
+      </div>
+
+      <div style="background-color: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 2rem; box-shadow: var(--shadow-sm);">
+        <h3 style="font-family: var(--font-serif); font-size: 1.35rem; margin-bottom: 1.25rem; color: var(--color-primary);">
+          Clinical Screening Benefits
+        </h3>
+        <ul style="list-style: none; display: flex; flex-direction: column; gap: 1rem;">
+          <li style="display: flex; gap: 0.75rem; align-items: flex-start;">
+            <i data-lucide="check" style="color: var(--color-primary); flex-shrink: 0; margin-top: 3px;"></i>
+            <span style="font-size: 0.9375rem; color: var(--text-muted);">
+              <strong>Zero-Missing-Barrier:</strong> Built-in statistical imputers handle incomplete laboratory tests typical of rural camps.
+            </span>
+          </li>
+          <li style="display: flex; gap: 0.75rem; align-items: flex-start;">
+            <i data-lucide="check" style="color: var(--color-primary); flex-shrink: 0; margin-top: 3px;"></i>
+            <span style="font-size: 0.9375rem; color: var(--text-muted);">
+              <strong>Prioritized Sensitivity:</strong> The Random Forest classifier eliminates False Negatives, ensuring at-risk patients are never overlooked.
+            </span>
+          </li>
+          <li style="display: flex; gap: 0.75rem; align-items: flex-start;">
+            <i data-lucide="check" style="color: var(--color-primary); flex-shrink: 0; margin-top: 3px;"></i>
+            <span style="font-size: 0.9375rem; color: var(--text-muted);">
+              <strong>Calibrated Probability:</strong> Provides nuanced risk stratification rather than misleading binary outputs.
+            </span>
+          </li>
+          <li style="display: flex; gap: 0.75rem; align-items: flex-start;">
+            <i data-lucide="check" style="color: var(--color-primary); flex-shrink: 0; margin-top: 3px;"></i>
+            <span style="font-size: 0.9375rem; color: var(--text-muted);">
+              <strong>Printable Referral PDF:</strong> Clean medical report ready for patient handover and hospital transfer.
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     4. How The Screening Process Works
+     ======================================================================== -->
+<section class="section section-alt" id="how-it-works">
+  <div class="container-wide">
+    <div class="section-header">
+      <span class="section-eyebrow">Operational Workflow</span>
+      <h2 class="section-title">How the Screening Process Works</h2>
+      <p class="section-description">
+        Designed for streamlined execution by primary care nursing officers, camp coordinators, and health workers.
+      </p>
+    </div>
+
+    <div class="process-steps">
+      <div class="step-card">
+        <div class="step-number">01</div>
+        <h3 class="step-title">Collect Routine Labs</h3>
+        <p class="step-desc">
+          Gather standard dipstick urinalysis, blood pressure, fasting/random glucose, and complete metabolic profile.
+        </p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">02</div>
+        <h3 class="step-title">Enter Parameters</h3>
+        <p class="step-desc">
+          Input available values into the structured 24-feature form. Reference ranges and automated pre-checks guide the operator.
+        </p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">03</div>
+        <h3 class="step-title">Model Evaluation</h3>
+        <p class="step-desc">
+          The machine learning pipeline scales, imputes, and assesses multi-parameter correlations in milliseconds.
+        </p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">04</div>
+        <h3 class="step-title">Clinical Report & Action</h3>
+        <p class="step-desc">
+          Review the risk summary, inspect abnormal findings, and download a branded PDF report for specialist consultation.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     5. Medical Parameters Considered (24 UCI Features)
+     ======================================================================== -->
+<section class="section">
+  <div class="container-wide">
+    <div class="section-header">
+      <span class="section-eyebrow">Diagnostic Variables</span>
+      <h2 class="section-title">24 Clinical Parameters Analyzed</h2>
+      <p class="section-description">
+        Covering urinalysis, renal chemistry, hematology, cardiovascular vitals, and physical symptoms from the UCI benchmark.
+      </p>
+    </div>
+
+    <div class="editorial-grid">
+      <div class="editorial-card">
+        <div class="card-icon-box"><i data-lucide="droplet"></i></div>
+        <h3 class="card-title">Urinalysis Biomarkers</h3>
+        <p class="card-text">
+          Specific Gravity (sg), Albumin / Proteinuria (al), Urine Sugar (su), Red Blood Cells (rbc), Pus Cells (pc), Pus Cell Clumps (pcc), Bacteria (ba).
+        </p>
+      </div>
+
+      <div class="editorial-card">
+        <div class="card-icon-box"><i data-lucide="activity"></i></div>
+        <h3 class="card-title">Renal & Chemistry Panel</h3>
+        <p class="card-text">
+          Serum Creatinine (sc), Blood Urea (bu), Blood Glucose Random (bgr), Serum Sodium (sod), Serum Potassium (pot), Resting Blood Pressure (bp).
+        </p>
+      </div>
+
+      <div class="editorial-card">
+        <div class="card-icon-box"><i data-lucide="disc"></i></div>
+        <h3 class="card-title">Hematology & CBC</h3>
+        <p class="card-text">
+          Hemoglobin (hemo), Packed Cell Volume / Hematocrit (pcv), White Blood Cell Count (wc), Red Blood Cell Count (rc).
+        </p>
+      </div>
+
+      <div class="editorial-card">
+        <div class="card-icon-box"><i data-lucide="heart"></i></div>
+        <h3 class="card-title">Systemic Comorbidities</h3>
+        <p class="card-text">
+          Hypertension history (htn), Diabetes Mellitus (dm), Coronary Artery Disease (cad).
+        </p>
+      </div>
+
+      <div class="editorial-card">
+        <div class="card-icon-box"><i data-lucide="alert-circle"></i></div>
+        <h3 class="card-title">Clinical Physical Signs</h3>
+        <p class="card-text">
+          Reported Appetite level (appet), Pedal Edema swelling (pe), Clinical Anemia presentation (ane).
+        </p>
+      </div>
+
+      <div class="editorial-card">
+        <div class="card-icon-box"><i data-lucide="user"></i></div>
+        <h3 class="card-title">Patient Demographics</h3>
+        <p class="card-text">
+          Patient age, sex, and institutional identifier for tracking screening history across clinical sessions.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     6. Machine Learning Methodology
+     ======================================================================== -->
+<section class="section section-alt">
+  <div class="container-wide">
+    <div class="section-header">
+      <span class="section-eyebrow">Machine Learning Engineering</span>
+      <h2 class="section-title">Rigorous Machine Learning Validation</h2>
+      <p class="section-description">
+        Comparative evaluation of Decision Tree and Random Forest algorithms trained on the authentic UCI Chronic Kidney Disease dataset.
+      </p>
+    </div>
+
+    <div style="background-color: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: var(--shadow-sm);">
+      <div style="overflow-x: auto;">
+        <table class="renal-table">
+          <thead>
+            <tr>
+              <th>Evaluated Model</th>
+              <th>Held-out Accuracy</th>
+              <th>Sensitivity (Recall)</th>
+              <th>Specificity</th>
+              <th>Precision</th>
+              <th>F1-Score</th>
+              <th>ROC-AUC</th>
+              <th>False Negatives</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background-color: var(--color-primary-subtle); font-weight: 600;">
+              <td><strong>Random Forest (Champion)</strong></td>
+              <td>100.0%</td>
+              <td><span class="badge-status badge-clear">100.0%</span></td>
+              <td>100.0%</td>
+              <td>100.0%</td>
+              <td>1.0000</td>
+              <td>1.0000</td>
+              <td><strong>0</strong> (Zero Misses)</td>
+            </tr>
+            <tr>
+              <td><strong>Decision Tree</strong></td>
+              <td>96.25%</td>
+              <td><span class="badge-status badge-clear">94.0%</span></td>
+              <td>100.0%</td>
+              <td>100.0%</td>
+              <td>0.9691</td>
+              <td>0.9890</td>
+              <td>3</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size: 0.8125rem; color: var(--text-subtle); margin-top: 0.75rem;">
+        * Evaluated on held-out test split (N=80: 50 CKD positive, 30 non-CKD) using 5-fold stratified cross-validation on training data.
+      </p>
+    </div>
+
+    <div style="text-align: center;">
+      <a href="{{ url_for('research_view') }}" class="btn-renal btn-renal-secondary">
+        <i data-lucide="book-open"></i>
+        <span>Read Full Machine Learning & Research Report</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     7. Community Project Information
+     ======================================================================== -->
+<section class="section">
+  <div class="container-wide">
+    <div class="academic-card">
+      <div>
+        <span class="section-eyebrow" style="color: var(--color-primary);">Academic Project Details</span>
+        <h3 style="font-family: var(--font-serif); font-size: 1.5rem; margin-bottom: 0.75rem;">
+          Dayananda Sagar College of Engineering, Bengaluru
+        </h3>
+        <p style="font-size: 0.9375rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+          <strong>Department:</strong> Department of Artificial Intelligence and Machine Learning
+        </p>
+        <p style="font-size: 0.9375rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+          <strong>Course:</strong> BCP308 – Community Project
+        </p>
+        <p style="font-size: 0.9375rem; color: var(--text-muted);">
+          <strong>Team Identifier:</strong> Team A-12
+        </p>
+      </div>
+
+      <div>
+        <h4 style="font-size: 0.9375rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); margin-bottom: 0.5rem;">
+          Student Engineering Team
+        </h4>
+        <ul class="team-list">
+          <li>
+            <i data-lucide="user-check" style="width: 16px; height: 16px; color: var(--color-primary);"></i>
+            <strong>Ayush Anjan Choudhary</strong> &nbsp;<span class="team-lead-badge">Team Lead</span>
+          </li>
+          <li>
+            <i data-lucide="user" style="width: 16px; height: 16px; color: var(--text-subtle);"></i>
+            <span>Harsh Kumawat</span>
+          </li>
+          <li>
+            <i data-lucide="user" style="width: 16px; height: 16px; color: var(--text-subtle);"></i>
+            <span>Krishna Arora</span>
+          </li>
+          <li>
+            <i data-lucide="user" style="width: 16px; height: 16px; color: var(--text-subtle);"></i>
+            <span>Kunal Kumar Singh</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
