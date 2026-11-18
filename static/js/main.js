@@ -39,19 +39,53 @@ function initMobileNav() {
     const navLinks = document.getElementById('navLinks');
 
     if (mobileBtn && navLinks) {
-        mobileBtn.addEventListener('click', () => {
-            const isVisible = navLinks.style.display === 'flex';
-            navLinks.style.display = isVisible ? 'none' : 'flex';
-            if (!isVisible) {
-                navLinks.style.flexDirection = 'column';
-                navLinks.style.position = 'absolute';
-                navLinks.style.top = '100%';
-                navLinks.style.left = '0';
-                navLinks.style.right = '0';
-                navLinks.style.backgroundColor = 'var(--bg-surface)';
-                navLinks.style.padding = '1.5rem';
-                navLinks.style.borderBottom = '1px solid var(--border-subtle)';
-                navLinks.style.boxShadow = 'var(--shadow-md)';
+        mobileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = navLinks.classList.toggle('is-open');
+            mobileBtn.classList.toggle('active', isOpen);
+            mobileBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            navLinks.style.display = isOpen ? 'flex' : 'none';
+        });
+
+        // Close when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!mobileBtn.contains(e.target) && !navLinks.contains(e.target) && navLinks.classList.contains('is-open')) {
+                navLinks.classList.remove('is-open');
+                mobileBtn.classList.remove('active');
+                mobileBtn.setAttribute('aria-expanded', 'false');
+                navLinks.style.display = 'none';
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && navLinks.classList.contains('is-open')) {
+                navLinks.classList.remove('is-open');
+                mobileBtn.classList.remove('active');
+                mobileBtn.setAttribute('aria-expanded', 'false');
+                navLinks.style.display = 'none';
+            }
+        });
+
+        // Close when clicking any nav link
+        navLinks.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 992 && navLinks.classList.contains('is-open')) {
+                    navLinks.classList.remove('is-open');
+                    mobileBtn.classList.remove('active');
+                    mobileBtn.setAttribute('aria-expanded', 'false');
+                    navLinks.style.display = 'none';
+                }
+            });
+        });
+
+        // Reset inline display when resizing to desktop
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 992) {
+                navLinks.classList.remove('is-open');
+                mobileBtn.classList.remove('active');
+                mobileBtn.setAttribute('aria-expanded', 'false');
+                navLinks.style.display = '';
             }
         });
     }
