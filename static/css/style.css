@@ -29,9 +29,9 @@
   --border-strong: #D0D6D2;
   --border-focus: #174D3A;
   
-  --shadow-sm: 0 1px 2px rgba(23, 77, 58, 0.04);
-  --shadow-md: 0 4px 12px rgba(23, 77, 58, 0.06);
-  --shadow-lg: 0 12px 32px rgba(23, 77, 58, 0.08);
+  --shadow-sm: 0 1px 3px rgba(23, 77, 58, 0.04);
+  --shadow-md: 0 3px 8px rgba(23, 77, 58, 0.06);
+  --shadow-lg: 0 8px 20px rgba(23, 77, 58, 0.07);
 
   /* Status Colors */
   --status-flagged-bg: #FEF2F2;
@@ -77,9 +77,9 @@
   --border-strong: #3D4C46;
   --border-focus: #88B39F;
   
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.22);
+  --shadow-md: 0 3px 8px rgba(0, 0, 0, 0.28);
+  --shadow-lg: 0 8px 20px rgba(0, 0, 0, 0.35);
 
   --status-flagged-bg: #3B1A1A;
   --status-flagged-border: #7F1D1D;
@@ -429,16 +429,17 @@ a:hover {
   position: relative;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  padding: 0.75rem;
-  box-shadow: var(--shadow-md);
+  border-radius: 8px;
+  padding: 0.625rem;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease;
 }
 
 .hero-image-wrapper {
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
   position: relative;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 3 / 2;
   background-color: var(--bg-surface-subtle);
 }
 
@@ -446,19 +447,38 @@ a:hover {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center 15%;
   display: block;
+}
+
+.hero-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0.5rem 0.25rem 0.5rem;
+  gap: 1rem;
+}
+
+.hero-meta-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-meta-status {
+  display: flex;
+  align-items: center;
 }
 
 .hero-floating-badge {
   position: absolute;
-  bottom: 1.5rem;
-  left: 1.5rem;
-  right: 1.5rem;
+  bottom: 1rem;
+  left: 1rem;
+  right: 1rem;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  padding: 0.85rem 1rem;
-  box-shadow: var(--shadow-lg);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  box-shadow: var(--shadow-sm);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -466,9 +486,10 @@ a:hover {
 
 .floating-stat-num {
   font-family: var(--font-serif);
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--color-primary);
+  line-height: 1.2;
 }
 
 .floating-stat-lbl {
@@ -480,7 +501,7 @@ a:hover {
    5. Content Sections (Editorial Structure)
    -------------------------------------------------------------------------- */
 .section {
-  padding: 5rem 1.5rem;
+  padding: 4.25rem 1.5rem;
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -501,7 +522,7 @@ a:hover {
 .section-header {
   text-align: center;
   max-width: 720px;
-  margin: 0 auto 3.5rem auto;
+  margin: 0 auto 2.75rem auto;
 }
 
 .section-eyebrow {
@@ -515,7 +536,8 @@ a:hover {
 }
 
 .section-title {
-  font-size: 2.25rem;
+  font-size: 2.125rem;
+  letter-spacing: -0.02em;
   margin-bottom: 1rem;
 }
 
@@ -528,15 +550,16 @@ a:hover {
 .editorial-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.75rem;
+  gap: 1.5rem;
 }
 
 .editorial-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  padding: 2rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 6px;
+  padding: 1.75rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .editorial-card:hover {
@@ -546,9 +569,9 @@ a:hover {
 }
 
 .card-icon-box {
-  width: 44px;
-  height: 44px;
-  border-radius: 8px;
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
   background-color: var(--color-primary-subtle);
   color: var(--color-primary);
   display: flex;
@@ -580,8 +603,9 @@ a:hover {
 .step-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  padding: 1.75rem;
+  border-radius: 6px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
   position: relative;
 }
 
@@ -613,8 +637,8 @@ a:hover {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-left: 4px solid var(--color-primary);
-  border-radius: 8px;
-  padding: 2rem;
+  border-radius: 6px;
+  padding: 1.75rem 2rem;
   box-shadow: var(--shadow-sm);
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -680,9 +704,10 @@ a:hover {
 .metric-stat-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  padding: 1.5rem;
+  border-radius: 6px;
+  padding: 1.35rem;
   box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s ease;
 }
 
 .stat-label {
@@ -721,8 +746,8 @@ a:hover {
 .chart-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  padding: 1.5rem;
+  border-radius: 6px;
+  padding: 1.35rem;
   box-shadow: var(--shadow-sm);
 }
 
@@ -741,7 +766,7 @@ a:hover {
 .empty-state-box {
   background-color: var(--bg-surface);
   border: 1px dashed var(--border-strong);
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 3.5rem 2rem;
   text-align: center;
   margin: 1.5rem 0;
@@ -800,8 +825,8 @@ a:hover {
 .clinical-fieldset {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  padding: 2rem;
+  border-radius: 6px;
+  padding: 1.75rem;
   margin-bottom: 2rem;
   box-shadow: var(--shadow-sm);
 }
@@ -864,7 +889,7 @@ a:hover {
   font-family: var(--font-sans);
   background-color: var(--bg-page);
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border-radius: 5px;
   color: var(--text-main);
   transition: all 0.15s ease;
 }
@@ -874,6 +899,17 @@ a:hover {
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px rgba(23, 77, 58, 0.15);
   background-color: var(--bg-surface);
+}
+
+.clinical-input-warning {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--status-flagged-text);
+  background-color: var(--status-flagged-bg);
+  border: 1px solid var(--status-flagged-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  line-height: 1.4;
 }
 
 .input-hint {
@@ -900,9 +936,9 @@ a:hover {
 .result-card-main {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
   margin-bottom: 2rem;
 }
 
@@ -1023,7 +1059,7 @@ a:hover {
 .filter-bar {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 1rem 1.25rem;
   display: flex;
   justify-content: space-between;
@@ -1041,7 +1077,7 @@ a:hover {
 .history-table-container {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
   box-shadow: var(--shadow-sm);
 }
@@ -1086,8 +1122,8 @@ a:hover {
   gap: 0.35rem;
   font-size: 0.75rem;
   font-weight: 600;
-  padding: 0.25rem 0.65rem;
-  border-radius: 12px;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
 }
 
 .badge-flagged {
@@ -1108,7 +1144,7 @@ a:hover {
 .disclaimer-card {
   background-color: var(--bg-surface-subtle);
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 1.5rem;
   margin: 2rem 0;
   display: flex;

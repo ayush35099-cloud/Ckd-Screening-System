@@ -142,7 +142,7 @@ ckd-screening-system/
 │   │   └── dashboard.js   # Dynamic Chart.js visualizations
 │   └── img/
 │       ├── logo.svg       # Custom RenalCare SVG brand logo
-│       └── hero-doctor.jpg# Editorial healthcare photograph
+│       └── renalcare-doctor.jpg # Physician portrait in consultation setting
 ├── templates/
 │   ├── base.html          # Base layout, navbar, theme toggle, footer
 │   ├── index.html         # Editorial landing page

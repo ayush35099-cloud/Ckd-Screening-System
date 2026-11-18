@@ -26,7 +26,7 @@
   </div>
 
   <!-- Upload Form Card -->
-  <div style="background-color: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 2rem; box-shadow: var(--shadow-sm); margin-bottom: 2.5rem;">
+  <div style="background-color: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 2rem; box-shadow: var(--shadow-sm); margin-bottom: 2.5rem;">
     <form action="{{ url_for('batch_screen_submit') }}" method="POST" enctype="multipart/form-data" id="batchUploadForm">
       
       <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: start;">
@@ -34,7 +34,7 @@
         <!-- File Input Dropzone -->
         <div>
           <label for="file" class="renal-label" style="margin-bottom: 0.5rem; display: block;">Select Patient Laboratory CSV File (.csv)</label>
-          <div style="border: 2px dashed var(--border-strong); border-radius: 8px; padding: 1.75rem; text-align: center; background-color: var(--bg-surface-subtle); transition: border-color 0.2s ease;">
+          <div style="border: 2px dashed var(--border-strong); border-radius: 6px; padding: 1.75rem; text-align: center; background-color: var(--bg-surface-subtle); transition: border-color 0.2s ease;">
             <i data-lucide="file-spreadsheet" style="width: 36px; height: 36px; color: var(--color-primary); margin-bottom: 0.5rem;"></i>
             <input type="file" id="file" name="file" accept=".csv" required style="display: block; width: 100%; font-size: 0.875rem; color: var(--text-main); margin-top: 0.5rem;">
             <span class="input-hint" style="display: block; margin-top: 0.5rem;">Maximum 100 patient rows per upload &bull; File size up to 2MB</span>
