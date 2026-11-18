@@ -11,24 +11,47 @@ from database import get_screenings_history
 class TestFlaskRoutes(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        test_db_path = os.path.join(os.path.dirname(__file__), 'test_renalcare.db')
-        if os.path.exists(test_db_path):
+        cls.test_db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'test_renalcare.db'))
+        if os.path.exists(cls.test_db_path):
             try:
-                os.remove(test_db_path)
+                os.remove(cls.test_db_path)
             except Exception:
                 pass
-        os.environ['DATABASE_PATH'] = test_db_path
+
+        # Save existing env vars
+        cls.orig_db_path = os.environ.get('DATABASE_PATH')
+        cls.orig_db_url = os.environ.get('DATABASE_URL')
+
+        # Enforce isolated test sqlite database
+        os.environ['DATABASE_PATH'] = cls.test_db_path
+        if 'DATABASE_URL' in os.environ:
+            del os.environ['DATABASE_URL']
         os.environ['TESTING'] = '1'
+
+        from database import init_db
+        init_db(db_path=cls.test_db_path)
 
         cls.app = create_app()
         cls.client = cls.app.test_client()
 
     @classmethod
     def tearDownClass(cls):
-        test_db_path = os.path.join(os.path.dirname(__file__), 'test_renalcare.db')
-        if os.path.exists(test_db_path):
+        # Restore environment variables
+        if cls.orig_db_path is not None:
+            os.environ['DATABASE_PATH'] = cls.orig_db_path
+        else:
+            os.environ.pop('DATABASE_PATH', None)
+
+        if cls.orig_db_url is not None:
+            os.environ['DATABASE_URL'] = cls.orig_db_url
+        else:
+            os.environ.pop('DATABASE_URL', None)
+
+        os.environ.pop('TESTING', None)
+
+        if hasattr(cls, 'test_db_path') and os.path.exists(cls.test_db_path):
             try:
-                os.remove(test_db_path)
+                os.remove(cls.test_db_path)
             except Exception:
                 pass
 
@@ -55,6 +78,9 @@ class TestFlaskRoutes(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertEqual(data['status'], 'healthy')
+        self.assertTrue(data['database_connected'])
+        self.assertEqual(data['database_backend'], 'sqlite')
+        self.assertEqual(data['database_persistence'], 'ephemeral_sqlite')
         self.assertTrue(data['models_loaded']['random_forest'])
         self.assertTrue(data['models_loaded']['decision_tree'])
 
@@ -135,6 +161,14 @@ class TestFlaskRoutes(unittest.TestCase):
         self.assertTrue(pdf_resp.data.startswith(b'%PDF'))
 
     def test_api_history_and_item(self):
+        # Ensure at least one record exists in test database
+        seed_payload = {
+            'patient_id': 'PT-SEED-001',
+            'patient_name': 'Seed Patient',
+            'parameters': {'age': 55, 'bp': 80, 'sc': 1.1, 'hemo': 13.5}
+        }
+        self.client.post('/api/predict', json=seed_payload)
+
         # Fetch history list
         resp = self.client.get('/api/history')
         self.assertEqual(resp.status_code, 200)
@@ -222,10 +256,23 @@ class TestFlaskRoutes(unittest.TestCase):
         self.assertIn(b'Decision Tree', res_page.data)
 
     def test_history_search_and_filters_query(self):
+        # Seed record for search test
+        seed_data = {
+            'patient_id': 'PT-SEARCH-001',
+            'patient_name': 'Search Patient',
+            'age': '52',
+            'sex': 'Female',
+            'model_choice': 'Random Forest',
+            'bp': '75',
+            'sc': '0.8',
+            'hemo': '14.0'
+        }
+        self.client.post('/screen', data=seed_data, follow_redirects=True)
+
         # Test searching by patient ID
-        resp = self.client.get('/history?q=PT-DT-TEST-001')
+        resp = self.client.get('/history?q=PT-SEARCH-001')
         self.assertEqual(resp.status_code, 200)
-        self.assertIn(b'PT-DT-TEST-001', resp.data)
+        self.assertIn(b'PT-SEARCH-001', resp.data)
 
         # Test filtering by flagged
         resp_flagged = self.client.get('/history?status=flagged')

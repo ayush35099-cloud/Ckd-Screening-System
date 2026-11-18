@@ -436,12 +436,32 @@ def create_app(config_class=Config):
     # -----------------------------------------------------------------------
     @app.route('/api/health')
     def health_check():
-        _, db_type = get_connection()
+        db_type = 'unknown'
+        db_connected = False
+        conn = None
+        try:
+            conn, db_type = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1;")
+            db_connected = True
+        except Exception as e:
+            logger.error(f"Health check database query error: {e}")
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+
+        persistence_mode = 'persistent' if db_type == 'postgres' else 'ephemeral_sqlite'
+
         return jsonify({
-            'status': 'healthy',
+            'status': 'healthy' if db_connected else 'degraded',
             'application': 'RenalCare CKD Screening System',
             'version': '1.1.0',
             'database_backend': db_type,
+            'database_connected': db_connected,
+            'database_persistence': persistence_mode,
             'models_loaded': {
                 'random_forest': model_service.rf_pipeline is not None,
                 'decision_tree': model_service.dt_pipeline is not None

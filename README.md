@@ -217,7 +217,10 @@ GET /api/health
 {
   "status": "healthy",
   "application": "RenalCare CKD Screening System",
-  "champion_model": "Random Forest Classifier",
+  "version": "1.1.0",
+  "database_backend": "sqlite",
+  "database_connected": true,
+  "database_persistence": "ephemeral_sqlite",
   "models_loaded": {
     "random_forest": true,
     "decision_tree": true
@@ -293,7 +296,42 @@ The application is pre-configured for deployment to **Render**'s free tier.
 
 ### Free-Tier Hosting Characteristics & Limitations
 - **Sleeping Instances:** Free Render web services spin down after 15 minutes of inactivity. The first incoming request may experience a 30–50 second cold start.
-- **Ephemeral Filesystem:** Local SQLite database files (`renalcare.db`) reset when the service restarts or deploys. For permanent data persistence across restarts, provision a free **Render PostgreSQL** database and set the `DATABASE_URL` environment variable.
+- **Ephemeral Filesystem (SQLite):** By default without a managed database attached, RenalCare operates in `ephemeral_sqlite` mode. On Render's free tier, the local SQLite database file (`renalcare.db`) is stored in an ephemeral disk that resets when the service spins down, restarts, or deploys.
+- **Persistent Storage (PostgreSQL):** For persistent production storage across restarts and redeployments, connect a Render PostgreSQL database instance via the `DATABASE_URL` environment variable as detailed below.
+
+### Configuring Persistent Render PostgreSQL (Step-by-Step)
+RenalCare features a dual-dialect database abstraction layer supporting both SQLite and PostgreSQL without code changes.
+
+1. **Create a Render PostgreSQL Database:**
+   - Log in to your [Render Dashboard](https://dashboard.render.com/).
+   - Click **New +** &rarr; **PostgreSQL**.
+   - Enter a name (e.g. `renalcare-db`) and select your closest region.
+   - Choose the **Free** instance tier.
+   - Click **Create Database**.
+2. **Retrieve the Connection String:**
+   - On the newly created database page, scroll down to the **Connections** section.
+   - Copy the **Internal Database URL** (recommended for services in the same Render region) or the **External Database URL**.
+   - The connection string will look like: `postgres://renalcare_user:password@dpg-...-a/renalcare_db`.
+3. **Configure the RenalCare Web Service:**
+   - Open your RenalCare Web Service from the Render Dashboard.
+   - Click **Environment** in the left navigation menu.
+   - Click **Add Environment Variable**.
+   - Set **Key**: `DATABASE_URL`
+   - Set **Value**: `<Pasted Internal Database URL>`
+   - Click **Save Changes**.
+4. **Verification:**
+   - Render automatically triggers a zero-downtime redeployment.
+   - Once deployed, visit `https://<your-app>.onrender.com/api/health`.
+   - Verify the health response returns:
+     ```json
+     {
+       "status": "healthy",
+       "database_backend": "postgres",
+       "database_connected": true,
+       "database_persistence": "persistent"
+     }
+     ```
+   - Schema tables (`screenings`) and indexes are auto-migrated on startup. All screening records, batch runs, and dashboard analytics will now persist permanently across all redeployments and sleep cycles.
 
 ### Deployment Steps
 1. Push the code to a GitHub repository:
