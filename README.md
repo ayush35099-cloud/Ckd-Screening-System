@@ -66,12 +66,13 @@ The machine learning pipeline is trained and validated on the authentic **UCI Ch
 3. **Categorical Processing:** Nominal clinical indicators (`rbc`, `pc`, `pcc`, `ba`, `htn`, `dm`, `cad`, `appet`, `pe`, `ane`) processed with `SimpleImputer(strategy='most_frequent')` and `OneHotEncoder(handle_unknown='ignore')`.
 4. **Leakage Safeguard:** Complete preprocessing and estimation are encapsulated within Scikit-Learn `Pipeline` objects.
 
-### Comparative Benchmark (Decision Tree vs. Random Forest)
+### Comparative Benchmark & Dual-Pipeline Architecture
 
-Because missing a CKD-positive patient can delay life-saving medical management, **Sensitivity (Recall) was heavily prioritized** while maintaining high specificity.
+RenalCare implements a **Dual-Pipeline Architecture** that executes both the champion **Random Forest** ensemble and an interpretable **Decision Tree** on each patient screening submission to provide comparative cross-validation:
 
 | Metric | Random Forest (Champion) | Decision Tree |
 | :--- | :---: | :---: |
+| **Model Architecture** | 100-Tree Forest (`n_estimators=100`) | Pruned Tree (`max_depth=5, min_samples_split=4`) |
 | **5-Fold CV Accuracy** | **98.75% (&plusmn;1.17%)** | 95.63% (&plusmn;1.82%) |
 | **5-Fold CV Recall (Sensitivity)** | **99.00% (&plusmn;1.22%)** | 95.50% (&plusmn;1.87%) |
 | **Held-Out Test Accuracy (N=80)** | **100.0%** | 96.25% |
@@ -80,9 +81,17 @@ Because missing a CKD-positive patient can delay life-saving medical management,
 | **Precision** | **100.0%** | 100.0% |
 | **F1-Score** | **1.0000** | 0.9691 |
 | **ROC-AUC** | **1.0000** | 0.9890 |
-| **False Negatives (Held-Out)** | **0 (on held-out test split N=80)** | 3 |
+| **Confusion Matrix (Held-Out N=80)** | TP: 50, TN: 30, FP: 0, FN: 0 | TP: 47, TN: 30, FP: 0, FN: 3 |
+| **Clinical Role** | Primary Screening Classifier | Comparative Cross-Validation & Interpretable Rules |
 
-> **Academic Evaluation Note:** The 100% evaluation metrics reflect retrospective benchmark testing on the standardized UCI held-out test split (N=80). They do not constitute prospective clinical validation or guaranteed real-world diagnostic certainty. In real-world clinical practice, no screening model achieves 100% sensitivity across heterogeneous patient cohorts.
+### Distinction Between Model Confidence and Statistical Indication
+
+To ensure clinical and mathematical rigor, RenalCare strictly distinguishes between:
+1. **Model Confidence in Prediction:** The mathematical probability associated with the *predicted class* ($P(\text{class}) = \max(P(\text{CKD}), P(\text{Not CKD}))$). For a healthy patient with $P(\text{Not CKD}) = 99.5\%$ and $P(\text{CKD}) = 0.5\%$, the model confidence in predicting "Indicators Not Detected" is **99.5%**.
+2. **Statistical CKD Indication Score:** Specifically the probability of CKD marker presence ($P(\text{CKD})$). For a healthy patient, this is **0.5%**; for a CKD-positive patient, this is **98.2%**.
+3. **Academic Benchmark Accuracy:** Retrospective test split accuracy (100% RF / 96.25% DT on UCI test split N=80), which evaluates historical population performance rather than individual screening confidence.
+
+> **Academic Evaluation Note:** The benchmark metrics reflect retrospective testing on the standardized UCI held-out test split (N=80). They do not constitute prospective clinical validation or guaranteed real-world diagnostic certainty. In real-world clinical practice, no screening model achieves 100% sensitivity across heterogeneous patient cohorts.
 
 ### Top Predictive Features
 1. **Packed Cell Volume (`pcv` - 17.4%):** Directly mirrors impaired renal erythropoietin production.
@@ -261,9 +270,28 @@ Content-Type: application/json
   "prediction": {
     "is_flagged": true,
     "result_label": "CKD indicators detected – further clinical evaluation recommended.",
+    "prediction_code": "ckd",
+    "confidence": 98.2,
     "probability_ckd": 98.2,
-    "risk_level": "High",
-    "probability_explanation": "Statistical model output; does not represent guaranteed clinical certainty.",
+    "probability_notckd": 1.8,
+    "risk_level": "High Statistical Indication",
+    "model_used": "Random Forest",
+    "comparison": {
+      "random_forest": {
+        "prediction_code": "ckd",
+        "confidence": 98.2,
+        "probability_ckd": 98.2,
+        "is_flagged": true
+      },
+      "decision_tree": {
+        "prediction_code": "ckd",
+        "confidence": 100.0,
+        "probability_ckd": 100.0,
+        "is_flagged": true
+      },
+      "agreement": true,
+      "consensus_label": "Complete Consensus (Both Models Agree)"
+    },
     "missing_parameters": [],
     "key_findings": [
       {

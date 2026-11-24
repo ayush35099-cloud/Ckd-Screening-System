@@ -65,6 +65,8 @@ class TestFlaskRoutes(unittest.TestCase):
         response = self.client.get('/dashboard')
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'Primary Care Screening Dashboard', response.data)
+        self.assertIn(b'Active ML Pipelines', response.data)
+        self.assertIn(b'Comparative Model Evaluation Metrics', response.data)
 
     def test_screen_view(self):
         response = self.client.get('/screen')
@@ -150,6 +152,8 @@ class TestFlaskRoutes(unittest.TestCase):
         result_resp = self.client.get(redirect_url)
         self.assertEqual(result_resp.status_code, 200)
         self.assertIn(b'PT-FORM-001', result_resp.data)
+        self.assertIn(b'Model Confidence:', result_resp.data)
+        self.assertIn(b'Dual-Pipeline Comparative Evaluation', result_resp.data)
 
         # Extract uuid from redirect url
         screening_uuid = redirect_url.split('/result/')[-1]

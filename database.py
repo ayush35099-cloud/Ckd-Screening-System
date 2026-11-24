@@ -69,12 +69,14 @@ def init_db(db_path=None, db_url=None):
                     prediction_label VARCHAR(128) NOT NULL,
                     prediction_code VARCHAR(32) NOT NULL,
                     probability REAL NOT NULL,
+                    confidence REAL,
                     risk_level VARCHAR(64) NOT NULL,
                     model_used VARCHAR(64) NOT NULL,
                     missing_params_json TEXT,
                     findings_json TEXT,
                     recommendation TEXT,
                     probability_explanation TEXT,
+                    comparison_json TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
             """)
@@ -95,12 +97,14 @@ def init_db(db_path=None, db_url=None):
                     prediction_label TEXT NOT NULL,
                     prediction_code TEXT NOT NULL,
                     probability REAL NOT NULL,
+                    confidence REAL,
                     risk_level TEXT NOT NULL,
                     model_used TEXT NOT NULL,
                     missing_params_json TEXT,
                     findings_json TEXT,
                     recommendation TEXT,
                     probability_explanation TEXT,
+                    comparison_json TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
             """)
@@ -116,6 +120,8 @@ def init_db(db_path=None, db_url=None):
             ("findings_json", "TEXT"),
             ("recommendation", "TEXT"),
             ("probability_explanation", "TEXT"),
+            ("confidence", "REAL"),
+            ("comparison_json", "TEXT"),
         ]
         for col_name, col_type in migration_columns:
             try:
@@ -149,23 +155,30 @@ def save_screening(patient_data, prediction_result, db_path=None, db_url=None):
         missing_json = json.dumps(prediction_result.get('missing_parameters', []))
         findings_json = json.dumps(prediction_result.get('key_findings', []))
         prob_explanation = prediction_result.get('probability_explanation', '')
+        comparison_json = json.dumps(prediction_result.get('comparison', {}))
+
+        confidence_val = prediction_result.get('confidence')
+        if confidence_val is None:
+            prob_ckd = float(prediction_result.get('probability_ckd', prediction_result.get('probability', 0.0)))
+            is_flagged = bool(prediction_result.get('is_flagged', prediction_result.get('prediction_code') == 'ckd'))
+            confidence_val = prob_ckd if is_flagged else round(100.0 - prob_ckd, 1)
 
         if db_type == 'postgres':
             query = """
                 INSERT INTO screenings (
                     screening_uuid, patient_id, patient_name, age, sex,
                     parameters_json, prediction_label, prediction_code,
-                    probability, risk_level, model_used, missing_params_json,
-                    findings_json, recommendation, probability_explanation
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    probability, confidence, risk_level, model_used, missing_params_json,
+                    findings_json, recommendation, probability_explanation, comparison_json
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id;
             """
             cursor.execute(query, (
                 screening_uuid, patient_id, patient_name, age, sex,
                 params_json, prediction_result['result_label'], prediction_result['prediction_code'],
-                prediction_result['probability_ckd'], prediction_result['risk_level'],
+                prediction_result['probability_ckd'], confidence_val, prediction_result['risk_level'],
                 prediction_result['model_used'], missing_json, findings_json,
-                prediction_result['recommendation'], prob_explanation
+                prediction_result['recommendation'], prob_explanation, comparison_json
             ))
             row = cursor.fetchone()
             screening_id = row[0]
@@ -174,16 +187,16 @@ def save_screening(patient_data, prediction_result, db_path=None, db_url=None):
                 INSERT INTO screenings (
                     screening_uuid, patient_id, patient_name, age, sex,
                     parameters_json, prediction_label, prediction_code,
-                    probability, risk_level, model_used, missing_params_json,
-                    findings_json, recommendation, probability_explanation
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                    probability, confidence, risk_level, model_used, missing_params_json,
+                    findings_json, recommendation, probability_explanation, comparison_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """
             cursor.execute(query, (
                 screening_uuid, patient_id, patient_name, age, sex,
                 params_json, prediction_result['result_label'], prediction_result['prediction_code'],
-                prediction_result['probability_ckd'], prediction_result['risk_level'],
+                prediction_result['probability_ckd'], confidence_val, prediction_result['risk_level'],
                 prediction_result['model_used'], missing_json, findings_json,
-                prediction_result['recommendation'], prob_explanation
+                prediction_result['recommendation'], prob_explanation, comparison_json
             ))
             screening_id = cursor.lastrowid
 
@@ -220,6 +233,20 @@ def get_screening_by_uuid(screening_uuid, db_path=None, db_url=None):
         result['findings'] = json.loads(result['findings_json']) if result.get('findings_json') else []
         result['missing_parameters'] = json.loads(result['missing_params_json']) if result.get('missing_params_json') else []
         result['missing_count'] = len(result['missing_parameters'])
+        result['comparison'] = json.loads(result['comparison_json']) if result.get('comparison_json') else {}
+
+        prob_val = float(result.get('probability', 0.0))
+        result['probability_ckd'] = round(prob_val, 1)
+        result['probability_notckd'] = round(100.0 - prob_val, 1)
+
+        if result.get('confidence') is not None:
+            result['confidence'] = round(float(result['confidence']), 1)
+        else:
+            if result.get('prediction_code') == 'ckd':
+                result['confidence'] = round(prob_val, 1)
+            else:
+                result['confidence'] = round(100.0 - prob_val, 1)
+
         if isinstance(result['created_at'], datetime):
             result['formatted_date'] = result['created_at'].strftime('%b %d, %Y, %I:%M %p')
         else:
@@ -315,7 +342,7 @@ def get_dashboard_summary(db_path=None, db_url=None):
         # Algorithm usage breakdown from database
         cursor.execute("SELECT model_used, COUNT(*) FROM screenings GROUP BY model_used;")
         algo_rows = cursor.fetchall()
-        algorithm_usage = {}
+        algorithm_usage = {'Random Forest': 0, 'Decision Tree': 0}
         for row in algo_rows:
             algorithm_usage[row[0]] = int(row[1])
 
@@ -340,37 +367,46 @@ def get_dashboard_summary(db_path=None, db_url=None):
         trend_rows = cursor.fetchall()
         screening_trend = [{'date': r[0], 'count': int(r[1])} for r in reversed(trend_rows)]
 
-        # Recent 5 screenings
+        # Recent 5 screenings with confidence and probability
+        query_recent = """
+            SELECT id, screening_uuid, patient_id, patient_name, age, sex,
+                   prediction_label, prediction_code, probability, confidence, risk_level,
+                   model_used, created_at
+            FROM screenings
+            ORDER BY id DESC
+            LIMIT 5;
+        """
         if db_type == 'postgres':
             import psycopg2.extras
             cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            cursor.execute("""
-                SELECT id, screening_uuid, patient_id, patient_name, age, sex,
-                       prediction_label, prediction_code, probability, risk_level,
-                       model_used, created_at
-                FROM screenings
-                ORDER BY id DESC
-                LIMIT 5;
-            """)
+            cursor.execute(query_recent)
             recent = [dict(r) for r in cursor.fetchall()]
         else:
-            cursor.execute("""
-                SELECT id, screening_uuid, patient_id, patient_name, age, sex,
-                       prediction_label, prediction_code, probability, risk_level,
-                       model_used, created_at
-                FROM screenings
-                ORDER BY id DESC
-                LIMIT 5;
-            """)
+            cursor.execute(query_recent)
             recent = [dict(r) for r in cursor.fetchall()]
     finally:
         conn.close()
 
     for r in recent:
+        prob = float(r.get('probability', 0.0))
+        r['probability_ckd'] = round(prob, 1)
+        if r.get('confidence') is not None:
+            r['confidence'] = round(float(r['confidence']), 1)
+        else:
+            r['confidence'] = round(prob if r.get('prediction_code') == 'ckd' else (100.0 - prob), 1)
+
         if isinstance(r['created_at'], datetime):
             r['formatted_date'] = r['created_at'].strftime('%b %d, %Y, %I:%M %p')
         else:
             r['formatted_date'] = str(r['created_at'])
+
+    # Fetch serialized ML metrics for comparative dashboard benchmark display
+    model_metrics = None
+    try:
+        from ml.model import model_service
+        model_metrics = model_service.get_metrics()
+    except Exception as e:
+        logger.warning(f"Could not load ML metrics in dashboard summary: {e}")
 
     return {
         'total': total,
@@ -378,6 +414,7 @@ def get_dashboard_summary(db_path=None, db_url=None):
         'non_flagged': non_flagged,
         'flagged_percentage': round((flagged / total * 100), 1) if total > 0 else 0,
         'algorithm_usage': algorithm_usage,
+        'model_metrics': model_metrics,
         'screening_trend': screening_trend,
         'recent_screenings': recent
     }

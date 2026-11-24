@@ -18,7 +18,9 @@
       </h1>
       <p class="result-subline">
         Statistical Tier: <strong>{{ result.risk_level }}</strong> &nbsp;|&nbsp;
-        Evaluated by: <strong>{{ result.model_used }}</strong> &nbsp;|&nbsp;
+        Primary Evaluator: <strong>{{ result.model_used }}</strong> &nbsp;|&nbsp;
+        Model Confidence: <strong>{{ result.confidence }}%</strong> &nbsp;|&nbsp;
+        Statistical Indication P(CKD): <strong>{{ result.probability_ckd }}%</strong> &nbsp;|&nbsp;
         Date: <strong>{{ result.formatted_date }}</strong>
       </p>
     </div>
@@ -45,6 +47,74 @@
           <span class="meta-val">{{ result.formatted_date }}</span>
         </div>
       </div>
+
+      <!-- Dual-Model Comparative Evaluation (Random Forest vs Decision Tree) -->
+      {% if result.comparison and result.comparison.random_forest and result.comparison.decision_tree %}
+      <div style="background-color: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1.25rem 1.5rem; margin-bottom: 1.75rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+          <h3 style="font-family: var(--font-serif); font-size: 1.125rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="git-compare" style="width: 18px; height: 18px; color: var(--color-primary);"></i>
+            <span>Dual-Pipeline Comparative Evaluation</span>
+          </h3>
+          {% if result.comparison.agreement %}
+            <span class="badge-status badge-clear" style="font-size: 0.75rem;">
+              <i data-lucide="check-check" style="width: 12px; height: 12px;"></i>
+              <span>{{ result.comparison.consensus_label }}</span>
+            </span>
+          {% else %}
+            <span class="badge-status badge-flagged" style="font-size: 0.75rem;">
+              <i data-lucide="alert-triangle" style="width: 12px; height: 12px;"></i>
+              <span>{{ result.comparison.consensus_label }}</span>
+            </span>
+          {% endif %}
+        </div>
+        <p style="font-size: 0.8125rem; color: var(--text-subtle); margin-bottom: 1rem; line-height: 1.5;">
+          Both machine learning pipelines were independently evaluated on the submitted 24 clinical parameters to provide comparative cross-validation.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+          <!-- Random Forest Card -->
+          <div style="border: 1px solid var(--border-subtle); border-radius: 6px; padding: 1rem; background-color: var(--bg-surface-subtle);">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
+              <strong style="font-size: 0.9375rem; color: var(--color-primary);">Random Forest (Champion)</strong>
+              <span style="font-size: 0.75rem; color: var(--text-subtle);">100-Tree Ensemble</span>
+            </div>
+            <div style="font-size: 0.875rem; margin-bottom: 0.35rem;">
+              Outcome:
+              {% if result.comparison.random_forest.is_flagged %}
+                <strong style="color: var(--status-flagged-text);">CKD Indicators Detected</strong>
+              {% else %}
+                <strong style="color: var(--status-clear-text);">Indicators Not Detected</strong>
+              {% endif %}
+            </div>
+            <div style="font-size: 0.8125rem; color: var(--text-subtle); display: flex; justify-content: space-between;">
+              <span>Model Confidence: <strong>{{ result.comparison.random_forest.confidence }}%</strong></span>
+              <span>P(CKD): <strong>{{ result.comparison.random_forest.probability_ckd }}%</strong></span>
+            </div>
+          </div>
+
+          <!-- Decision Tree Card -->
+          <div style="border: 1px solid var(--border-subtle); border-radius: 6px; padding: 1rem; background-color: var(--bg-surface-subtle);">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
+              <strong style="font-size: 0.9375rem; color: var(--color-primary);">Decision Tree</strong>
+              <span style="font-size: 0.75rem; color: var(--text-subtle);">Pruned Single Tree</span>
+            </div>
+            <div style="font-size: 0.875rem; margin-bottom: 0.35rem;">
+              Outcome:
+              {% if result.comparison.decision_tree.is_flagged %}
+                <strong style="color: var(--status-flagged-text);">CKD Indicators Detected</strong>
+              {% else %}
+                <strong style="color: var(--status-clear-text);">Indicators Not Detected</strong>
+              {% endif %}
+            </div>
+            <div style="font-size: 0.8125rem; color: var(--text-subtle); display: flex; justify-content: space-between;">
+              <span>Model Confidence: <strong>{{ result.comparison.decision_tree.confidence }}%</strong></span>
+              <span>P(CKD): <strong>{{ result.comparison.decision_tree.probability_ckd }}%</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
 
       <!-- Missing Information Warning Banner -->
       {% if result.missing_parameters and result.missing_parameters|length > 0 %}

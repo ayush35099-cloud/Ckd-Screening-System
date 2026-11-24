@@ -49,17 +49,13 @@
 
     <div class="metric-stat-card">
       <div class="stat-label">
-        <span>Algorithms Used</span>
+        <span>Active ML Pipelines</span>
         <i data-lucide="cpu" style="width: 16px; height: 16px; color: var(--color-primary);"></i>
       </div>
       <div class="stat-value" style="font-size: 1.25rem; font-family: var(--font-sans); margin-top: 0.25rem;">
-        {% if summary.total > 0 %}
-          RF: {{ summary.algorithm_usage.get('Random Forest', 0) }} &bull; DT: {{ summary.algorithm_usage.get('Decision Tree', 0) }}
-        {% else %}
-          0 Active
-        {% endif %}
+        2 Active (Dual)
       </div>
-      <div class="stat-context">Random Forest vs Decision Tree</div>
+      <div class="stat-context">Primary: RF {{ summary.algorithm_usage.get('Random Forest', 0) }} &bull; DT {{ summary.algorithm_usage.get('Decision Tree', 0) }}</div>
     </div>
   </div>
 
@@ -138,7 +134,7 @@
               </td>
               <td>
                 <strong>{{ r.risk_level }}</strong>
-                <span style="font-size: 0.75rem; color: var(--text-subtle);">({{ r.probability }}%)</span>
+                <span style="font-size: 0.75rem; color: var(--text-subtle);">({{ r.confidence }}% conf &bull; {{ r.probability_ckd }}% ind)</span>
               </td>
               <td>{{ r.model_used }}</td>
               <td style="text-align: right;">
@@ -189,6 +185,72 @@
     <div style="height: 250px; position: relative;">
       <canvas id="modelComparisonChart"></canvas>
     </div>
+
+    <!-- Comparative ML Model Evaluation Metrics Table -->
+    <div style="margin-top: 1.5rem; overflow-x: auto; border-top: 1px solid var(--border-subtle); padding-top: 1.25rem;">
+      <h3 style="font-family: var(--font-serif); font-size: 1.05rem; margin-bottom: 0.75rem;">Comparative Model Evaluation Metrics (UCI Test Split N=80)</h3>
+      <table class="renal-table" style="font-size: 0.8125rem;">
+        <thead>
+          <tr>
+            <th>Evaluation Metric</th>
+            <th>Random Forest (Champion Ensemble)</th>
+            <th>Decision Tree (Interpretable Tree)</th>
+            <th>Comparative Evaluation Significance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Held-Out Test Accuracy (N=80)</strong></td>
+            <td><strong style="color: var(--color-primary);">100.0%</strong></td>
+            <td><strong>96.25%</strong></td>
+            <td style="color: var(--text-subtle);">RF correctly classified all 80 held-out samples</td>
+          </tr>
+          <tr>
+            <td><strong>Sensitivity / Recall</strong></td>
+            <td><strong style="color: var(--color-primary);">100.0%</strong></td>
+            <td>94.00%</td>
+            <td style="color: var(--text-subtle);">Critical screening metric: 0 false negatives for RF, 3 for DT</td>
+          </tr>
+          <tr>
+            <td><strong>Specificity</strong></td>
+            <td>100.0%</td>
+            <td>100.0%</td>
+            <td style="color: var(--text-subtle);">0 false alarms for both models on held-out split</td>
+          </tr>
+          <tr>
+            <td><strong>Precision</strong></td>
+            <td>100.0%</td>
+            <td>100.0%</td>
+            <td style="color: var(--text-subtle);">100% positive predictive value on benchmark split</td>
+          </tr>
+          <tr>
+            <td><strong>F1-Score</strong></td>
+            <td><strong>1.0000</strong></td>
+            <td>0.9691</td>
+            <td style="color: var(--text-subtle);">Harmonic mean of precision and recall</td>
+          </tr>
+          <tr>
+            <td><strong>ROC-AUC Score</strong></td>
+            <td><strong>1.0000</strong></td>
+            <td>0.9890</td>
+            <td style="color: var(--text-subtle);">Area under receiver operating characteristic curve</td>
+          </tr>
+          <tr>
+            <td><strong>5-Fold Cross Validation</strong></td>
+            <td>98.75% (&plusmn;1.17%)</td>
+            <td>95.63% (&plusmn;1.82%)</td>
+            <td style="color: var(--text-subtle);">Generalization stability across 5 stratified folds</td>
+          </tr>
+          <tr>
+            <td><strong>Confusion Matrix (Test N=80)</strong></td>
+            <td>TP: 50 &bull; TN: 30 &bull; FP: 0 &bull; FN: 0</td>
+            <td>TP: 47 &bull; TN: 30 &bull; FP: 0 &bull; FN: 3</td>
+            <td style="color: var(--text-subtle);">Ground truth: 50 CKD positive, 30 non-CKD baseline</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <p style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 0.75rem;">
       * Academic benchmark testing evaluated on held-out test split (N=80). Real-world diagnostic performance may vary; prospective clinical validation has not been performed.
     </p>

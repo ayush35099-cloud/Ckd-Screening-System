@@ -48,8 +48,11 @@ class TestCKDModelService(unittest.TestCase):
         self.assertEqual(result['prediction_code'], 'notckd')
         self.assertIn("not detected", result['result_label'].lower())
         self.assertLess(result['probability_ckd'], 50.0)
+        self.assertGreater(result['confidence'], 90.0)
         self.assertIn('missing_parameters', result)
         self.assertIn('probability_explanation', result)
+        self.assertIn('comparison', result)
+        self.assertTrue(result['comparison']['agreement'])
 
     def test_ckd_prediction_rf(self):
         result = self.service.predict(self.ckd_sample, model_choice='Random Forest')
@@ -57,19 +60,44 @@ class TestCKDModelService(unittest.TestCase):
         self.assertEqual(result['prediction_code'], 'ckd')
         self.assertIn("detected", result['result_label'].lower())
         self.assertGreater(result['probability_ckd'], 50.0)
+        self.assertGreater(result['confidence'], 90.0)
         self.assertGreater(len(result['key_findings']), 0)
         self.assertIn('missing_parameters', result)
         self.assertIn('probability_explanation', result)
+        self.assertIn('comparison', result)
+        self.assertTrue(result['comparison']['agreement'])
 
     def test_healthy_prediction_dt(self):
         result = self.service.predict(self.healthy_sample, model_choice='Decision Tree')
         self.assertFalse(result['is_flagged'])
         self.assertEqual(result['prediction_code'], 'notckd')
+        self.assertEqual(result['confidence'], 100.0)
+        self.assertEqual(result['probability_ckd'], 0.0)
 
     def test_ckd_prediction_dt(self):
         result = self.service.predict(self.ckd_sample, model_choice='Decision Tree')
         self.assertTrue(result['is_flagged'])
         self.assertEqual(result['prediction_code'], 'ckd')
+        self.assertEqual(result['confidence'], 100.0)
+        self.assertEqual(result['probability_ckd'], 100.0)
+
+    def test_model_confidence_calculation_and_distinction(self):
+        # Verify healthy prediction does NOT yield tiny confidence (e.g. 0.6%)
+        res_healthy = self.service.predict(self.healthy_sample, model_choice='Random Forest')
+        self.assertGreater(res_healthy['confidence'], 90.0)
+        self.assertLess(res_healthy['probability_ckd'], 10.0)
+        self.assertEqual(res_healthy['prediction_code'], 'notckd')
+
+        # Verify CKD prediction yields high confidence and high probability_ckd
+        res_ckd = self.service.predict(self.ckd_sample, model_choice='Random Forest')
+        self.assertGreater(res_ckd['confidence'], 90.0)
+        self.assertGreater(res_ckd['probability_ckd'], 90.0)
+        self.assertEqual(res_ckd['prediction_code'], 'ckd')
+
+        # Verify Decision Tree confidence
+        res_dt_healthy = self.service.predict(self.healthy_sample, model_choice='Decision Tree')
+        self.assertEqual(res_dt_healthy['confidence'], 100.0)
+        self.assertEqual(res_dt_healthy['probability_ckd'], 0.0)
 
     def test_missing_values_handled(self):
         # Partial sample with several missing parameters

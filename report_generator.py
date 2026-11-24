@@ -158,13 +158,23 @@ def generate_pdf_report(screening_data, feature_meta=None):
         banner_border = colors.HexColor('#86EFAC')
         banner_text_color = C_SUCCESS
 
-    prob_val = screening_data.get('probability', 0.0)
+    raw_prob = float(screening_data.get('probability', 0.0))
+    conf_val = screening_data.get('confidence')
+    if conf_val is not None:
+        confidence = round(float(conf_val), 1)
+    else:
+        confidence = round(raw_prob if is_flagged else (100.0 - raw_prob), 1)
+
+    prob_ckd = round(raw_prob, 1)
     risk_level = screening_data.get('risk_level', 'Moderate' if is_flagged else 'Low')
+    model_name = screening_data.get('model_used', 'Random Forest')
 
     outcome_p1 = Paragraph(
         f"<font size=10 color='{banner_text_color.hexval()}'><b>RESULT: {result_text}</b></font><br/>"
         f"<font size=8 color='#334155'>Statistical Stratification: <b>{risk_level}</b> &nbsp;|&nbsp; "
-        f"Model Confidence: <b>{prob_val}%</b> (retrospective training distribution)</font>",
+        f"Primary Evaluator: <b>{model_name}</b> &nbsp;|&nbsp; "
+        f"Model Confidence: <b>{confidence}%</b> &nbsp;|&nbsp; "
+        f"Statistical Indication P(CKD): <b>{prob_ckd}%</b></font>",
         styles['Normal']
     )
     outcome_table = Table([[outcome_p1]], colWidths=[7.4 * inch])
@@ -177,6 +187,61 @@ def generate_pdf_report(screening_data, feature_meta=None):
     ]))
     story.append(outcome_table)
     story.append(Spacer(1, 8))
+
+    # Dual-Model Comparative Cross-Validation Section (if comparison data present)
+    comparison = screening_data.get('comparison') or {}
+    rf_comp = comparison.get('random_forest')
+    dt_comp = comparison.get('decision_tree')
+    if rf_comp and dt_comp:
+        consensus_text = comparison.get('consensus_label', 'Complete Consensus')
+        is_consensus = comparison.get('agreement', True)
+        status_color = C_SUCCESS if is_consensus else C_ALERT
+
+        dual_head = Paragraph(
+            f"<b>Dual-Model Comparative Cross-Validation</b> &nbsp;&bull;&nbsp; "
+            f"<font color='{status_color.hexval()}'><b>Status: {consensus_text}</b></font>",
+            section_heading
+        )
+        story.append(dual_head)
+
+        dual_rows = [
+            [Paragraph("<b>Evaluation Pipeline</b>", body_style),
+             Paragraph("<b>Predicted Classification</b>", body_style),
+             Paragraph("<b>Model Confidence</b>", body_style),
+             Paragraph("<b>Statistical P(CKD)</b>", body_style),
+             Paragraph("<b>Benchmark Role</b>", body_style)]
+        ]
+
+        # Random Forest Row
+        dual_rows.append([
+            Paragraph("<b>Random Forest</b>", body_bold),
+            Paragraph("Flagged (Indicators Detected)" if rf_comp.get('is_flagged') else "Non-Flagged (Baseline)", body_style),
+            Paragraph(f"<b>{rf_comp.get('confidence', 0.0)}%</b>", body_style),
+            Paragraph(f"{rf_comp.get('probability_ckd', 0.0)}%", body_style),
+            Paragraph("Primary Champion Ensemble (100% test sensitivity)", body_style)
+        ])
+
+        # Decision Tree Row
+        dual_rows.append([
+            Paragraph("<b>Decision Tree</b>", body_bold),
+            Paragraph("Flagged (Indicators Detected)" if dt_comp.get('is_flagged') else "Non-Flagged (Baseline)", body_style),
+            Paragraph(f"<b>{dt_comp.get('confidence', 0.0)}%</b>", body_style),
+            Paragraph(f"{dt_comp.get('probability_ckd', 0.0)}%", body_style),
+            Paragraph("Comparative Tree Classifier (94% test sensitivity)", body_style)
+        ])
+
+        dual_table = Table(dual_rows, colWidths=[1.5 * inch, 1.8 * inch, 1.1 * inch, 1.1 * inch, 1.9 * inch])
+        dual_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#F1F5F9')),
+            ('BOX', (0,0), (-1,-1), 0.5, C_BORDER),
+            ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
+            ('TOPPADDING', (0,0), (-1,-1), 3),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+            ('LEFTPADDING', (0,0), (-1,-1), 5),
+            ('RIGHTPADDING', (0,0), (-1,-1), 5),
+        ]))
+        story.append(dual_table)
+        story.append(Spacer(1, 8))
 
     # Missing Values Warning (if any)
     missing_params = screening_data.get('missing_parameters') or []

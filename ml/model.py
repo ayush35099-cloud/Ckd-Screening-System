@@ -57,25 +57,80 @@ class CKDModelService:
     def get_metrics(self):
         return self.metrics
 
+    def _evaluate_single_pipeline(self, pipeline, input_df, model_name):
+        """
+        Evaluates a single scikit-learn Pipeline on prepared input_df.
+        Returns normalized predictions, class probabilities, and true model confidence.
+        """
+        pred_label_idx = int(pipeline.predict(input_df)[0])  # 1 = ckd, 0 = notckd
+        is_flagged = bool(pred_label_idx == 1)
+
+        # Determine class probabilities
+        if hasattr(pipeline, "predict_proba"):
+            probabilities = pipeline.predict_proba(input_df)[0]
+            # classes_ are [0, 1] where 0=notckd, 1=ckd
+            prob_notckd = float(probabilities[0])
+            prob_ckd = float(probabilities[1])
+        else:
+            prob_ckd = 1.0 if is_flagged else 0.0
+            prob_notckd = 0.0 if is_flagged else 1.0
+
+        # Model confidence is the probability of the predicted class:
+        # For notckd: confidence = prob_notckd (e.g. 99.5%)
+        # For ckd:    confidence = prob_ckd    (e.g. 98.2%)
+        conf_ratio = prob_ckd if is_flagged else prob_notckd
+        confidence = round(conf_ratio * 100, 1)
+        prob_ckd_pct = round(prob_ckd * 100, 1)
+        prob_notckd_pct = round(prob_notckd * 100, 1)
+
+        if is_flagged:
+            result_label = "CKD indicators detected – further clinical evaluation recommended."
+        else:
+            result_label = "CKD indicators not detected by this model – this result does not rule out CKD."
+
+        # Risk tier stratification based on statistical probability of CKD markers
+        if prob_ckd >= 0.70:
+            risk_level = "High Statistical Indication"
+            risk_badge = "risk-high"
+        elif prob_ckd >= 0.35:
+            risk_level = "Moderate Statistical Indication"
+            risk_badge = "risk-moderate"
+        else:
+            risk_level = "Low Statistical Indication"
+            risk_badge = "risk-low"
+
+        return {
+            'model_name': model_name,
+            'is_flagged': is_flagged,
+            'prediction_code': 'ckd' if is_flagged else 'notckd',
+            'result_label': result_label,
+            'confidence': confidence,
+            'probability_ckd': prob_ckd_pct,
+            'probability_notckd': prob_notckd_pct,
+            'probability_raw': round(prob_ckd, 4),
+            'risk_level': risk_level,
+            'risk_badge': risk_badge
+        }
+
     def predict(self, input_dict, model_choice='Random Forest'):
         """
         Takes raw dictionary of patient parameters.
+        Evaluates both primary chosen model and comparative dual pipeline.
         Returns:
-            dict containing prediction ('ckd' or 'notckd'),
-            confidence / probability,
-            risk_level ('Low', 'Moderate', 'High'),
-            model_used,
-            missing_parameters list,
-            key_findings list,
-            recommendation string,
-            disclaimer string.
+            dict containing primary prediction, true model confidence,
+            statistical CKD probability, risk_level, key findings,
+            recommendation, and dual-model comparative evaluation.
         """
         if model_choice.lower() in ['decision tree', 'decisiontree', 'dt'] and self.dt_pipeline is not None:
-            pipeline = self.dt_pipeline
-            model_name = 'Decision Tree'
+            primary_pipeline = self.dt_pipeline
+            primary_name = 'Decision Tree'
+            secondary_pipeline = self.rf_pipeline
+            secondary_name = 'Random Forest'
         else:
-            pipeline = self.rf_pipeline
-            model_name = 'Random Forest'
+            primary_pipeline = self.rf_pipeline
+            primary_name = 'Random Forest'
+            secondary_pipeline = self.dt_pipeline
+            secondary_name = 'Decision Tree'
 
         features_def = self.metadata['features']
         row_data = {}
@@ -106,30 +161,32 @@ class CKDModelService:
         # Convert to single-row DataFrame with expected column order
         input_df = pd.DataFrame([row_data])
 
-        # Prediction and probabilities
-        pred_label_idx = pipeline.predict(input_df)[0] # 1 = ckd, 0 = notckd
-        probabilities = pipeline.predict_proba(input_df)[0] # [prob_notckd, prob_ckd]
-        prob_ckd = float(probabilities[1])
-        prob_notckd = float(probabilities[0])
+        # Execute primary model evaluation
+        primary_eval = self._evaluate_single_pipeline(primary_pipeline, input_df, primary_name)
 
-        is_flagged = bool(pred_label_idx == 1)
-
-        # Exact, responsible medical phrasing
-        if is_flagged:
-            result_label = "CKD indicators detected – further clinical evaluation recommended."
+        # Execute secondary model evaluation for dual-model comparative cross-validation
+        if secondary_pipeline is not None:
+            secondary_eval = self._evaluate_single_pipeline(secondary_pipeline, input_df, secondary_name)
         else:
-            result_label = "CKD indicators not detected by this model – this result does not rule out CKD."
+            secondary_eval = None
 
-        # Risk tier stratification based on model statistical probability
-        if prob_ckd >= 0.70:
-            risk_level = "High Statistical Indication"
-            risk_badge = "risk-high"
-        elif prob_ckd >= 0.35:
-            risk_level = "Moderate Statistical Indication"
-            risk_badge = "risk-moderate"
+        # Build dual-model comparison structure
+        if primary_name == 'Random Forest':
+            rf_summary = primary_eval
+            dt_summary = secondary_eval
         else:
-            risk_level = "Low Statistical Indication"
-            risk_badge = "risk-low"
+            rf_summary = secondary_eval
+            dt_summary = primary_eval
+
+        agreement = bool(rf_summary['prediction_code'] == dt_summary['prediction_code']) if (rf_summary and dt_summary) else True
+        consensus_label = "Complete Consensus (Both Models Agree)" if agreement else "Model Divergence (Clinical Follow-Up Recommended)"
+
+        comparison = {
+            'random_forest': rf_summary,
+            'decision_tree': dt_summary,
+            'agreement': agreement,
+            'consensus_label': consensus_label
+        }
 
         # Analyze key contributing abnormal flags from entered laboratory parameters
         key_findings = []
@@ -203,7 +260,7 @@ class CKDModelService:
             })
 
         # Clinical Guidance / Action Recommendation
-        if is_flagged:
+        if primary_eval['is_flagged']:
             recommendation = (
                 "The machine learning screening pipeline has identified laboratory indicators consistent with Chronic Kidney Disease. "
                 "Further clinical correlation by a qualified healthcare professional or nephrologist is recommended, "
@@ -218,28 +275,32 @@ class CKDModelService:
             )
 
         probability_explanation = (
-            f"The computed probability score ({round(prob_ckd * 100, 1)}%) reflects the mathematical confidence "
-            f"of the {model_name} ensemble on the retrospective UCI training distribution. "
-            f"It does NOT represent an individual patient's medically validated CKD risk percentage. "
-            f"Independent prospective clinical validation has not been performed."
+            f"The {primary_name} model predicts '{primary_eval['result_label'].split('–')[0].strip()}' with "
+            f"{primary_eval['confidence']}% model confidence ({primary_eval['probability_ckd']}% statistical probability of CKD markers vs "
+            f"{primary_eval['probability_notckd']}% baseline). This score represents mathematical class probability on the "
+            f"retrospective UCI training distribution and does NOT represent an individual patient's "
+            f"medically validated diagnostic certainty."
         )
 
         return {
-            'is_flagged': is_flagged,
-            'result_label': result_label,
-            'prediction_code': 'ckd' if is_flagged else 'notckd',
-            'probability_ckd': round(prob_ckd * 100, 1),
-            'probability_notckd': round(prob_notckd * 100, 1),
-            'probability_raw': round(prob_ckd, 4),
-            'risk_level': risk_level,
-            'risk_badge': risk_badge,
-            'model_used': model_name,
+            'is_flagged': primary_eval['is_flagged'],
+            'result_label': primary_eval['result_label'],
+            'prediction_code': primary_eval['prediction_code'],
+            'confidence': primary_eval['confidence'],
+            'probability': primary_eval['probability_ckd'],
+            'probability_ckd': primary_eval['probability_ckd'],
+            'probability_notckd': primary_eval['probability_notckd'],
+            'probability_raw': primary_eval['probability_raw'],
+            'risk_level': primary_eval['risk_level'],
+            'risk_badge': primary_eval['risk_badge'],
+            'model_used': primary_name,
             'missing_parameters': missing_params,
             'missing_count': len(missing_params),
             'key_findings': key_findings,
             'recommendation': recommendation,
             'probability_explanation': probability_explanation,
-            'evaluated_parameters': row_data
+            'evaluated_parameters': row_data,
+            'comparison': comparison
         }
 
 model_service = CKDModelService()
