@@ -48,6 +48,7 @@
   </div>
 
   <form id="ckdScreeningForm" action="{{ url_for('screen_submit') }}" method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     
     <!-- 1. Patient Demographics & Vitals -->
     <fieldset class="clinical-fieldset">
@@ -55,7 +56,7 @@
         <i data-lucide="user" style="color: var(--color-primary);"></i>
         <div>
           <h2 style="margin-bottom: 0.15rem;">1. Patient Demographics & Vitals</h2>
-          <span style="font-size: 0.8125rem; color: var(--text-subtle); display: block;">Patient ID, Patient Name, and Biological Sex are strictly administrative metadata for clinical record-keeping and PDF reports; they are not passed to the 24-feature ML model.</span>
+          <span style="font-size: 0.8125rem; color: var(--text-subtle); display: block;">Patient ID, Patient Name, Biological Sex, and optional Email are administrative metadata for record-keeping and report delivery; they are not passed to the 24-feature ML model.</span>
         </div>
       </div>
 
@@ -116,6 +117,28 @@
             <option value="Decision Tree">Decision Tree (Single Decision Tree)</option>
           </select>
           <span class="input-hint">Random Forest benchmarked at 99.0% CV recall on training distribution</span>
+        </div>
+      </div>
+
+      <!-- Optional Automatic Patient Email Report Delivery -->
+      <div style="margin-top: 1.25rem; padding: 1rem 1.25rem; background-color: var(--bg-surface-subtle); border: 1px solid var(--border-subtle); border-radius: 6px;">
+        <div class="form-row-grid-2" style="align-items: start; gap: 1rem;">
+          <div class="input-group-renal">
+            <div class="input-label-row">
+              <label for="patient_email" class="renal-label">Patient Email Address (Optional)</label>
+              <span class="ref-pill">Secure Link Delivery</span>
+            </div>
+            <input type="email" id="patient_email" name="patient_email" class="renal-input" placeholder="e.g. patient@example.com" autocomplete="off">
+            <span class="input-hint">Optional. Receives a secure, time-limited PDF report download link after screening.</span>
+          </div>
+
+          <div class="input-group-renal" style="padding-top: 1.5rem;">
+            <label for="email_consent" style="display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; font-size: 0.875rem; color: var(--text-main);">
+              <input type="checkbox" id="email_consent" name="email_consent" value="yes" style="margin-top: 0.25rem; width: 16px; height: 16px; accent-color: var(--color-primary); flex-shrink: 0;">
+              <span>I consent to receiving my screening report at the email address provided.</span>
+            </label>
+            <span class="input-hint" style="margin-left: 1.6rem;">Explicit consent is required before RenalCare sends an automated report email.</span>
+          </div>
         </div>
       </div>
     </fieldset>

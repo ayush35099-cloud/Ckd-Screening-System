@@ -1,0 +1,23 @@
+RenalCare — Smarter Screening. Earlier Awareness.
+================================================
+
+{% if patient_name %}Hello {{ patient_name }},{% else %}Hello,{% endif %}
+
+Your RenalCare CKD screening has been completed successfully on {{ screening_date }}.
+
+Your screening report is ready. You can securely access and download your PDF report using the link below:
+
+Download Your Report:
+{{ download_url }}
+
+SECURITY & LINK EXPIRY:
+For your privacy, this secure link will expire after {{ expiry_hours }} hours.
+If the link expires, please contact your clinic or healthcare worker to issue a replacement link.
+
+IMPORTANT MEDICAL NOTICE:
+Please remember that this report is intended for preliminary screening support and is not a medical diagnosis. Consult a qualified healthcare professional or nephrologist for interpretation and further evaluation.
+
+--
+RenalCare Community Health Initiative
+Department of Artificial Intelligence & Machine Learning
+Dayananda Sagar College of Engineering, Bengaluru

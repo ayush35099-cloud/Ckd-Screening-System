@@ -114,6 +114,7 @@ To ensure clinical and mathematical rigor, RenalCare strictly distinguishes betw
 8. **REST API Suite:** Endpoints for health checks, model inference, dashboard statistics, history queries, and PDF streaming.
 9. **Batch CSV Screening:** Community health camp feature supporting batch uploads of up to 100 patient records in a single CSV file, with downloadable result summaries.
 10. **CSV History Export:** Export filtered clinical logs to CSV with built-in protection against spreadsheet formula injection.
+11. **Automatic Email Report Delivery:** Consent-gated transactional email delivery via Resend issuing secure, 24-hour cryptographic PDF download links with automatic retry handling and manual resend controls.
 
 ---
 
@@ -124,6 +125,7 @@ ckd-screening-system/
 ├── app.py                 # Flask application entry point & route definitions
 ├── config.py              # Configuration module (environment variables & settings)
 ├── database.py            # SQLite & PostgreSQL database abstraction layer
+├── email_service.py       # Modular email provider, token security & retry engine
 ├── report_generator.py    # ReportLab clinical PDF generation engine
 ├── Procfile               # Production WSGI process definition (Gunicorn)
 ├── render.yaml            # Render Blueprint deployment configuration
@@ -157,13 +159,18 @@ ckd-screening-system/
 │   ├── index.html         # Editorial landing page
 │   ├── dashboard.html     # Clinical dashboard with charts & activity
 │   ├── screen.html        # 24-parameter structured screening form
-│   ├── result.html        # Prediction outcome, findings & recommendations
+│   ├── result.html        # Prediction outcome, email delivery & recommendations
 │   ├── history.html       # Searchable & filterable history records
-│   └── research.html      # Technical ML methodology & benchmark report
+│   ├── research.html      # Technical ML methodology & benchmark report
+│   ├── report_link_error.html # Branded expired/invalid secure download link page
+│   └── emails/
+│       ├── report_ready.html  # Patient HTML notification email
+│       └── report_ready.txt   # Plain-text notification fallback
 └── tests/
-    ├── test_model.py      # ML unit tests
-    ├── test_pdf.py        # PDF generation tests
-    └── test_routes.py     # Web view & REST API route integration tests
+    ├── test_model.py          # ML unit tests
+    ├── test_pdf.py            # PDF generation tests
+    ├── test_routes.py         # Web view & REST API route integration tests
+    └── test_email_delivery.py # Email workflow, consent, tokens & security tests
 ```
 
 ---
@@ -205,7 +212,7 @@ python ml/train.py
 ```bash
 python -m unittest discover -s tests -p "test_*.py"
 ```
-*(All 46 unit and integration tests should pass in under 1 second).*
+*(All 59 unit and integration tests should pass cleanly against isolated temporary test databases).*
 
 ### 6. Start the Development Server
 ```bash
@@ -315,6 +322,51 @@ GET /api/dashboard
 ```http
 GET /api/report/<screening_uuid>
 ```
+
+---
+
+## Automatic Patient Email Report Delivery
+
+RenalCare includes an optional, consent-gated **Automatic Email Report Delivery System** powered by a modular provider interface (with [Resend](https://resend.com/) built in).
+
+### Clinical Workflow & Consent
+1. **Optional Email & Explicit Consent:** During patient intake (`/screen`), the healthcare worker may optionally enter the patient's email address and check:
+   > *"I consent to receiving my screening report at the email address provided."*
+2. **Non-Blocking Screening:** Missing, empty, or invalid email addresses never prevent screening completion or PDF generation. Emails are **never** dispatched if consent is absent.
+3. **PDF-First Guarantee:** RenalCare generates and verifies the clinical PDF report *before* issuing a download token or contacting the email provider.
+4. **Delivery Status Visibility:** The screening result page (`/result/<screening_uuid>`) displays live delivery status (`Email Sent`, `Delivery Pending`, `Delivery Failed`, `Email Not Provided`, `Email Not Configured`, or `Consent Not Provided`) without exposing patient email addresses in dashboard analytics or history exports.
+
+### Security, Privacy & Time-Limited Download Links
+- **Zero Clinical Data in Emails:** Subject lines (`"Your RenalCare Screening Report Is Ready"`) and email bodies intentionally exclude CKD risk predictions, lab parameters, and patient identifiers.
+- **Cryptographic Tokens:** Each delivery creates a 256-bit `secrets.token_urlsafe(32)` token and stores **only its SHA-256 hash** (`token_hash`) in `email_deliveries` alongside a **24-hour UTC expiry** (`token_expiry`).
+- **HTTPS-Only Links & Clean Error Handling:** Patients download reports via `https://<app>/report/download/<token>` with `Cache-Control: no-store`. Expired links return HTTP `410 Gone` with clear instructions to contact the clinic; original screening records remain intact.
+- **Authorized Resend & Abuse Protection:** Authorized healthcare workers (clinician session + CSRF token + rate limiting) can issue a fresh 24-hour replacement link from `/result/<screening_uuid>`, automatically invalidating previous tokens.
+
+### Retry & Failure Handling
+- Transient errors (`429 rate_limit_exceeded`, `5xx`, network timeouts) are retried up to 3 total attempts using bounded exponential backoff and `Idempotency-Key` headers to prevent duplicate sends.
+- Permanent errors (`401`, `403`, `400/422`, `daily_quota_exceeded`) fail immediately without spinning retries.
+- **Free-Tier Background Worker Note:** To stay compatible with Render's free tier without external Redis/Celery infrastructure, email dispatch runs in a daemon background thread inside Gunicorn. If the free container spins down mid-retry, healthcare workers can safely trigger a manual resend from the screening result page.
+
+### Resend Setup & Free-Tier Verification Limitations
+Set the following environment variables in your `.env` file or Render Web Service **Environment** tab:
+
+| Variable | Description | Example / Default |
+| :--- | :--- | :--- |
+| `RESEND_API_KEY` | Resend API key (keep secret; leave blank to disable email cleanly) | `re_...` |
+| `MAIL_FROM` | Verified sender identity permitted by Resend | `RenalCare <onboarding@resend.dev>` |
+| `APP_BASE_URL` | Public HTTPS base URL used inside email download links | `https://ckd-screening-system.onrender.com` |
+| `EMAIL_REPORT_ENABLED` | Master toggle (`true` / `false`) | `true` |
+| `DOWNLOAD_TOKEN_EXPIRY_HOURS` | Token validity duration in hours | `24` |
+
+> **Important Free-Tier Limitation (Stage A Testing):** Without a verified custom domain in Resend, accounts using `onboarding@resend.dev` can **only deliver to the account owner's verified email address**. Arbitrary patient email addresses will return a `403` verification restriction until custom domain DNS authentication is configured.
+
+### Stage B: Future Custom Domain & Email Authentication (SPF, DKIM, DMARC)
+When deploying with an institutional or clinic domain (e.g. `reports@renalcare.org`), add and verify the domain in Resend by publishing the required DNS records:
+- **SPF (Sender Policy Framework):** Authorizes Resend's mail servers to send on behalf of your domain.
+- **DKIM (DomainKeys Identified Mail):** Cryptographically signs outgoing emails so receiving mail servers verify authenticity and integrity.
+- **DMARC (Domain-based Message Authentication, Reporting, and Conformance):** Instructs recipient servers how to handle messages that fail SPF/DKIM alignment, protecting against spoofing.
+
+After verification, update `MAIL_FROM` to `RenalCare <reports@yourdomain.com>`. Always comply with clinical privacy laws and understand that no technical setup can guarantee Primary Inbox placement across all external mail providers.
 
 ---
 

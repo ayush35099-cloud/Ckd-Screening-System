@@ -209,23 +209,39 @@ function initScreeningForm() {
         });
     }
 
+    function escapeHtml(str) {
+        return String(str || '').replace(/[&<>"']/g, function(ch) {
+            return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];
+        });
+    }
+
     function buildReviewSummary() {
         const summaryContainer = document.getElementById('reviewSummaryContent');
         if (!summaryContainer) return;
 
         const formData = new FormData(form);
-        const ptId = formData.get('patient_id') || 'Auto-assigned';
-        const age = formData.get('age') || 'N/A';
-        const model = formData.get('model_choice') || 'Random Forest';
-        const bp = formData.get('bp') || 'N/A';
-        const sc = formData.get('sc') || 'N/A';
-        const hemo = formData.get('hemo') || 'N/A';
-        const al = formData.get('al') || '0';
+        const ptId = escapeHtml(formData.get('patient_id') || 'Auto-assigned');
+        const age = escapeHtml(formData.get('age') || 'N/A');
+        const model = escapeHtml(formData.get('model_choice') || 'Random Forest');
+        const bp = escapeHtml(formData.get('bp') || 'N/A');
+        const sc = escapeHtml(formData.get('sc') || 'N/A');
+        const hemo = escapeHtml(formData.get('hemo') || 'N/A');
+        const al = escapeHtml(formData.get('al') || '0');
+        const rawEmail = (formData.get('patient_email') || '').trim();
+        const emailConsent = formData.get('email_consent') === 'yes';
+
+        let emailSummaryLine = 'Not provided (PDF downloadable locally)';
+        if (rawEmail) {
+            emailSummaryLine = emailConsent
+                ? `${escapeHtml(rawEmail)} (Consent recorded — auto-email enabled)`
+                : `${escapeHtml(rawEmail)} (Consent unchecked — email will NOT be sent)`;
+        }
 
         summaryContainer.innerHTML = `
             <div style="background-color: var(--bg-surface-subtle); padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
                 <p style="margin-bottom: 0.25rem;"><strong>Patient ID:</strong> ${ptId} &nbsp;|&nbsp; <strong>Age:</strong> ${age}</p>
                 <p style="margin-bottom: 0.25rem;"><strong>Screening Model:</strong> ${model}</p>
+                <p style="margin-bottom: 0.25rem; font-size: 0.85rem;"><strong>Email Delivery:</strong> ${emailSummaryLine}</p>
                 <p style="font-size: 0.85rem; color: var(--text-subtle);">Key Lab Samples: Creatinine: ${sc} mg/dL, Hemoglobin: ${hemo} g/dL, Albumin: Grade ${al}, BP: ${bp} mm/Hg</p>
             </div>
             <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">

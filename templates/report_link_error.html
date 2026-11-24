@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  {% if error_type == 'expired' %}Report Link Expired — RenalCare{% else %}Report Link Unavailable — RenalCare{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container-wide" style="max-width: 720px; padding: 4rem 1.5rem;">
+  <div style="background-color: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 2.5rem; box-shadow: var(--shadow-md); text-align: center;">
+    <div style="width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 1.25rem auto; display: flex; align-items: center; justify-content: center; {% if error_type == 'expired' %}background-color: var(--status-moderate-bg); color: var(--status-moderate-text);{% else %}background-color: var(--status-flagged-bg); color: var(--status-flagged-text);{% endif %}">
+      {% if error_type == 'expired' %}
+        <i data-lucide="clock" style="width: 28px; height: 28px;"></i>
+      {% else %}
+        <i data-lucide="shield-alert" style="width: 28px; height: 28px;"></i>
+      {% endif %}
+    </div>
+
+    <span class="section-eyebrow" style="display: block; margin-bottom: 0.5rem;">
+      Secure Report Access
+    </span>
+
+    {% if error_type == 'expired' %}
+      <h1 style="font-family: var(--font-serif); font-size: 1.75rem; margin-bottom: 1rem;">
+        This Report Download Link Has Expired
+      </h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; max-width: 540px; margin: 0 auto 1.5rem auto;">
+        For patient privacy and security, RenalCare report download links automatically expire after 24 hours.
+        Your underlying screening record and clinical report remain safely preserved at your clinic.
+      </p>
+      <div style="background-color: var(--bg-surface-subtle); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 1.15rem 1.25rem; text-align: left; max-width: 540px; margin: 0 auto 1.75rem auto;">
+        <strong style="font-size: 0.9rem; color: var(--color-primary); display: block; margin-bottom: 0.35rem;">
+          How to obtain a new download link
+        </strong>
+        <p style="font-size: 0.84rem; color: var(--text-muted); margin: 0; line-height: 1.55;">
+          Please contact the healthcare worker or Primary Health Centre staff who performed your screening. An authorized healthcare worker can immediately generate a fresh 24-hour download link and resend your report email.
+        </p>
+      </div>
+    {% else %}
+      <h1 style="font-family: var(--font-serif); font-size: 1.75rem; margin-bottom: 1rem;">
+        Download Link Invalid or Unavailable
+      </h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; max-width: 540px; margin: 0 auto 1.5rem auto;">
+        The requested report link is invalid, has been replaced by a newer link, or cannot be verified. Please verify that you copied the complete link from your RenalCare email, or ask your healthcare worker to resend the report.
+      </p>
+    {% endif %}
+
+    <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
+      <a href="{{ url_for('index') }}" class="btn-renal btn-renal-primary">
+        <i data-lucide="home"></i>
+        <span>Return to RenalCare Home</span>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

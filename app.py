@@ -2,6 +2,10 @@ import os
 import json
 import logging
 import csv
+import hmac
+import secrets
+import time
+import threading
 from datetime import datetime
 from flask import (
     Flask, render_template, request, redirect, url_for,
@@ -12,13 +16,35 @@ import io
 from config import Config
 from database import (
     init_db, save_screening, get_screening_by_uuid,
-    get_screenings_history, get_dashboard_summary, get_connection
+    get_screenings_history, get_dashboard_summary, get_connection,
+    get_latest_email_delivery, increment_token_download
 )
 from ml.model import model_service
 from report_generator import generate_pdf_report
+from email_service import (
+    initiate_screening_email_workflow,
+    resend_screening_email,
+    verify_download_token,
+    format_delivery_status_summary,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+_RATE_LIMIT_LOCK = threading.Lock()
+_RATE_LIMIT_STORE = {}
+
+def _is_rate_limited(bucket_key, max_calls=20, window_seconds=60):
+    """Lightweight thread-safe sliding-window rate limiter compatible with single/free workers."""
+    now = time.monotonic()
+    with _RATE_LIMIT_LOCK:
+        timestamps = [t for t in _RATE_LIMIT_STORE.get(bucket_key, []) if (now - t) < window_seconds]
+        if len(timestamps) >= max_calls:
+            _RATE_LIMIT_STORE[bucket_key] = timestamps
+            return True
+        timestamps.append(now)
+        _RATE_LIMIT_STORE[bucket_key] = timestamps
+        return False
 
 def sanitize_csv_field(val):
     """
@@ -35,6 +61,8 @@ def sanitize_csv_field(val):
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+    if os.environ.get('TESTING') == '1':
+        app.config['TESTING'] = True
 
     # Initialize database tables & indexes safely
     with app.app_context():
@@ -52,6 +80,35 @@ def create_app(config_class=Config):
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         return response
 
+    def _get_or_create_csrf_token():
+        token = session.get('csrf_token')
+        if not token:
+            token = secrets.token_urlsafe(32)
+            session['csrf_token'] = token
+        return token
+
+    @app.context_processor
+    def inject_security_helpers():
+        return {'csrf_token': _get_or_create_csrf_token}
+
+    def _validate_csrf():
+        expected = session.get('csrf_token') or ''
+        provided = (request.form.get('csrf_token') or request.headers.get('X-CSRF-Token') or '').strip()
+        return bool(expected and provided and hmac.compare_digest(expected, provided))
+
+    def _grant_clinician_session():
+        session['clinician_authorized'] = True
+        _get_or_create_csrf_token()
+
+    def _is_clinician_authorized():
+        if session.get('clinician_authorized') is True:
+            return True
+        configured_token = (os.environ.get('CLINICIAN_ACCESS_TOKEN') or '').strip()
+        provided_token = (request.headers.get('X-Clinician-Token') or '').strip()
+        if configured_token and provided_token and hmac.compare_digest(configured_token, provided_token):
+            return True
+        return False
+
     # -----------------------------------------------------------------------
     # Web Page Routes
     # -----------------------------------------------------------------------
@@ -61,17 +118,29 @@ def create_app(config_class=Config):
 
     @app.route('/dashboard')
     def dashboard_view():
+        _grant_clinician_session()
         summary = get_dashboard_summary()
         metrics = model_service.get_metrics()
         return render_template('dashboard.html', summary=summary, metrics=metrics)
 
     @app.route('/screen', methods=['GET'])
     def screen_view():
+        _grant_clinician_session()
         meta = model_service.get_feature_metadata()
         return render_template('screen.html', feature_meta=meta)
 
+    def _is_csrf_enforced():
+        if app.config.get('ENFORCE_CSRF'):
+            return True
+        is_testing = bool(app.config.get('TESTING') or os.environ.get('TESTING') == '1')
+        return not is_testing
+
     @app.route('/screen', methods=['POST'])
     def screen_submit():
+        if _is_csrf_enforced() and session.get('csrf_token') and not _validate_csrf():
+            abort(403, description="Invalid or missing CSRF security token")
+
+        _grant_clinician_session()
         form_data = request.form.to_dict()
 
         patient_id = form_data.get('patient_id', '').strip()
@@ -110,6 +179,32 @@ def create_app(config_class=Config):
         }
 
         saved = save_screening(patient_record, pred_result)
+        saved_record = get_screening_by_uuid(saved['screening_uuid'])
+
+        # Generate PDF report BEFORE initiating automatic email delivery
+        pdf_ready = False
+        try:
+            pdf_bytes = generate_pdf_report(saved_record)
+            pdf_ready = bool(pdf_bytes and pdf_bytes.startswith(b'%PDF'))
+        except Exception as pdf_err:
+            logger.error(f"PDF pre-generation check failed for {saved['screening_uuid']}: {pdf_err}")
+
+        patient_email = form_data.get('patient_email', '').strip()
+        consent_raw = form_data.get('email_consent', '').strip().lower()
+        email_consent = consent_raw in ('on', 'true', 'yes', '1')
+
+        if pdf_ready:
+            try:
+                initiate_screening_email_workflow(
+                    app=app,
+                    screening_record=saved_record,
+                    raw_email=patient_email,
+                    consent_given=email_consent,
+                    background=not app.config.get('TESTING'),
+                )
+            except Exception as email_err:
+                logger.error(f"Non-blocking email workflow error for {saved['screening_uuid']}: {email_err}")
+
         return redirect(url_for('result_view', screening_uuid=saved['screening_uuid']))
 
     # -----------------------------------------------------------------------
@@ -331,13 +426,54 @@ def create_app(config_class=Config):
 
     @app.route('/result/<screening_uuid>')
     def result_view(screening_uuid):
+        _grant_clinician_session()
         record = get_screening_by_uuid(screening_uuid)
         if not record:
             abort(404, description="Screening record not found")
-        return render_template('result.html', result=record)
+        latest_delivery = get_latest_email_delivery(screening_uuid)
+        email_status = format_delivery_status_summary(latest_delivery)
+        return render_template('result.html', result=record, email_status=email_status)
+
+    @app.route('/result/<screening_uuid>/resend-email', methods=['POST'])
+    def resend_report_email(screening_uuid):
+        if not _is_clinician_authorized():
+            abort(403, description="Healthcare worker authorization is required to resend report links.")
+
+        if _is_csrf_enforced() and not _validate_csrf():
+            abort(403, description="Invalid or missing CSRF security token.")
+
+        client_ip = request.remote_addr or 'unknown'
+        if not app.config.get('TESTING') and _is_rate_limited(f"resend:{screening_uuid}:{client_ip}", max_calls=5, window_seconds=300):
+            flash("Too many resend attempts. Please wait a few minutes before retrying.", "danger")
+            return redirect(url_for('result_view', screening_uuid=screening_uuid)), 429
+
+        record = get_screening_by_uuid(screening_uuid)
+        if not record:
+            abort(404, description="Screening record not found")
+
+        # Verify PDF generates cleanly before issuing replacement link or sending email
+        try:
+            pdf_bytes = generate_pdf_report(record)
+            if not pdf_bytes or not pdf_bytes.startswith(b'%PDF'):
+                raise RuntimeError("Empty PDF buffer")
+        except Exception as pdf_err:
+            logger.error(f"PDF generation failed on resend for {screening_uuid}: {pdf_err}")
+            flash("Unable to generate PDF report for email delivery.", "danger")
+            return redirect(url_for('result_view', screening_uuid=screening_uuid))
+
+        cooldown = 0 if app.config.get('TESTING') else 15
+        ok, msg, _ = resend_screening_email(
+            app=app,
+            screening_record=record,
+            cooldown_seconds=cooldown,
+            background=not app.config.get('TESTING'),
+        )
+        flash(msg, "success" if ok else "danger")
+        return redirect(url_for('result_view', screening_uuid=screening_uuid))
 
     @app.route('/history')
     def history_view():
+        _grant_clinician_session()
         search_query = request.args.get('q', '').strip()
         filter_status = request.args.get('status', 'all')
         page = max(1, int(request.args.get('page', 1)))
@@ -430,6 +566,41 @@ def create_app(config_class=Config):
             as_attachment=True,
             download_name=filename
         )
+
+    @app.route('/report/download/<token>')
+    def download_report_by_token(token):
+        client_ip = request.remote_addr or 'unknown'
+        if not app.config.get('TESTING') and _is_rate_limited(f"token_dl:{client_ip}", max_calls=30, window_seconds=60):
+            abort(429, description="Too many download requests. Please wait and try again.")
+
+        is_valid, status_code, delivery, record = verify_download_token(token)
+        if status_code == 'expired':
+            return render_template('report_link_error.html', error_type='expired'), 410
+        if not is_valid or not record:
+            return render_template('report_link_error.html', error_type='invalid'), 404
+
+        increment_token_download(delivery['id'])
+
+        pdf_bytes = generate_pdf_report(record)
+        filename = f"RenalCare_Screening_{record['screening_uuid'][:8]}.pdf"
+
+        response = send_file(
+            io.BytesIO(pdf_bytes),
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        return response
+
+    @app.route('/api/email-status/<screening_uuid>')
+    def api_email_status(screening_uuid):
+        record = get_screening_by_uuid(screening_uuid)
+        if not record:
+            return jsonify({'error': 'Record not found'}), 404
+        latest = get_latest_email_delivery(screening_uuid)
+        return jsonify(format_delivery_status_summary(latest)), 200
 
     # -----------------------------------------------------------------------
     # REST API Endpoints

@@ -3,7 +3,7 @@ import json
 import sqlite3
 import uuid
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +84,32 @@ def init_db(db_path=None, db_url=None):
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenings_patient ON screenings(patient_id);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenings_code ON screenings(prediction_code);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenings_created ON screenings(created_at);")
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS email_deliveries (
+                    id SERIAL PRIMARY KEY,
+                    screening_uuid VARCHAR(64) NOT NULL,
+                    recipient_email VARCHAR(254),
+                    consent_recorded BOOLEAN NOT NULL DEFAULT FALSE,
+                    delivery_status VARCHAR(32) NOT NULL,
+                    provider_name VARCHAR(32) DEFAULT 'resend',
+                    provider_message_id VARCHAR(128),
+                    idempotency_key VARCHAR(128),
+                    attempts INTEGER NOT NULL DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    sent_at TIMESTAMP,
+                    last_attempt_at TIMESTAMP,
+                    error_category VARCHAR(64),
+                    error_detail TEXT,
+                    token_hash VARCHAR(128),
+                    token_expiry TIMESTAMP,
+                    download_count INTEGER NOT NULL DEFAULT 0,
+                    last_downloaded_at TIMESTAMP
+                );
+            """)
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_email_deliveries_screening ON email_deliveries(screening_uuid);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_email_deliveries_token_hash ON email_deliveries(token_hash);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_email_deliveries_status ON email_deliveries(delivery_status);")
         else:
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS screenings (
@@ -113,6 +139,32 @@ def init_db(db_path=None, db_url=None):
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenings_patient ON screenings(patient_id);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenings_code ON screenings(prediction_code);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenings_created ON screenings(created_at);")
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS email_deliveries (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    screening_uuid TEXT NOT NULL,
+                    recipient_email TEXT,
+                    consent_recorded INTEGER NOT NULL DEFAULT 0,
+                    delivery_status TEXT NOT NULL,
+                    provider_name TEXT DEFAULT 'resend',
+                    provider_message_id TEXT,
+                    idempotency_key TEXT,
+                    attempts INTEGER NOT NULL DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    sent_at TIMESTAMP,
+                    last_attempt_at TIMESTAMP,
+                    error_category TEXT,
+                    error_detail TEXT,
+                    token_hash TEXT,
+                    token_expiry TIMESTAMP,
+                    download_count INTEGER NOT NULL DEFAULT 0,
+                    last_downloaded_at TIMESTAMP
+                );
+            """)
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_email_deliveries_screening ON email_deliveries(screening_uuid);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_email_deliveries_token_hash ON email_deliveries(token_hash);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_email_deliveries_status ON email_deliveries(delivery_status);")
 
         # Ensure schema migrations for existing databases
         migration_columns = [
@@ -418,3 +470,221 @@ def get_dashboard_summary(db_path=None, db_url=None):
         'screening_trend': screening_trend,
         'recent_screenings': recent
     }
+
+# ---------------------------------------------------------------------------
+# Email Delivery & Secure Token Persistence Helpers
+# ---------------------------------------------------------------------------
+def _to_db_timestamp(dt_val, db_type):
+    if dt_val is None:
+        return None
+    if isinstance(dt_val, str):
+        return dt_val
+    if dt_val.tzinfo is not None:
+        dt_val = dt_val.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt_val if db_type == 'postgres' else dt_val.strftime('%Y-%m-%d %H:%M:%S')
+
+def _parse_utc_timestamp(val):
+    if val is None:
+        return None
+    if isinstance(val, datetime):
+        return val if val.tzinfo is not None else val.replace(tzinfo=timezone.utc)
+    s = str(val).strip()
+    if s.endswith('Z'):
+        s = s[:-1]
+    for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S.%f'):
+        try:
+            return datetime.strptime(s, fmt).replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+    return None
+
+def _normalize_delivery_row(row_dict):
+    if not row_dict:
+        return None
+    d = dict(row_dict)
+    d['consent_recorded'] = bool(d.get('consent_recorded'))
+    for ts_field in ('created_at', 'sent_at', 'last_attempt_at', 'token_expiry', 'last_downloaded_at'):
+        parsed = _parse_utc_timestamp(d.get(ts_field))
+        if parsed is not None:
+            d[f'{ts_field}_dt'] = parsed
+            d[ts_field] = parsed.strftime('%Y-%m-%d %H:%M:%S UTC')
+        else:
+            d[f'{ts_field}_dt'] = None
+    return d
+
+def create_email_delivery(
+    screening_uuid,
+    recipient_email=None,
+    consent_recorded=False,
+    delivery_status='not_provided',
+    provider_name='resend',
+    idempotency_key=None,
+    token_hash=None,
+    token_expiry=None,
+    error_category=None,
+    error_detail=None,
+    db_path=None,
+    db_url=None
+):
+    conn, db_type = get_connection(db_path=db_path, db_url=db_url)
+    try:
+        cursor = conn.cursor()
+        consent_db = bool(consent_recorded) if db_type == 'postgres' else (1 if consent_recorded else 0)
+        expiry_db = _to_db_timestamp(token_expiry, db_type)
+
+        if db_type == 'postgres':
+            cursor.execute("""
+                INSERT INTO email_deliveries (
+                    screening_uuid, recipient_email, consent_recorded, delivery_status,
+                    provider_name, idempotency_key, attempts, error_category,
+                    error_detail, token_hash, token_expiry
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id;
+            """, (
+                screening_uuid, recipient_email, consent_db, delivery_status,
+                provider_name, idempotency_key, 0, error_category,
+                error_detail, token_hash, expiry_db
+            ))
+            delivery_id = cursor.fetchone()[0]
+        else:
+            cursor.execute("""
+                INSERT INTO email_deliveries (
+                    screening_uuid, recipient_email, consent_recorded, delivery_status,
+                    provider_name, idempotency_key, attempts, error_category,
+                    error_detail, token_hash, token_expiry
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            """, (
+                screening_uuid, recipient_email, consent_db, delivery_status,
+                provider_name, idempotency_key, 0, error_category,
+                error_detail, token_hash, expiry_db
+            ))
+            delivery_id = cursor.lastrowid
+
+        conn.commit()
+        return delivery_id
+    finally:
+        conn.close()
+
+def invalidate_old_tokens_for_screening(screening_uuid, exclude_delivery_id=None, db_path=None, db_url=None):
+    """Clears older token hashes for a screening when a replacement link is issued."""
+    conn, db_type = get_connection(db_path=db_path, db_url=db_url)
+    try:
+        cursor = conn.cursor()
+        ph = "%s" if db_type == 'postgres' else "?"
+        if exclude_delivery_id is not None:
+            cursor.execute(
+                f"UPDATE email_deliveries SET token_hash = NULL WHERE screening_uuid = {ph} AND id != {ph};",
+                (screening_uuid, exclude_delivery_id)
+            )
+        else:
+            cursor.execute(
+                f"UPDATE email_deliveries SET token_hash = NULL WHERE screening_uuid = {ph};",
+                (screening_uuid,)
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+def update_email_delivery_status(
+    delivery_id,
+    delivery_status,
+    provider_message_id=None,
+    attempts=None,
+    sent_at=None,
+    last_attempt_at=None,
+    error_category=None,
+    error_detail=None,
+    db_path=None,
+    db_url=None
+):
+    conn, db_type = get_connection(db_path=db_path, db_url=db_url)
+    try:
+        cursor = conn.cursor()
+        ph = "%s" if db_type == 'postgres' else "?"
+        fields = [f"delivery_status = {ph}"]
+        values = [delivery_status]
+
+        if provider_message_id is not None:
+            fields.append(f"provider_message_id = {ph}")
+            values.append(provider_message_id)
+        if attempts is not None:
+            fields.append(f"attempts = {ph}")
+            values.append(int(attempts))
+        if sent_at is not None:
+            fields.append(f"sent_at = {ph}")
+            values.append(_to_db_timestamp(sent_at, db_type))
+        if last_attempt_at is not None:
+            fields.append(f"last_attempt_at = {ph}")
+            values.append(_to_db_timestamp(last_attempt_at, db_type))
+        if error_category is not None:
+            fields.append(f"error_category = {ph}")
+            values.append(error_category)
+        if error_detail is not None:
+            fields.append(f"error_detail = {ph}")
+            values.append(error_detail)
+
+        values.append(delivery_id)
+        cursor.execute(f"UPDATE email_deliveries SET {', '.join(fields)} WHERE id = {ph};", tuple(values))
+        conn.commit()
+    finally:
+        conn.close()
+
+def get_latest_email_delivery(screening_uuid, db_path=None, db_url=None):
+    conn, db_type = get_connection(db_path=db_path, db_url=db_url)
+    try:
+        if db_type == 'postgres':
+            import psycopg2.extras
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            cursor.execute(
+                "SELECT * FROM email_deliveries WHERE screening_uuid = %s ORDER BY id DESC LIMIT 1;",
+                (screening_uuid,)
+            )
+            row = cursor.fetchone()
+        else:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM email_deliveries WHERE screening_uuid = ? ORDER BY id DESC LIMIT 1;",
+                (screening_uuid,)
+            )
+            row = cursor.fetchone()
+        return _normalize_delivery_row(row) if row else None
+    finally:
+        conn.close()
+
+def get_email_delivery_by_token_hash(token_hash, db_path=None, db_url=None):
+    if not token_hash:
+        return None
+    conn, db_type = get_connection(db_path=db_path, db_url=db_url)
+    try:
+        if db_type == 'postgres':
+            import psycopg2.extras
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            cursor.execute(
+                "SELECT * FROM email_deliveries WHERE token_hash = %s ORDER BY id DESC LIMIT 1;",
+                (token_hash,)
+            )
+            row = cursor.fetchone()
+        else:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM email_deliveries WHERE token_hash = ? ORDER BY id DESC LIMIT 1;",
+                (token_hash,)
+            )
+            row = cursor.fetchone()
+        return _normalize_delivery_row(row) if row else None
+    finally:
+        conn.close()
+
+def increment_token_download(delivery_id, db_path=None, db_url=None):
+    conn, db_type = get_connection(db_path=db_path, db_url=db_url)
+    try:
+        cursor = conn.cursor()
+        ph = "%s" if db_type == 'postgres' else "?"
+        now_db = _to_db_timestamp(datetime.now(timezone.utc), db_type)
+        cursor.execute(
+            f"UPDATE email_deliveries SET download_count = download_count + 1, last_downloaded_at = {ph} WHERE id = {ph};",
+            (now_db, delivery_id)
+        )
+        conn.commit()
+    finally:
+        conn.close()

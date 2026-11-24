@@ -18,3 +18,11 @@ services:
         generateValue: true
       - key: DATABASE_URL
         value: ""
+      - key: APP_BASE_URL
+        value: https://ckd-screening-system.onrender.com
+      - key: EMAIL_REPORT_ENABLED
+        value: "true"
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
