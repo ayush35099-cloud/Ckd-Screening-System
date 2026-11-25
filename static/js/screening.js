@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function initScreeningForm() {
     const form = document.getElementById('ckdScreeningForm');
     const btnFillNormal = document.getElementById('btnFillNormal');
+    const btnFillModerate = document.getElementById('btnFillModerate');
     const btnFillHighRisk = document.getElementById('btnFillHighRisk');
     const btnReset = document.getElementById('btnResetForm');
     const reviewModal = document.getElementById('reviewModal');
@@ -17,69 +18,124 @@ function initScreeningForm() {
     const btnCloseModal = document.getElementById('btnCloseModal');
 
     // Sample Datasets for Fast Field Testing / Camps (Neutral identifiers, never hardcoded personal names)
-    const normalSample = {
-        patient_id: 'PT-NORM-' + Math.floor(1000 + Math.random() * 9000),
-        patient_name: 'Sample Baseline Patient',
-        age: 34,
-        sex: 'Female',
-        model_choice: 'Random Forest',
-        bp: 75,
-        sg: '1.025',
-        al: '0',
-        su: '0',
-        rbc: 'normal',
-        pc: 'normal',
-        pcc: 'notpresent',
-        ba: 'notpresent',
-        bgr: 98,
-        bu: 26,
-        sc: 0.8,
-        sod: 140,
-        pot: 4.2,
-        hemo: 15.2,
-        pcv: 45,
-        wc: 6800,
-        rc: 5.1,
-        htn: 'no',
-        dm: 'no',
-        cad: 'no',
-        appet: 'good',
-        pe: 'no',
-        ane: 'no'
-    };
+    function getNormalSample() {
+        return {
+            patient_id: 'PT-NORM-' + Math.floor(1000 + Math.random() * 9000),
+            patient_name: 'Sample Baseline Patient',
+            age: 34,
+            sex: 'Female',
+            model_choice: 'Random Forest',
+            bp: 75,
+            sg: '1.025',
+            al: '0',
+            su: '0',
+            rbc: 'normal',
+            pc: 'normal',
+            pcc: 'notpresent',
+            ba: 'notpresent',
+            bgr: 98,
+            bu: 26,
+            sc: 0.8,
+            sod: 140,
+            pot: 4.2,
+            hemo: 15.2,
+            pcv: 45,
+            wc: 6800,
+            rc: 5.1,
+            htn: 'no',
+            dm: 'no',
+            cad: 'no',
+            appet: 'good',
+            pe: 'no',
+            ane: 'no'
+        };
+    }
 
-    const ckdSample = {
-        patient_id: 'PT-EVAL-' + Math.floor(1000 + Math.random() * 9000),
-        patient_name: 'Sample Evaluation Patient',
-        age: 63,
-        sex: 'Male',
-        model_choice: 'Random Forest',
-        bp: 90,
-        sg: '1.010',
-        al: '3',
-        su: '2',
-        rbc: 'abnormal',
-        pc: 'abnormal',
-        pcc: 'present',
-        ba: 'present',
-        bgr: 220,
-        bu: 86,
-        sc: 3.2,
-        sod: 130,
-        pot: 5.4,
-        hemo: 9.4,
-        pcv: 29,
-        wc: 11400,
-        rc: 3.2,
-        htn: 'yes',
-        dm: 'yes',
-        cad: 'yes',
-        appet: 'poor',
-        pe: 'yes',
-        ane: 'yes'
-    };
+    function getModerateSample() {
+        return {
+            patient_id: 'PT-MOD-' + Math.floor(1000 + Math.random() * 9000),
+            patient_name: 'Sample Moderate Indicators Patient',
+            age: 54,
+            sex: 'Male',
+            model_choice: 'Random Forest',
+            bp: 80,
+            sg: '1.015',
+            al: '1',
+            su: '0',
+            rbc: 'normal',
+            pc: 'normal',
+            pcc: 'notpresent',
+            ba: 'notpresent',
+            bgr: 135,
+            bu: 46,
+            sc: 1.5,
+            sod: 137,
+            pot: 4.6,
+            hemo: 11.8,
+            pcv: 36,
+            wc: 8200,
+            rc: 4.2,
+            htn: 'yes',
+            dm: 'no',
+            cad: 'no',
+            appet: 'good',
+            pe: 'no',
+            ane: 'no'
+        };
+    }
+
+    function getHighRiskSample() {
+        return {
+            patient_id: 'PT-EVAL-' + Math.floor(1000 + Math.random() * 9000),
+            patient_name: 'Sample Evaluation Patient',
+            age: 63,
+            sex: 'Male',
+            model_choice: 'Random Forest',
+            bp: 90,
+            sg: '1.010',
+            al: '3',
+            su: '2',
+            rbc: 'abnormal',
+            pc: 'abnormal',
+            pcc: 'present',
+            ba: 'present',
+            bgr: 220,
+            bu: 86,
+            sc: 3.2,
+            sod: 130,
+            pot: 5.4,
+            hemo: 9.4,
+            pcv: 29,
+            wc: 11400,
+            rc: 3.2,
+            htn: 'yes',
+            dm: 'yes',
+            cad: 'yes',
+            appet: 'poor',
+            pe: 'yes',
+            ane: 'yes'
+        };
+    }
+
+    const normalSample = getNormalSample();
+    const moderateSample = getModerateSample();
+    const ckdSample = getHighRiskSample();
 
     function populateForm(data) {
+        if (!form) return;
+
+        // Reset optional administrative email/consent fields when applying a sample
+        if (form.elements['patient_email']) {
+            form.elements['patient_email'].value = '';
+        }
+        if (form.elements['email_consent']) {
+            form.elements['email_consent'].checked = false;
+        }
+        if (profileBadge) profileBadge.style.display = 'none';
+        if (profileIdHint) profileIdHint.textContent = 'Unique PHC or camp record number';
+        if (emailHint) emailHint.textContent = 'Optional. Receives a secure, time-limited PDF report download link after screening.';
+        lastLookedUpId = null;
+
         for (const [key, val] of Object.entries(data)) {
             const el = form.elements[key];
             if (el) {
@@ -91,13 +147,19 @@ function initScreeningForm() {
 
     if (btnFillNormal) {
         btnFillNormal.addEventListener('click', () => {
-            populateForm(normalSample);
+            populateForm(getNormalSample());
+        });
+    }
+
+    if (btnFillModerate) {
+        btnFillModerate.addEventListener('click', () => {
+            populateForm(getModerateSample());
         });
     }
 
     if (btnFillHighRisk) {
         btnFillHighRisk.addEventListener('click', () => {
-            populateForm(ckdSample);
+            populateForm(getHighRiskSample());
         });
     }
 

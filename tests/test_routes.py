@@ -406,5 +406,72 @@ class TestFlaskRoutes(unittest.TestCase):
         self.assertIn(b'Batch CSV Screening', resp.data)
         self.assertIn(b'CSV Template', resp.data)
 
+    def test_sample_buttons_presence_and_order(self):
+        resp = self.client.get('/screen')
+        self.assertEqual(resp.status_code, 200)
+        html = resp.data.decode('utf-8')
+
+        # Check all 4 buttons exist with correct IDs
+        self.assertIn('id="btnFillNormal"', html)
+        self.assertIn('id="btnFillModerate"', html)
+        self.assertIn('id="btnFillHighRisk"', html)
+        self.assertIn('id="btnResetForm"', html)
+
+        # Check exact button labels
+        self.assertIn('Sample: Normal Baseline', html)
+        self.assertIn('Sample: Moderate CKD Indicators', html)
+        self.assertIn('Sample: High-Risk CKD Profile', html)
+        self.assertIn('Reset Form', html)
+
+        # Verify strict order in HTML source
+        idx_normal = html.find('id="btnFillNormal"')
+        idx_mod = html.find('id="btnFillModerate"')
+        idx_high = html.find('id="btnFillHighRisk"')
+        idx_reset = html.find('id="btnResetForm"')
+
+        self.assertTrue(idx_normal < idx_mod < idx_high < idx_reset,
+                        "Sample buttons must appear in order: Normal -> Moderate -> High-Risk -> Reset")
+
+    def test_moderate_sample_submission_and_inference(self):
+        # Post exact moderate sample profile
+        mod_payload = {
+            'patient_id': 'PT-MOD-TEST-01',
+            'patient_name': 'Sample Moderate Indicators Patient',
+            'age': '54',
+            'sex': 'Male',
+            'model_choice': 'Random Forest',
+            'bp': '80',
+            'sg': '1.015',
+            'al': '1',
+            'su': '0',
+            'rbc': 'normal',
+            'pc': 'normal',
+            'pcc': 'notpresent',
+            'ba': 'notpresent',
+            'bgr': '135',
+            'bu': '46',
+            'sc': '1.5',
+            'sod': '137',
+            'pot': '4.6',
+            'hemo': '11.8',
+            'pcv': '36',
+            'wc': '8200',
+            'rc': '4.2',
+            'htn': 'yes',
+            'dm': 'no',
+            'cad': 'no',
+            'appet': 'good',
+            'pe': 'no',
+            'ane': 'no'
+        }
+        resp = self.client.post('/screen', data=mod_payload, follow_redirects=True)
+        self.assertEqual(resp.status_code, 200)
+        html = resp.data.decode('utf-8')
+        # Patient ID and Name should be rendered on the results page
+        self.assertIn('PT-MOD-TEST-01', html)
+        self.assertIn('Sample Moderate Indicators Patient', html)
+        # Should display findings indicating flags for elevated creatinine / mild anemia / albuminuria
+        self.assertTrue('Serum Creatinine' in html or 'Creatinine' in html)
+
 if __name__ == '__main__':
     unittest.main()
