@@ -23,6 +23,7 @@ from database import (
     get_latest_email_delivery,
     get_email_delivery_by_token_hash,
     get_screening_by_uuid,
+    get_email_diagnostics,
 )
 
 logger = logging.getLogger(__name__)
@@ -334,13 +335,12 @@ class ResendEmailProvider(BaseEmailProvider):
                 )
 
             if status_code == 403:
+                detail = f'Provider restricted delivery (HTTP 403): {err_msg}' if err_msg else 'Sender/recipient restriction on email provider (verify custom domain or test recipient in Resend).'
                 return ProviderSendResult(
                     accepted=False,
                     retryable=False,
                     error_category='domain_verification_required',
-                    error_detail=(
-                        'Sender/recipient restriction on email provider (verify domain or test recipient in Resend).'
-                    ),
+                    error_detail=detail[:250],
                     status_code=403,
                 )
 
@@ -586,12 +586,14 @@ def initiate_screening_email_workflow(
     5. Renders email templates & dispatches without blocking screening flow.
     """
     screening_uuid = screening_record['screening_uuid']
+    patient_id = screening_record.get('patient_id')
     normalized_email, email_err = validate_and_normalize_email(raw_email)
 
     # Case 1: No email provided
     if normalized_email is None and email_err is None:
         delivery_id = create_email_delivery(
             screening_uuid=screening_uuid,
+            patient_id=patient_id,
             recipient_email=None,
             consent_recorded=False,
             delivery_status='not_provided',
@@ -604,6 +606,7 @@ def initiate_screening_email_workflow(
     if email_err == 'invalid_email':
         delivery_id = create_email_delivery(
             screening_uuid=screening_uuid,
+            patient_id=patient_id,
             recipient_email=None,
             consent_recorded=bool(consent_given),
             delivery_status='failed',
@@ -618,6 +621,7 @@ def initiate_screening_email_workflow(
     if not consent_given:
         delivery_id = create_email_delivery(
             screening_uuid=screening_uuid,
+            patient_id=patient_id,
             recipient_email=normalized_email,
             consent_recorded=False,
             delivery_status='consent_not_provided',
@@ -634,6 +638,7 @@ def initiate_screening_email_workflow(
     if not configured and provider is None:
         delivery_id = create_email_delivery(
             screening_uuid=screening_uuid,
+            patient_id=patient_id,
             recipient_email=normalized_email,
             consent_recorded=True,
             delivery_status='not_configured',
@@ -656,6 +661,7 @@ def initiate_screening_email_workflow(
 
     delivery_id = create_email_delivery(
         screening_uuid=screening_uuid,
+        patient_id=patient_id,
         recipient_email=normalized_email,
         consent_recorded=True,
         delivery_status='pending',
@@ -752,6 +758,7 @@ def resend_screening_email(
 
     delivery_id = create_email_delivery(
         screening_uuid=screening_uuid,
+        patient_id=screening_record.get('patient_id') or latest.get('patient_id'),
         recipient_email=latest['recipient_email'],
         consent_recorded=True,
         delivery_status='pending',
@@ -896,4 +903,36 @@ def format_delivery_status_summary(delivery: Optional[Dict[str, Any]]) -> Dict[s
         'masked_email': '',
         'attempts': 0,
         'consent_recorded': False,
+    }
+
+
+def get_email_service_diagnostics(limit: int = 50, db_path=None, db_url=None) -> Dict[str, Any]:
+    """
+    Returns diagnostic summary of transactional email delivery status, provider configuration,
+    and sanitized recent delivery records for authorized clinician review.
+    """
+    cfg = get_email_runtime_config()
+    is_conf, code, msg = is_email_provider_configured(cfg)
+    deliveries = get_email_diagnostics(limit=limit, db_path=db_path, db_url=db_url)
+
+    sender = cfg.get('mail_from', '')
+    is_resend_dev = 'onboarding@resend.dev' in sender.lower()
+
+    sandbox_note = (
+        "On Resend free tier using onboarding@resend.dev, emails can only be delivered to your registered Resend account address. "
+        "To deliver reports to arbitrary patient emails, configure a custom domain with SPF/DKIM records in Resend and update MAIL_FROM."
+        if is_resend_dev else
+        "Custom sender domain configured."
+    )
+
+    return {
+        'provider_configured': is_conf,
+        'configuration_code': code,
+        'configuration_message': msg,
+        'enabled': cfg['enabled'],
+        'mail_from': cfg['mail_from'],
+        'app_base_url': cfg['app_base_url'],
+        'expiry_hours': cfg['expiry_hours'],
+        'sandbox_restriction_note': sandbox_note,
+        'recent_deliveries': deliveries,
     }

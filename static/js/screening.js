@@ -16,10 +16,10 @@ function initScreeningForm() {
     const btnConfirmSubmit = document.getElementById('btnConfirmSubmit');
     const btnCloseModal = document.getElementById('btnCloseModal');
 
-    // Sample Datasets for Fast Field Testing / Camps
+    // Sample Datasets for Fast Field Testing / Camps (Neutral identifiers, never hardcoded personal names)
     const normalSample = {
         patient_id: 'PT-NORM-' + Math.floor(1000 + Math.random() * 9000),
-        patient_name: 'Aditi Sharma',
+        patient_name: 'Sample Baseline Patient',
         age: 34,
         sex: 'Female',
         model_choice: 'Random Forest',
@@ -50,7 +50,7 @@ function initScreeningForm() {
 
     const ckdSample = {
         patient_id: 'PT-EVAL-' + Math.floor(1000 + Math.random() * 9000),
-        patient_name: 'Rajesh Verma',
+        patient_name: 'Sample Evaluation Patient',
         age: 63,
         sex: 'Male',
         model_choice: 'Random Forest',
@@ -104,7 +104,90 @@ function initScreeningForm() {
     if (btnReset) {
         btnReset.addEventListener('click', () => {
             form.reset();
+            if (profileBadge) profileBadge.style.display = 'none';
+            if (profileIdHint) profileIdHint.textContent = 'Unique PHC or camp record number';
+            if (emailHint) emailHint.textContent = 'Optional. Receives a secure, time-limited PDF report download link after screening.';
+            lastLookedUpId = null;
             setTimeout(checkClinicalWarnings, 50);
+        });
+    }
+
+    // Persistent Patient Profile Auto-Lookup (Phase 3)
+    const patientIdEl = form.elements['patient_id'];
+    const patientNameEl = form.elements['patient_name'];
+    const patientEmailEl = form.elements['patient_email'];
+    const emailConsentEl = form.elements['email_consent'];
+    const profileBadge = document.getElementById('patientProfileBadge');
+    const profileIdHint = document.getElementById('patientIdHint');
+    const emailHint = document.getElementById('patientEmailHint');
+
+    let profileLookupTimer = null;
+    let lastLookedUpId = null;
+
+    async function lookupPatientProfile(ptId) {
+        const cleanId = (ptId || '').trim();
+        if (!cleanId) {
+            if (profileBadge) profileBadge.style.display = 'none';
+            if (profileIdHint) profileIdHint.textContent = 'Unique PHC or camp record number';
+            if (emailHint) emailHint.textContent = 'Optional. Receives a secure, time-limited PDF report download link after screening.';
+            lastLookedUpId = null;
+            return;
+        }
+
+        if (cleanId === lastLookedUpId) return;
+        lastLookedUpId = cleanId;
+
+        try {
+            const resp = await fetch(`/api/patient/${encodeURIComponent(cleanId)}`);
+            if (!resp.ok) return;
+            const data = await resp.json();
+
+            if (data.found && data.profile) {
+                const profile = data.profile;
+
+                // Auto-fill patient name if field is currently blank
+                if (patientNameEl && !patientNameEl.value.trim() && profile.patient_name) {
+                    patientNameEl.value = profile.patient_name;
+                }
+
+                // Auto-fill patient email if field is currently blank
+                if (patientEmailEl && !patientEmailEl.value.trim() && profile.email) {
+                    patientEmailEl.value = profile.email;
+                }
+
+                // Auto-check consent if recorded on file and email exists
+                if (emailConsentEl && profile.consent_recorded && (profile.email || (patientEmailEl && patientEmailEl.value.trim()))) {
+                    emailConsentEl.checked = true;
+                }
+
+                // Visual confirmation
+                if (profileBadge) profileBadge.style.display = 'inline-block';
+                if (profileIdHint) {
+                    const nameLabel = profile.patient_name ? ` (${profile.patient_name})` : '';
+                    profileIdHint.innerHTML = `<span style="color: var(--status-clear-text); font-weight: 500;">Existing profile linked${nameLabel}</span>`;
+                }
+                if (emailHint && profile.email) {
+                    emailHint.innerHTML = `<span style="color: var(--status-clear-text); font-weight: 500;">Email retrieved from saved patient profile. You can keep or edit it.</span>`;
+                }
+            } else {
+                if (profileBadge) profileBadge.style.display = 'none';
+                if (profileIdHint) profileIdHint.textContent = 'New patient record will be created on submission';
+                if (emailHint) emailHint.textContent = 'Optional. Receives a secure, time-limited PDF report download link after screening.';
+            }
+        } catch (err) {
+            // Silently fall through on network failure
+        }
+    }
+
+    if (patientIdEl) {
+        patientIdEl.addEventListener('blur', () => {
+            lookupPatientProfile(patientIdEl.value);
+        });
+        patientIdEl.addEventListener('input', () => {
+            clearTimeout(profileLookupTimer);
+            profileLookupTimer = setTimeout(() => {
+                lookupPatientProfile(patientIdEl.value);
+            }, 400);
         });
     }
 

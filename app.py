@@ -17,7 +17,9 @@ from config import Config
 from database import (
     init_db, save_screening, get_screening_by_uuid,
     get_screenings_history, get_dashboard_summary, get_connection,
-    get_latest_email_delivery, increment_token_download
+    get_latest_email_delivery, increment_token_download,
+    get_patient_profile, upsert_patient_profile, get_patient_profiles,
+    get_email_diagnostics
 )
 from ml.model import model_service
 from report_generator import generate_pdf_report
@@ -26,6 +28,7 @@ from email_service import (
     resend_screening_email,
     verify_download_token,
     format_delivery_status_summary,
+    get_email_service_diagnostics,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -148,6 +151,45 @@ def create_app(config_class=Config):
             flash("Patient Identifier is required for clinical record keeping.", "danger")
             return redirect(url_for('screen_view'))
 
+        raw_patient_name = form_data.get('patient_name', '').strip() or None
+        patient_email = form_data.get('patient_email', '').strip()
+        consent_raw = form_data.get('email_consent', '').strip().lower()
+        email_consent = consent_raw in ('on', 'true', 'yes', '1')
+
+        # Retrieve any existing profile for this patient
+        existing_profile = get_patient_profile(patient_id)
+
+        # Effective patient name: prefer form submission, fall back to stored profile
+        effective_name = raw_patient_name or (existing_profile.get('patient_name') if existing_profile else None)
+
+        # Determine effective email and consent:
+        # 1. If form has email, use it directly.
+        # 2. If form email is empty, but patient has a stored email on file:
+        #    - If consent is explicitly checked for this screening, reuse the stored email.
+        #    - If consent is not checked, do not send an email for this screening.
+        if patient_email:
+            effective_email = patient_email
+            effective_consent = email_consent
+        elif existing_profile and existing_profile.get('email') and email_consent:
+            effective_email = existing_profile.get('email')
+            effective_consent = True
+        else:
+            effective_email = None
+            effective_consent = False
+
+        # Persist or update patient profile without hardcoding
+        try:
+            profile_email_to_save = patient_email if patient_email else (existing_profile.get('email') if existing_profile else None)
+            profile_consent_to_save = email_consent if (patient_email or email_consent) else (existing_profile.get('consent_recorded') if existing_profile else False)
+            upsert_patient_profile(
+                patient_id=patient_id,
+                patient_name=effective_name,
+                email=profile_email_to_save,
+                consent_recorded=profile_consent_to_save
+            )
+        except Exception as profile_err:
+            logger.warning(f"Could not upsert patient profile for {patient_id}: {profile_err}")
+
         model_choice = form_data.get('model_choice', 'Random Forest')
 
         # The 24 UCI dataset features strictly separated from patient administrative metadata
@@ -172,7 +214,7 @@ def create_app(config_class=Config):
         # Prepare database record
         patient_record = {
             'patient_id': patient_id,
-            'patient_name': form_data.get('patient_name', '').strip() or None,
+            'patient_name': effective_name,
             'age': form_data.get('age', '').strip() or None,
             'sex': form_data.get('sex', 'Not Specified'),
             'parameters': input_params
@@ -189,17 +231,13 @@ def create_app(config_class=Config):
         except Exception as pdf_err:
             logger.error(f"PDF pre-generation check failed for {saved['screening_uuid']}: {pdf_err}")
 
-        patient_email = form_data.get('patient_email', '').strip()
-        consent_raw = form_data.get('email_consent', '').strip().lower()
-        email_consent = consent_raw in ('on', 'true', 'yes', '1')
-
         if pdf_ready:
             try:
                 initiate_screening_email_workflow(
                     app=app,
                     screening_record=saved_record,
-                    raw_email=patient_email,
-                    consent_given=email_consent,
+                    raw_email=effective_email,
+                    consent_given=effective_consent,
                     background=not app.config.get('TESTING'),
                 )
             except Exception as email_err:
@@ -335,6 +373,14 @@ def create_app(config_class=Config):
                         'parameters': input_params
                     }
                     saved = save_screening(patient_record, pred_result)
+
+                    try:
+                        upsert_patient_profile(
+                            patient_id=patient_id,
+                            patient_name=patient_name,
+                        )
+                    except Exception:
+                        pass
 
                     if pred_result['is_flagged']:
                         flagged_count += 1
@@ -601,6 +647,44 @@ def create_app(config_class=Config):
             return jsonify({'error': 'Record not found'}), 404
         latest = get_latest_email_delivery(screening_uuid)
         return jsonify(format_delivery_status_summary(latest)), 200
+
+    @app.route('/api/patient/<patient_id>', methods=['GET'])
+    def api_get_patient_profile(patient_id):
+        _grant_clinician_session()
+        clean_id = (patient_id or '').strip()
+        if not clean_id:
+            return jsonify({'found': False, 'message': 'Missing patient ID'}), 400
+
+        profile = get_patient_profile(clean_id)
+        if not profile:
+            return jsonify({'found': False, 'patient_id': clean_id}), 200
+
+        return jsonify({
+            'found': True,
+            'profile': {
+                'patient_id': profile['patient_id'],
+                'patient_name': profile['patient_name'] or '',
+                'email': profile['email'] or '',
+                'email_verified': bool(profile.get('email_verified')),
+                'consent_recorded': bool(profile.get('consent_recorded')),
+                'consent_at': profile.get('consent_at'),
+                'updated_at': profile.get('updated_at'),
+            }
+        }), 200
+
+    @app.route('/api/admin/email-diagnostics', methods=['GET'])
+    def api_email_diagnostics():
+        if not _is_clinician_authorized():
+            abort(403, description="Clinician authorization required to access email diagnostics.")
+
+        limit = request.args.get('limit', 50)
+        try:
+            limit_val = int(limit)
+        except (ValueError, TypeError):
+            limit_val = 50
+
+        diagnostics = get_email_service_diagnostics(limit=limit_val)
+        return jsonify(diagnostics), 200
 
     # -----------------------------------------------------------------------
     # REST API Endpoints

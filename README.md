@@ -170,7 +170,8 @@ ckd-screening-system/
     ├── test_model.py          # ML unit tests
     ├── test_pdf.py            # PDF generation tests
     ├── test_routes.py         # Web view & REST API route integration tests
-    └── test_email_delivery.py # Email workflow, consent, tokens & security tests
+    ├── test_email_delivery.py # Email workflow, consent, tokens & security tests
+    └── test_patient_profile.py # Persistent patient profiles, auto-lookup & diagnostics tests
 ```
 
 ---
@@ -212,7 +213,7 @@ python ml/train.py
 ```bash
 python -m unittest discover -s tests -p "test_*.py"
 ```
-*(All 59 unit and integration tests should pass cleanly against isolated temporary test databases).*
+*(All 69 unit and integration tests should pass cleanly against isolated temporary test databases).*
 
 ### 6. Start the Development Server
 ```bash
@@ -323,18 +324,48 @@ GET /api/dashboard
 GET /api/report/<screening_uuid>
 ```
 
+### 5. Patient Profile Lookup
+```http
+GET /api/patient/<patient_id>
+```
+**Response:**
+```json
+{
+  "found": true,
+  "profile": {
+    "patient_id": "PT-2026-081",
+    "patient_name": "R. Sharma",
+    "email": "patient@example.com",
+    "email_verified": false,
+    "consent_recorded": true,
+    "consent_at": "2026-11-25 14:00:00 UTC",
+    "updated_at": "2026-11-25 14:00:00 UTC"
+  }
+}
+```
+
+### 6. Email Service Diagnostics (Clinician Authorized)
+```http
+GET /api/admin/email-diagnostics?limit=50
+```
+
 ---
 
-## Automatic Patient Email Report Delivery
+## Persistent Patient Profile System & Automated Report Delivery
 
-RenalCare includes an optional, consent-gated **Automatic Email Report Delivery System** powered by a modular provider interface (with [Resend](https://resend.com/) built in).
+RenalCare features a persistent **Patient Profile System** combined with a consent-gated, background **Automatic Email Report Delivery System**.
 
-### Clinical Workflow & Consent
-1. **Optional Email & Explicit Consent:** During patient intake (`/screen`), the healthcare worker may optionally enter the patient's email address and check:
+### Patient Profiles & Automatic Retrieval
+1. **Persistent Demographics:** Patient records are persisted in the `patient_profiles` table (SQLite & PostgreSQL) storing `patient_id` (unique), `patient_name`, `email`, `consent_recorded`, `consent_at`, `created_at`, and `updated_at`.
+2. **Auto-Lookup on Screening Form:** When a healthcare worker enters a `patient_id` on `/screen`, the application retrieves their saved profile, auto-populating patient name, email, and consent status without requiring repetitive manual re-entry.
+3. **Flexible Updates & Optional Intake:** Clinicians can modify email addresses or consent preferences at any time. Patient email entry is strictly optional; screening and immediate PDF generation never require an email.
+
+### Clinical Email Workflow & Consent
+1. **Explicit Patient Consent:** Report delivery requires explicit consent:
    > *"I consent to receiving my screening report at the email address provided."*
-2. **Non-Blocking Screening:** Missing, empty, or invalid email addresses never prevent screening completion or PDF generation. Emails are **never** dispatched if consent is absent.
-3. **PDF-First Guarantee:** RenalCare generates and verifies the clinical PDF report *before* issuing a download token or contacting the email provider.
-4. **Delivery Status Visibility:** The screening result page (`/result/<screening_uuid>`) displays live delivery status (`Email Sent`, `Delivery Pending`, `Delivery Failed`, `Email Not Provided`, `Email Not Configured`, or `Consent Not Provided`) without exposing patient email addresses in dashboard analytics or history exports.
+2. **Non-Blocking Screening:** Missing or invalid email addresses never prevent screening completion. If consent is absent, emails are never dispatched.
+3. **Clean Outcome Page:** The screening outcome page (`/result/<screening_uuid>`) focuses strictly on clinical evaluation, risk tiers, and one-click PDF download without extraneous email status boxes.
+4. **Developer Diagnostics:** Authorized clinicians can inspect real-time delivery state and error classifications via `/api/admin/email-diagnostics` without exposing clinical data or API credentials.
 
 ### Security, Privacy & Time-Limited Download Links
 - **Zero Clinical Data in Emails:** Subject lines (`"Your RenalCare Screening Report Is Ready"`) and email bodies intentionally exclude CKD risk predictions, lab parameters, and patient identifiers.

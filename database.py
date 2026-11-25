@@ -89,6 +89,7 @@ def init_db(db_path=None, db_url=None):
                 CREATE TABLE IF NOT EXISTS email_deliveries (
                     id SERIAL PRIMARY KEY,
                     screening_uuid VARCHAR(64) NOT NULL,
+                    patient_id VARCHAR(64),
                     recipient_email VARCHAR(254),
                     consent_recorded BOOLEAN NOT NULL DEFAULT FALSE,
                     delivery_status VARCHAR(32) NOT NULL,
@@ -110,6 +111,22 @@ def init_db(db_path=None, db_url=None):
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_email_deliveries_screening ON email_deliveries(screening_uuid);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_email_deliveries_token_hash ON email_deliveries(token_hash);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_email_deliveries_status ON email_deliveries(delivery_status);")
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS patient_profiles (
+                    id SERIAL PRIMARY KEY,
+                    patient_id VARCHAR(64) UNIQUE NOT NULL,
+                    patient_name VARCHAR(128),
+                    email VARCHAR(254),
+                    email_verified BOOLEAN DEFAULT FALSE,
+                    consent_recorded BOOLEAN DEFAULT FALSE,
+                    consent_at TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_patient_profiles_id ON patient_profiles(patient_id);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_patient_profiles_email ON patient_profiles(email);")
         else:
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS screenings (
@@ -144,6 +161,7 @@ def init_db(db_path=None, db_url=None):
                 CREATE TABLE IF NOT EXISTS email_deliveries (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     screening_uuid TEXT NOT NULL,
+                    patient_id TEXT,
                     recipient_email TEXT,
                     consent_recorded INTEGER NOT NULL DEFAULT 0,
                     delivery_status TEXT NOT NULL,
@@ -166,6 +184,22 @@ def init_db(db_path=None, db_url=None):
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_email_deliveries_token_hash ON email_deliveries(token_hash);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_email_deliveries_status ON email_deliveries(delivery_status);")
 
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS patient_profiles (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    patient_id TEXT UNIQUE NOT NULL,
+                    patient_name TEXT,
+                    email TEXT,
+                    email_verified INTEGER DEFAULT 0,
+                    consent_recorded INTEGER DEFAULT 0,
+                    consent_at TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_patient_profiles_id ON patient_profiles(patient_id);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_patient_profiles_email ON patient_profiles(email);")
+
         # Ensure schema migrations for existing databases
         migration_columns = [
             ("missing_params_json", "TEXT"),
@@ -181,6 +215,19 @@ def init_db(db_path=None, db_url=None):
                 conn.commit()
             except Exception:
                 pass  # Column already exists
+
+        # Ensure patient_id migration in email_deliveries
+        try:
+            pid_col_type = "VARCHAR(64)" if db_type == 'postgres' else "TEXT"
+            cursor.execute(f"ALTER TABLE email_deliveries ADD COLUMN patient_id {pid_col_type};")
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_email_deliveries_patient ON email_deliveries(patient_id);")
+            conn.commit()
+        except Exception:
+            pass
 
         conn.commit()
     finally:
@@ -523,6 +570,7 @@ def create_email_delivery(
     token_expiry=None,
     error_category=None,
     error_detail=None,
+    patient_id=None,
     db_path=None,
     db_url=None
 ):
@@ -537,13 +585,13 @@ def create_email_delivery(
                 INSERT INTO email_deliveries (
                     screening_uuid, recipient_email, consent_recorded, delivery_status,
                     provider_name, idempotency_key, attempts, error_category,
-                    error_detail, token_hash, token_expiry
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    error_detail, token_hash, token_expiry, patient_id
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id;
             """, (
                 screening_uuid, recipient_email, consent_db, delivery_status,
                 provider_name, idempotency_key, 0, error_category,
-                error_detail, token_hash, expiry_db
+                error_detail, token_hash, expiry_db, patient_id
             ))
             delivery_id = cursor.fetchone()[0]
         else:
@@ -551,12 +599,12 @@ def create_email_delivery(
                 INSERT INTO email_deliveries (
                     screening_uuid, recipient_email, consent_recorded, delivery_status,
                     provider_name, idempotency_key, attempts, error_category,
-                    error_detail, token_hash, token_expiry
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                    error_detail, token_hash, token_expiry, patient_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """, (
                 screening_uuid, recipient_email, consent_db, delivery_status,
                 provider_name, idempotency_key, 0, error_category,
-                error_detail, token_hash, expiry_db
+                error_detail, token_hash, expiry_db, patient_id
             ))
             delivery_id = cursor.lastrowid
 
@@ -686,5 +734,208 @@ def increment_token_download(delivery_id, db_path=None, db_url=None):
             (now_db, delivery_id)
         )
         conn.commit()
+    finally:
+        conn.close()
+
+# ---------------------------------------------------------------------------
+# Patient Profile Persistence (Phase 2)
+# ---------------------------------------------------------------------------
+
+def _normalize_patient_profile_row(row_dict):
+    if not row_dict:
+        return None
+    d = dict(row_dict)
+    d['email_verified'] = bool(d.get('email_verified'))
+    d['consent_recorded'] = bool(d.get('consent_recorded'))
+    for ts_field in ('consent_at', 'created_at', 'updated_at'):
+        parsed = _parse_utc_timestamp(d.get(ts_field))
+        if parsed is not None:
+            d[f'{ts_field}_dt'] = parsed
+            d[ts_field] = parsed.strftime('%Y-%m-%d %H:%M:%S UTC')
+        else:
+            d[f'{ts_field}_dt'] = None
+    return d
+
+def get_patient_profile(patient_id, db_path=None, db_url=None):
+    """Retrieves a persistent patient profile by patient_id."""
+    if not patient_id or not str(patient_id).strip():
+        return None
+    pid = str(patient_id).strip()
+    conn, db_type = get_connection(db_path=db_path, db_url=db_url)
+    try:
+        ph = "%s" if db_type == 'postgres' else "?"
+        if db_type == 'postgres':
+            import psycopg2.extras
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        else:
+            cursor = conn.cursor()
+        cursor.execute(f"SELECT * FROM patient_profiles WHERE patient_id = {ph} LIMIT 1;", (pid,))
+        row = cursor.fetchone()
+        return _normalize_patient_profile_row(row) if row else None
+    finally:
+        conn.close()
+
+def upsert_patient_profile(
+    patient_id,
+    patient_name=None,
+    email=None,
+    consent_recorded=None,
+    email_verified=None,
+    db_path=None,
+    db_url=None
+):
+    """
+    Inserts or updates a persistent patient profile.
+    Guarantees that patient_id remains unique across all records.
+    """
+    if not patient_id or not str(patient_id).strip():
+        raise ValueError("patient_id is required for patient profile records")
+
+    pid = str(patient_id).strip()
+    clean_name = str(patient_name).strip() if patient_name is not None and str(patient_name).strip() else None
+    clean_email = str(email).strip().lower() if email is not None and str(email).strip() else None
+
+    conn, db_type = get_connection(db_path=db_path, db_url=db_url)
+    try:
+        cursor = conn.cursor()
+        ph = "%s" if db_type == 'postgres' else "?"
+        now_dt = datetime.now(timezone.utc)
+        now_db = _to_db_timestamp(now_dt, db_type)
+
+        cursor.execute(f"SELECT id, patient_name, email, email_verified, consent_recorded, consent_at FROM patient_profiles WHERE patient_id = {ph} LIMIT 1;", (pid,))
+        existing = cursor.fetchone()
+
+        if existing:
+            fields = []
+            vals = []
+            if patient_name is not None:
+                fields.append(f"patient_name = {ph}")
+                vals.append(clean_name)
+            if email is not None:
+                fields.append(f"email = {ph}")
+                vals.append(clean_email)
+            if consent_recorded is not None:
+                c_val = bool(consent_recorded) if db_type == 'postgres' else (1 if consent_recorded else 0)
+                fields.append(f"consent_recorded = {ph}")
+                vals.append(c_val)
+                if consent_recorded:
+                    fields.append(f"consent_at = {ph}")
+                    vals.append(now_db)
+            if email_verified is not None:
+                v_val = bool(email_verified) if db_type == 'postgres' else (1 if email_verified else 0)
+                fields.append(f"email_verified = {ph}")
+                vals.append(v_val)
+
+            fields.append(f"updated_at = {ph}")
+            vals.append(now_db)
+
+            vals.append(pid)
+            cursor.execute(f"UPDATE patient_profiles SET {', '.join(fields)} WHERE patient_id = {ph};", tuple(vals))
+        else:
+            c_val = bool(consent_recorded) if db_type == 'postgres' else (1 if consent_recorded else 0)
+            v_val = bool(email_verified) if db_type == 'postgres' else (1 if email_verified else 0)
+            c_at = now_db if consent_recorded else None
+
+            if db_type == 'postgres':
+                cursor.execute("""
+                    INSERT INTO patient_profiles (
+                        patient_id, patient_name, email, email_verified,
+                        consent_recorded, consent_at, created_at, updated_at
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+                """, (pid, clean_name, clean_email, v_val, c_val, c_at, now_db, now_db))
+            else:
+                cursor.execute("""
+                    INSERT INTO patient_profiles (
+                        patient_id, patient_name, email, email_verified,
+                        consent_recorded, consent_at, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+                """, (pid, clean_name, clean_email, v_val, c_val, c_at, now_db, now_db))
+
+        conn.commit()
+    finally:
+        conn.close()
+
+    return get_patient_profile(pid, db_path=db_path, db_url=db_url)
+
+def get_patient_profiles(limit=50, offset=0, search=None, db_path=None, db_url=None):
+    """Lists patient profiles with optional search and pagination."""
+    conn, db_type = get_connection(db_path=db_path, db_url=db_url)
+    try:
+        limit_val = max(1, min(int(limit), 200))
+        offset_val = max(0, int(offset))
+        ph = "%s" if db_type == 'postgres' else "?"
+
+        where_clause = ""
+        params = []
+        if search and str(search).strip():
+            s = f"%{str(search).strip()}%"
+            where_clause = f"WHERE patient_id LIKE {ph} OR patient_name LIKE {ph} OR email LIKE {ph}"
+            params = [s, s, s]
+
+        count_query = f"SELECT COUNT(*) FROM patient_profiles {where_clause};"
+        cursor = conn.cursor()
+        cursor.execute(count_query, tuple(params))
+        total_count = cursor.fetchone()[0]
+
+        select_query = f"SELECT * FROM patient_profiles {where_clause} ORDER BY updated_at DESC LIMIT {ph} OFFSET {ph};"
+        select_params = list(params) + [limit_val, offset_val]
+
+        if db_type == 'postgres':
+            import psycopg2.extras
+            cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        else:
+            cur = conn.cursor()
+        cur.execute(select_query, tuple(select_params))
+        rows = cur.fetchall()
+
+        return [_normalize_patient_profile_row(r) for r in rows], total_count
+    finally:
+        conn.close()
+
+def get_email_diagnostics(limit=50, db_path=None, db_url=None):
+    """
+    Returns sanitized summary of recent email deliveries for authorized clinician troubleshooting.
+    Masks recipient emails, omits secret tokens, and details failure categories.
+    """
+    conn, db_type = get_connection(db_path=db_path, db_url=db_url)
+    try:
+        limit_val = max(1, min(int(limit), 200))
+        ph = "%s" if db_type == 'postgres' else "?"
+        if db_type == 'postgres':
+            import psycopg2.extras
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        else:
+            cursor = conn.cursor()
+        cursor.execute(f"SELECT * FROM email_deliveries ORDER BY id DESC LIMIT {ph};", (limit_val,))
+        rows = cursor.fetchall()
+
+        results = []
+        for r in rows:
+            norm = _normalize_delivery_row(r)
+            raw_rec = norm.get('recipient_email') or ''
+            if raw_rec and '@' in raw_rec:
+                l, d = raw_rec.split('@', 1)
+                masked = (l[0] + '***' + l[-1] if len(l) > 2 else '*@' + d) + '@' + d
+            else:
+                masked = 'Not provided'
+
+            results.append({
+                'id': norm.get('id'),
+                'screening_uuid': norm.get('screening_uuid'),
+                'patient_id': norm.get('patient_id'),
+                'masked_recipient': masked,
+                'delivery_status': norm.get('delivery_status'),
+                'provider_name': norm.get('provider_name'),
+                'provider_message_id': norm.get('provider_message_id'),
+                'attempts': norm.get('attempts', 0),
+                'error_category': norm.get('error_category'),
+                'error_detail': norm.get('error_detail'),
+                'created_at': norm.get('created_at'),
+                'sent_at': norm.get('sent_at'),
+                'last_attempt_at': norm.get('last_attempt_at'),
+                'token_expiry': norm.get('token_expiry'),
+                'download_count': norm.get('download_count', 0),
+            })
+        return results
     finally:
         conn.close()

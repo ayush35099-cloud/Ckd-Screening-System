@@ -128,7 +128,9 @@ class TestEmailDeliveryFeature(unittest.TestCase):
 
         res_page = self.client.get(f"/result/{uuid_val}")
         self.assertEqual(res_page.status_code, 200)
-        self.assertIn(b"Email Not Provided", res_page.data)
+        self.assertNotIn(b"Patient Email Report Delivery", res_page.data)
+        self.assertNotIn(b"emailDeliveryCard", res_page.data)
+        self.assertIn(b"Download Official PDF Report", res_page.data)
 
     # 2. Screening with an email but no consent
     @patch("email_service.urllib.request.urlopen")
@@ -145,7 +147,9 @@ class TestEmailDeliveryFeature(unittest.TestCase):
         self.assertIsNone(delivery["token_hash"])
 
         res_page = self.client.get(f"/result/{uuid_val}")
-        self.assertIn(b"Consent Not Provided", res_page.data)
+        self.assertEqual(res_page.status_code, 200)
+        self.assertNotIn(b"Patient Email Report Delivery", res_page.data)
+        self.assertNotIn(b"emailDeliveryCard", res_page.data)
 
     # 3 & 6. Screening with valid email and consent + successful provider response + privacy check
     @patch("email_service.urllib.request.urlopen")
@@ -184,10 +188,12 @@ class TestEmailDeliveryFeature(unittest.TestCase):
         self.assertTrue(delivery["consent_recorded"])
         self.assertEqual(delivery["attempts"], 1)
 
-        # Result page displays Email Sent safely and PDF route still works
+        # Result page preserves clean outcome view and PDF download button
         res_page = self.client.get(f"/result/{uuid_val}")
-        self.assertIn(b"Email Sent", res_page.data)
-        self.assertIn(b"your screening report has been emailed successfully", res_page.data.lower())
+        self.assertEqual(res_page.status_code, 200)
+        self.assertNotIn(b"Patient Email Report Delivery", res_page.data)
+        self.assertNotIn(b"emailDeliveryCard", res_page.data)
+        self.assertIn(b"Download Official PDF Report", res_page.data)
 
         # Privacy: Dashboard and History APIs must never expose recipient_email
         dash_json = json.loads(self.client.get("/api/dashboard").data)
@@ -233,8 +239,9 @@ class TestEmailDeliveryFeature(unittest.TestCase):
         self.assertTrue(pdf_resp.data.startswith(b"%PDF"))
 
         res_page = self.client.get(f"/result/{uuid_val}")
-        self.assertIn(b"Email Not Configured", res_page.data)
-        self.assertNotIn(b"emailed successfully", res_page.data.lower())
+        self.assertEqual(res_page.status_code, 200)
+        self.assertNotIn(b"Patient Email Report Delivery", res_page.data)
+        self.assertNotIn(b"emailDeliveryCard", res_page.data)
 
     # 7. Provider API permanent failure (e.g. 403 domain/recipient restriction on free tier)
     @patch("email_service.urllib.request.urlopen")

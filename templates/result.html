@@ -248,87 +248,8 @@
         </a>
       </div>
 
-      <!-- Patient Email Report Delivery Status Card -->
-      {% if email_status %}
-      <div id="emailDeliveryCard" data-status="{{ email_status.delivery_status }}" data-uuid="{{ result.screening_uuid }}" style="margin-top: 1.75rem; background-color: var(--bg-surface-subtle); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1.25rem 1.5rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.6rem;">
-          <h3 style="font-family: var(--font-serif); font-size: 1.05rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-            <i data-lucide="mail" style="width: 18px; height: 18px; color: var(--color-primary);"></i>
-            <span>Patient Email Report Delivery</span>
-          </h3>
-
-          <span id="emailDeliveryBadge" class="badge-status {% if email_status.delivery_status == 'sent' %}badge-clear{% elif email_status.delivery_status == 'failed' %}badge-flagged{% else %}badge-moderate{% endif %}" style="font-size: 0.75rem; {% if email_status.delivery_status in ['not_provided', 'not_configured', 'consent_not_provided'] %}background-color: var(--bg-surface); border: 1px solid var(--border-strong); color: var(--text-muted);{% endif %}">
-            {{ email_status.badge_label }}
-          </span>
-        </div>
-
-        <p id="emailDeliveryMessage" style="font-size: 0.875rem; color: var(--text-main); margin-bottom: 0.65rem; line-height: 1.55;">
-          {{ email_status.message }}
-        </p>
-
-        {% if email_status.masked_email %}
-          <p style="font-size: 0.78125rem; color: var(--text-subtle); margin-bottom: 0.75rem;">
-            Recipient: <strong>{{ email_status.masked_email }}</strong>
-            {% if email_status.attempts %} &nbsp;&bull;&nbsp; Delivery attempts: <strong>{{ email_status.attempts }}</strong>{% endif %}
-            {% if email_status.sent_at %} &nbsp;&bull;&nbsp; Sent: <strong>{{ email_status.sent_at }}</strong>{% endif %}
-            {% if email_status.token_expiry %} &nbsp;&bull;&nbsp; Download link expires: <strong>{{ email_status.token_expiry }}</strong>{% endif %}
-          </p>
-        {% endif %}
-
-        {% if email_status.can_resend %}
-          <form action="{{ url_for('resend_report_email', screening_uuid=result.screening_uuid) }}" method="POST" style="display: inline-block;" onsubmit="const btn = this.querySelector('button[type=submit]'); if (btn) { btn.disabled = true; btn.innerHTML = '<span>Sending Replacement Link...</span>'; }">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn-renal btn-renal-outline btn-sm">
-              <i data-lucide="send" style="width: 14px; height: 14px;"></i>
-              <span>Resend Report (New 24h Link)</span>
-            </button>
-          </form>
-        {% endif %}
-      </div>
-      {% endif %}
-
     </div>
   </div>
 
 </div>
-{% endblock %}
-
-{% block extra_scripts %}
-{% if email_status and email_status.delivery_status == 'pending' %}
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const card = document.getElementById('emailDeliveryCard');
-    if (!card) return;
-    const uuid = card.getAttribute('data-uuid');
-    let polls = 0;
-    const maxPolls = 8;
-
-    const timer = setInterval(async () => {
-        polls += 1;
-        try {
-            const resp = await fetch(`/api/email-status/${encodeURIComponent(uuid)}`);
-            if (!resp.ok) return;
-            const data = await resp.json();
-            if (data.delivery_status && data.delivery_status !== 'pending') {
-                clearInterval(timer);
-                const badge = document.getElementById('emailDeliveryBadge');
-                const msg = document.getElementById('emailDeliveryMessage');
-                if (badge) badge.textContent = data.badge_label;
-                if (msg) msg.textContent = data.message;
-                if (data.delivery_status === 'sent' && badge) {
-                    badge.className = 'badge-status badge-clear';
-                } else if (data.delivery_status === 'failed' && badge) {
-                    badge.className = 'badge-status badge-flagged';
-                }
-            }
-        } catch (err) {
-            // Silently ignore transient poll failure
-        }
-        if (polls >= maxPolls) {
-            clearInterval(timer);
-        }
-    }, 2000);
-});
-</script>
-{% endif %}
 {% endblock %}

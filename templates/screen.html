@@ -64,9 +64,10 @@
         <div class="input-group-renal">
           <div class="input-label-row">
             <label for="patient_id" class="renal-label">Patient ID</label>
+            <span id="patientProfileBadge" class="ref-pill" style="display: none; background-color: var(--status-clear-bg); color: var(--status-clear-text); border-color: var(--status-clear-border); font-size: 0.6875rem;">Profile Linked</span>
           </div>
           <input type="text" id="patient_id" name="patient_id" class="renal-input" placeholder="e.g. PT-2026-081" required>
-          <span class="input-hint">Unique PHC or camp record number</span>
+          <span class="input-hint" id="patientIdHint">Unique PHC or camp record number</span>
         </div>
 
         <div class="input-group-renal">
@@ -129,7 +130,7 @@
               <span class="ref-pill">Secure Link Delivery</span>
             </div>
             <input type="email" id="patient_email" name="patient_email" class="renal-input" placeholder="e.g. patient@example.com" autocomplete="off">
-            <span class="input-hint">Optional. Receives a secure, time-limited PDF report download link after screening.</span>
+            <span class="input-hint" id="patientEmailHint">Optional. Receives a secure, time-limited PDF report download link after screening.</span>
           </div>
 
           <div class="input-group-renal" style="padding-top: 1.5rem;">
