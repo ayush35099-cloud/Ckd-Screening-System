@@ -11,24 +11,29 @@
     <div class="hero-content">
       <div class="hero-eyebrow">
         <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
-        <span>Clinical Decision-Support &bull; Community Screening</span>
+        <span data-i18n="hero_eyebrow">Clinical Decision-Support &bull; Community Screening</span>
       </div>
-      <h1 class="hero-title">
+      <h1 class="hero-title" data-i18n="hero_title">
         Better Kidney Health Starts With Early Awareness.
       </h1>
-      <p class="hero-subtitle">
+      <p class="hero-subtitle" data-i18n="hero_subtitle">
         An intelligent screening platform that helps healthcare workers identify potential kidney health concerns using routine laboratory parameters in primary health centres and diagnostic camps.
       </p>
 
       <div class="hero-actions">
         <a href="{{ url_for('screen_view') }}" class="btn-renal btn-renal-primary" style="padding: 0.85rem 1.75rem; font-size: 1rem;">
           <i data-lucide="clipboard-plus"></i>
-          <span>Start Screening</span>
+          <span data-i18n="hero_btn_screen">Start Patient Screening</span>
         </a>
         <a href="#how-it-works" class="btn-renal btn-renal-outline" style="padding: 0.85rem 1.75rem; font-size: 1rem;">
-          <span>Explore How It Works</span>
+          <span data-i18n="nav_how_it_works">Explore How It Works</span>
           <i data-lucide="arrow-down" style="width: 16px; height: 16px;"></i>
         </a>
+        <!-- Audio TTS Listen Button -->
+        <button type="button" class="btn-tts" data-tts-target=".hero-content" title="Listen to instructions">
+          <i data-lucide="volume-2"></i>
+          <span class="tts-label" data-i18n="hero_listen">Listen to Instructions</span>
+        </button>
       </div>
 
       <div class="hero-badges">
@@ -182,7 +187,7 @@
   <div class="container-wide">
     <div class="section-header">
       <span class="section-eyebrow">Operational Workflow</span>
-      <h2 class="section-title">How the Screening Process Works</h2>
+      <h2 class="section-title" data-i18n="how_it_works_title">How RenalCare Works in 3 Simple Steps</h2>
       <p class="section-description">
         Designed for streamlined execution by primary care nursing officers, camp coordinators, and health workers.
       </p>
@@ -191,25 +196,25 @@
     <div class="process-steps">
       <div class="step-card">
         <div class="step-number">01</div>
-        <h3 class="step-title">Collect Routine Labs</h3>
-        <p class="step-desc">
-          Gather standard dipstick urinalysis, blood pressure, fasting/random glucose, and complete metabolic profile.
+        <h3 class="step-title" data-i18n="step1_title">1. Select Screening Model</h3>
+        <p class="step-desc" data-i18n="step1_desc">
+          Choose between the standard clinical model (with urine tests) or expanded survey model (non-invasive vitals & blood tests).
         </p>
       </div>
 
       <div class="step-card">
         <div class="step-number">02</div>
-        <h3 class="step-title">Enter Parameters</h3>
-        <p class="step-desc">
-          Input available values into the structured 24-feature form. Reference ranges and automated pre-checks guide the operator.
+        <h3 class="step-title" data-i18n="step2_title">2. Enter Parameters</h3>
+        <p class="step-desc" data-i18n="step2_desc">
+          Input available values into the structured form. Reference ranges and automated pre-checks guide the operator.
         </p>
       </div>
 
       <div class="step-card">
         <div class="step-number">03</div>
-        <h3 class="step-title">Model Evaluation</h3>
-        <p class="step-desc">
-          The machine learning pipeline scales, imputes, and assesses multi-parameter correlations in milliseconds.
+        <h3 class="step-title" data-i18n="step3_title">3. Instant Evaluation & PDF Report</h3>
+        <p class="step-desc" data-i18n="step3_desc">
+          Receive instant decision-support risk stratification, abnormal findings summary, and official downloadable clinical report.
         </p>
       </div>
 

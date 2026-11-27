@@ -7,13 +7,13 @@
   
   <div class="dashboard-header">
     <div class="dashboard-title-group">
-      <h1>Patient Screening Records</h1>
-      <p>Search, filter, and audit past clinical screening evaluations and PDF reports.</p>
+      <h1 data-i18n="history_title">Patient Screening Records</h1>
+      <p data-i18n="history_desc">Search, filter, and audit past clinical screening evaluations and PDF reports.</p>
     </div>
     <div>
       <a href="{{ url_for('screen_view') }}" class="btn-renal btn-renal-primary">
         <i data-lucide="plus-circle"></i>
-        <span>New Patient Screening</span>
+        <span data-i18n="new_screening">New Patient Screening</span>
       </a>
     </div>
   </div>
@@ -21,7 +21,7 @@
   <!-- Search & Filter Controls -->
   <form method="GET" action="{{ url_for('history_view') }}" class="filter-bar">
     <div class="search-input-wrap">
-      <input type="text" name="q" value="{{ search_query }}" class="renal-input" placeholder="Search by Patient ID, Name, or UUID...">
+      <input type="text" name="q" value="{{ search_query }}" class="renal-input" placeholder="Search by Patient ID, Name, or UUID..." data-i18n-placeholder="search_placeholder">
     </div>
 
     <div style="display: flex; gap: 0.75rem; align-items: center;">

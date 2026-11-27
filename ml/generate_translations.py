@@ -1,0 +1,810 @@
+# -*- coding: utf-8 -*-
+"""
+Build complete translations for RenalCare (8 languages: EN, HI, BN, MR, TE, TA, UR, GU).
+"""
+import os
+import json
+
+TRANSLATIONS_DIR = os.path.join(os.path.dirname(__file__), '..', 'translations')
+os.makedirs(TRANSLATIONS_DIR, exist_ok=True)
+
+# Language Metadata
+LANG_META = {
+    'en': {'name': 'English', 'native': 'English', 'dir': 'ltr', 'code': 'en', 'icon': 'EN'},
+    'hi': {'name': 'Hindi', 'native': 'हिन्दी', 'dir': 'ltr', 'code': 'hi', 'icon': 'अ'},
+    'bn': {'name': 'Bengali', 'native': 'বাংলা', 'dir': 'ltr', 'code': 'bn', 'icon': 'অ'},
+    'mr': {'name': 'Marathi', 'native': 'मराठी', 'dir': 'ltr', 'code': 'mr', 'icon': 'म'},
+    'te': {'name': 'Telugu', 'native': 'తెలుగు', 'dir': 'ltr', 'code': 'te', 'icon': 'తె'},
+    'ta': {'name': 'Tamil', 'native': 'தமிழ்', 'dir': 'ltr', 'code': 'ta', 'icon': 'த'},
+    'ur': {'name': 'Urdu', 'native': 'اردو', 'dir': 'rtl', 'code': 'ur', 'icon': 'اردو'},
+    'gu': {'name': 'Gujarati', 'native': 'ગુજરાતી', 'dir': 'ltr', 'code': 'gu', 'icon': 'ગુ'}
+}
+
+# Translation Keys & Dictionaries
+EN = {
+    "app_name": "RenalCare",
+    "tagline": "Smarter Screening • Earlier Awareness",
+    "academic_bar_left": "Dayananda Sagar College of Engineering, Bengaluru | Dept. of Artificial Intelligence & Machine Learning • BCP308 Community Project • Team A-12",
+    "academic_bar_right": "For Primary Health Centres & Community Diagnostic Camps",
+    
+    # Navigation
+    "nav_home": "Home",
+    "nav_language": "Language",
+    "nav_how_it_works": "How It Works",
+    "nav_screening": "Screening",
+    "nav_research": "Research & ML",
+    "nav_dashboard": "Dashboard",
+    "nav_history": "History",
+    "nav_start_screening": "Start Screening",
+    "nav_easy_mode": "Easy Mode",
+    "nav_normal_mode": "Standard Mode",
+    
+    # Welcome Modal
+    "welcome_title": "Welcome to RenalCare",
+    "welcome_subtitle": "Choose the language you are comfortable with.",
+    "welcome_continue": "Continue to RenalCare",
+    "welcome_change_note": "You can change your language anytime from the top navigation bar.",
+    
+    # Hero & Landing
+    "hero_eyebrow": "Community Kidney Health Initiative",
+    "hero_title": "Better Kidney Health Starts With Early Awareness",
+    "hero_subtitle": "A machine learning decision-support platform designed to assist healthcare workers in Primary Health Centres (PHCs) and rural camps in detecting early physiological markers of Chronic Kidney Disease.",
+    "hero_btn_screen": "Start Patient Screening",
+    "hero_btn_dashboard": "View Analytics Dashboard",
+    "hero_listen": "Listen to Instructions",
+    "hero_stop": "Stop Listening",
+    
+    # How It Works
+    "how_it_works_title": "How RenalCare Works in 3 Simple Steps",
+    "step1_title": "1. Select Screening Model",
+    "step1_desc": "Choose between the standard clinical model (with urine tests) or expanded survey model (non-invasive vitals & blood tests).",
+    "step2_title": "2. Enter Patient Clinical Parameters",
+    "step2_desc": "Input blood pressure, blood chemistry, and basic laboratory findings with inline normal reference guidance.",
+    "step3_title": "3. Instant Evaluation & PDF Report",
+    "step3_desc": "Receive instant decision-support risk stratification, abnormal findings summary, and official downloadable clinical report.",
+    
+    # Screening Page
+    "screen_heading": "Patient Screening Evaluation",
+    "screen_subtitle": "Select an independent machine learning model, enter patient clinical indicators, and evaluate Chronic Kidney Disease risk.",
+    "step1_choose_pipeline": "Step 1: Choose Evaluation Pipeline",
+    "select_screening_model": "Select Clinical Screening Model",
+    "model_selection_desc": "Choose between the standard clinical benchmark model (UCI) and the expanded population survey model (CDC NHANES).",
+    
+    # Model 1 Card
+    "model1_title": "Standard CKD Model",
+    "model1_dataset": "Dataset: UCI Chronic Kidney Disease (N=400)",
+    "model1_features": "24 Features",
+    "model1_desc": "Standard clinical benchmark. Evaluates routine blood chemistry, urinalysis dipsticks (albumin, sugar, specific gravity), urine microscopy (RBC/pus cells), and clinical comorbidities.",
+    "tag_urinalysis": "Urinalysis Dipstick",
+    "tag_microscopy": "Urine Microscopy",
+    "tag_chemistry": "Blood Chemistry",
+    "tag_sensitivity": "100% Test Sensitivity",
+    
+    # Model 2 Card
+    "model2_title": "Expanded CKD Model",
+    "model2_dataset": "Dataset: CDC NHANES 2017–2018 (N=5,063)",
+    "model2_features": "19 Features",
+    "model2_desc": "National survey model. Evaluates 19 non-invasive markers: vitals (SBP/DBP/BMI), comprehensive metabolic panel, HbA1c, uric acid, and CBC without requiring dipstick microscopy.",
+    "tag_no_dipstick": "No Urine Dipstick Needed",
+    "tag_metabolic_hba1c": "Metabolic Panel & HbA1c",
+    "tag_vitals": "Vitals (BP & BMI)",
+    "tag_cdc_population": "CDC Survey Population",
+    
+    "btn_continue_to_form": "Continue to Screening Form",
+    "active_model_label": "Active Screening Model",
+    "switch_model": "Switch Model",
+    
+    # Samples & Camp Bar
+    "sample_normal": "Sample: Normal Baseline",
+    "sample_moderate": "Sample: Moderate CKD Indicators",
+    "sample_high": "Sample: High-Risk CKD Profile",
+    "sample_reset": "Reset Form",
+    "camp_mode_title": "Community Diagnostic Camp Mode:",
+    "camp_mode_desc": "Evaluating multiple patients? Upload a batch CSV of up to 100 records or select a specialized screening model below.",
+    "batch_csv_btn": "Batch CSV Screening",
+    "csv_template_btn": "CSV Template",
+    "select_and_open_model": "Select & Open Model",
+    "switch_to_standard": "Switch to Standard Model",
+    
+    # Form Fieldsets
+    "sec_demographics": "1. Patient Demographics & Vitals",
+    "sec_urinalysis": "2. Urinalysis Biomarkers",
+    "sec_chemistry": "3. Renal Chemistry & Electrolytes",
+    "sec_hematology": "4. Hematological Parameters",
+    "sec_comorbidities": "5. Clinical Comorbidities & Symptoms",
+    "sec_nhanes_demographics": "1. Patient Demographics & Physical Examination",
+    "sec_nhanes_metabolic": "2. Comprehensive Metabolic & Renal Panel",
+    "sec_nhanes_biochemistry": "3. Biochemistry & Serum Electrolytes",
+    "sec_nhanes_hematology": "4. Hematological Parameters (CBC_J)",
+    "sec_nhanes_comorbidities": "5. Clinical History & Comorbidities",
+    
+    # Form Labels & Hints
+    "lbl_patient_id": "Patient ID",
+    "hint_patient_id": "Unique PHC or camp record number",
+    "lbl_patient_name": "Patient Name (Optional)",
+    "hint_patient_name": "Confidential local display",
+    "lbl_age": "Age (Years)",
+    "lbl_sex": "Biological Sex",
+    "lbl_male": "Male",
+    "lbl_female": "Female",
+    "lbl_other": "Other",
+    "lbl_bp": "Blood Pressure (Diastolic)",
+    "lbl_sbp": "Systolic BP (sbp)",
+    "lbl_dbp": "Diastolic BP (dbp)",
+    "lbl_bmi": "Body Mass Index (BMI)",
+    "lbl_algorithm": "Evaluation Algorithm",
+    "lbl_rf": "Random Forest (Champion Ensemble)",
+    "lbl_dt": "Decision Tree (Single Decision Tree)",
+    "lbl_email": "Patient Email Address (Optional)",
+    "hint_email": "Optional. Receives an automated PDF report download link.",
+    "lbl_consent": "I consent to receiving my screening report at the email address provided.",
+    
+    "lbl_sg": "Specific Gravity (sg)",
+    "lbl_al": "Urine Albumin / Protein (al)",
+    "lbl_su": "Urine Sugar / Glucose (su)",
+    "lbl_rbc": "Red Blood Cells (rbc)",
+    "lbl_pc": "Pus Cells (pc)",
+    "lbl_pcc": "Pus Cell Clumps (pcc)",
+    "lbl_ba": "Bacteria (ba)",
+    "lbl_bgr": "Blood Glucose Random (bgr)",
+    "lbl_bu": "Blood Urea (bu)",
+    "lbl_sc": "Serum Creatinine (sc)",
+    "lbl_sod": "Serum Sodium (sod)",
+    "lbl_pot": "Serum Potassium (pot)",
+    "lbl_tot_protein": "Total Protein",
+    "lbl_serum_alb": "Serum Albumin",
+    "lbl_uric_acid": "Serum Uric Acid",
+    "lbl_hba1c": "Glycohemoglobin (HbA1c)",
+    "lbl_hemo": "Hemoglobin (hemo)",
+    "lbl_pcv": "Packed Cell Volume (pcv)",
+    "lbl_wc": "White Blood Cells (wc)",
+    "lbl_rc": "Red Blood Cells (rc)",
+    "lbl_htn": "Hypertension (htn)",
+    "lbl_dm": "Diabetes Mellitus (dm)",
+    "lbl_cad": "Coronary Artery Disease (cad)",
+    "lbl_appet": "Appetite (appet)",
+    "lbl_pe": "Pedal Edema (pe)",
+    "lbl_ane": "Anemia Manifestation (ane)",
+    
+    "opt_yes": "yes",
+    "opt_no": "no",
+    "opt_normal": "normal",
+    "opt_abnormal": "abnormal",
+    "opt_present": "present",
+    "opt_notpresent": "notpresent",
+    "opt_good": "good",
+    "opt_poor": "poor",
+    
+    "btn_review_submit_standard": "Review & Evaluate Screening (Standard Model)",
+    "btn_review_submit_expanded": "Review & Evaluate Screening (Expanded Model)",
+    "modal_confirm_title": "Confirm Clinical Screening Submission",
+    "modal_edit": "Edit Values",
+    "modal_confirm": "Confirm & Evaluate",
+    
+    # Results View
+    "result_headline_detected": "CKD indicators detected – further clinical evaluation recommended.",
+    "result_headline_clear": "CKD indicators not detected by this model – this result does not rule out CKD.",
+    "stat_tier_label": "Statistical Tier:",
+    "tier_low": "Low Statistical Indication",
+    "tier_moderate": "Moderate Statistical Indication",
+    "tier_high": "High Statistical Indication",
+    "primary_evaluator": "Primary Evaluator:",
+    "model_confidence": "Model Confidence:",
+    "stat_indication": "Statistical Indication P(CKD):",
+    "screening_timestamp": "Screening Timestamp:",
+    "dual_eval_title": "Dual-Pipeline Comparative Evaluation",
+    "consensus_agree": "Complete Consensus (Both Models Agree)",
+    "consensus_divergent": "Divergent Outcome",
+    "clinical_guidance_title": "Clinical Screening Guidance",
+    "guidance_detected": "Laboratory indicators consistent with Chronic Kidney Disease detected. Prompt consultation with a physician or nephrologist is strongly advised.",
+    "guidance_clear": "Routine screening indicators show values within non-CKD baseline ranges. Periodic wellness checks are advised.",
+    "download_pdf_report": "Download Official PDF Report",
+    "new_screening": "New Patient Screening",
+    "return_dashboard": "Return to Dashboard",
+    "screening_history": "Screening History",
+    
+    # Dashboard
+    "dash_title": "Primary Care Screening Dashboard",
+    "dash_desc": "Operational decision-support metrics and recent screening activity from the active database.",
+    "total_screened": "Total Screened",
+    "flagged_evaluation": "Flagged for Evaluation",
+    "routine_baseline": "Routine Baseline",
+    "active_pipelines": "Active ML Pipelines",
+    "screening_breakdown": "Live Screening Outcomes Breakdown",
+    "screening_activity": "Screening Activity Over Time",
+    "recent_activity": "Recent Patient Screening Activity",
+    "multi_dataset_comparison": "Multi-Dataset Model Comparison & Audit",
+    "cohort_distinction_notice": "Cohort & Population Distinction Notice",
+    
+    # History
+    "history_title": "Patient Screening History",
+    "history_desc": "Searchable audit trail of community screening records.",
+    "search_placeholder": "Search by Patient ID or Name...",
+    "all_outcomes": "All Outcomes",
+    "flagged_only": "Flagged Only",
+    "clear_only": "Routine Baseline Only",
+    "export_csv": "Export Filtered CSV",
+    
+    # Easy Mode Explanations
+    "easy_mode_banner": "Easy Mode Active: Simplified explanations and larger buttons for easier reading.",
+    "easy_creatinine": "Serum Creatinine: Kidney waste filter test. High numbers show kidneys are under stress.",
+    "easy_bp": "Blood Pressure: Checks pressure on heart and arteries.",
+    "easy_hemo": "Hemoglobin: Measures blood strength and oxygen levels. Low levels cause weakness.",
+    "easy_glucose": "Blood Glucose: Measures sugar in blood to check for diabetes.",
+    "easy_urine": "Urinalysis: Checks for protein leakage in urine.",
+    
+    # Regulatory Disclaimer
+    "disclaimer_title": "Educational & Screening Disclaimer",
+    "disclaimer_text": "This application is an educational decision-support screening aid and is NOT a medical diagnostic device. It does not diagnose, cure, mitigate, or treat Chronic Kidney Disease. Any flagged indicator must be independently verified by a licensed medical practitioner through standard diagnostic nephrology protocols."
+}
+
+# Translations generator helper
+def create_lang_dict(base_dict, overrides):
+    res = dict(base_dict)
+    res.update(overrides)
+    return res
+
+# 1. HINDI (हिन्दी)
+HI = create_lang_dict(EN, {
+    "app_name": "RenalCare (रीनलकेयर)",
+    "tagline": "बेहतर जांच • पहले से जागरूकता",
+    "academic_bar_left": "दयानंद सागर कॉलेज ऑफ इंजीनियरिंग, बेंगलुरु | एआई व मशीन लर्निंग विभाग • BCP308 कम्युनिटी प्रोजेक्ट • टीम A-12",
+    "academic_bar_right": "प्राथमिक स्वास्थ्य केंद्रों और ग्रामीण स्वास्थ्य शिविरों के लिए",
+    
+    "nav_home": "होम",
+    "nav_language": "भाषा (Language)",
+    "nav_how_it_works": "यह कैसे काम करता है",
+    "nav_screening": "मरीज की जांच",
+    "nav_research": "शोध एवं एमएल",
+    "nav_dashboard": "डैशबोर्ड",
+    "nav_history": "इतिहास",
+    "nav_start_screening": "जांच शुरू करें",
+    "nav_easy_mode": "सरल मोड (Easy Mode)",
+    "nav_normal_mode": "मानक मोड (Standard Mode)",
+    
+    "welcome_title": "RenalCare (रीनलकेयर) में आपका स्वागत है",
+    "welcome_subtitle": "अपनी सुविधानुसार अपनी भाषा चुनें।",
+    "welcome_continue": "RenalCare पर आगे बढ़ें",
+    "welcome_change_note": "आप ऊपर दिए गए मेनू से कभी भी भाषा बदल सकते हैं।",
+    
+    "hero_eyebrow": "सामुदायिक गुर्दा स्वास्थ्य पहल",
+    "hero_title": "गुर्दे का बेहतर स्वास्थ्य समय पर जांच से शुरू होता है",
+    "hero_subtitle": "प्राथमिक स्वास्थ्य केंद्रों और ग्रामीण स्वास्थ्य शिविरों में स्वास्थ्य कार्यकर्ताओं की सहायता के लिए एक मशीन लर्निंग आधारित प्रणाली, जो गुर्दे की बीमारी के शुरुआती लक्षणों की पहचान करती है।",
+    "hero_btn_screen": "मरीज की जांच शुरू करें",
+    "hero_btn_dashboard": "डैशबोर्ड देखें",
+    "hero_listen": "निर्देश सुनें (Audio)",
+    "hero_stop": "आवाज रोकें",
+    
+    "how_it_works_title": "RenalCare 3 आसान चरणों में कैसे काम करता है",
+    "step1_title": "1. जांच मॉडल चुनें",
+    "step1_desc": "मानक क्लिनिकल मॉडल (पेशाब जांच सहित) या विस्तारित जनसंख्या मॉडल (गैर-आक्रामक रक्त जांच) में से चुनें।",
+    "step2_title": "2. मरीज के मेडिकल आंकड़े भरें",
+    "step2_desc": "रक्तचाप, शुगर, क्रिएटिनिन और सामान्य रिपोर्ट दर्ज करें, सामान्य संदर्भ सीमाओं के साथ।",
+    "step3_title": "3. तुरंत परिणाम और पीडीएफ रिपोर्ट पाएं",
+    "step3_desc": "जोखिम स्तर की तुरंत गणना, असामान्य रिपोर्ट की सूची और डाउनलोड करने योग्य आधिकारिक रिपोर्ट प्राप्त करें।",
+    
+    "screen_heading": "मरीज गुर्दा स्वास्थ्य जांच",
+    "screen_subtitle": "स्वतंत्र मशीन लर्निंग मॉडल चुनें, क्लिनिकल रिपोर्ट दर्ज करें और जोखिम का आकलन करें।",
+    "step1_choose_pipeline": "चरण 1: मूल्यांकन पाइपलाइन चुनें",
+    "select_screening_model": "जांच मॉडल का चयन करें",
+    "model_selection_desc": "मानक मॉडल (UCI) और विस्तारित जनसंख्या मॉडल (CDC NHANES) में से चुनें।",
+    
+    "model1_title": "मानक गुर्दा जांच मॉडल (Standard Model)",
+    "model1_dataset": "डेटासेट: UCI क्रोनिक किडनी डिजीज (400 मरीज)",
+    "model1_features": "24 जांच पैरामीटर",
+    "model1_desc": "मानक क्लिनिकल बेंचमार्क। नियमित रक्त रसायन, यूरिन एल्बुमिन, यूरिन शुगर, माइक्रोस्कोपी और अन्य बीमारियों का मूल्यांकन करता है।",
+    "tag_urinalysis": "पेशाब जांच (Urinalysis)",
+    "tag_microscopy": "यूरिन माइक्रोस्कोपी",
+    "tag_chemistry": "रक्त रसायन जांच",
+    "tag_sensitivity": "100% परीक्षण संवेदनशीलता",
+    
+    "model2_title": "विस्तारित जनसंख्या मॉडल (Expanded Model)",
+    "model2_dataset": "डेटासेट: CDC NHANES 2017–2018 (5,063 मरीज)",
+    "model2_features": "19 जांच पैरामीटर",
+    "model2_desc": "राष्ट्रीय स्वास्थ्य सर्वेक्षण मॉडल। बिना पेशाब जांच के 19 गैर-आक्रामक परीक्षणों (बीपी, बीएमआई, एचबीए1सी, सीबीसी और मेटाबॉलिक पैनल) का मूल्यांकन करता है।",
+    "tag_no_dipstick": "पेशाब जांच की आवश्यकता नहीं",
+    "tag_metabolic_hba1c": "मेटाबॉलिक पैनल व HbA1c",
+    "tag_vitals": "बीपी और वजन (BMI)",
+    "tag_cdc_population": "व्यापक जनसंख्या सर्वेक्षण",
+    
+    "btn_continue_to_form": "जांच फॉर्म पर आगे बढ़ें",
+    "active_model_label": "सक्रिय जांच मॉडल",
+    "switch_model": "मॉडल बदलें",
+    
+    "sample_normal": "नमूना: सामान्य स्वस्थ व्यक्ति",
+    "sample_moderate": "नमूना: मध्यम जोखिम लक्षण",
+    "sample_high": "नमूना: उच्च जोखिम गुर्दा प्रोफाइल",
+    "sample_reset": "फॉर्म रीसेट करें",
+    "camp_mode_title": "सामुदायिक स्वास्थ्य शिविर मोड (Camp Mode):",
+    "camp_mode_desc": "कई मरीजों की एक साथ जांच? 100 मरीजों की CSV फाइल अपलोड करें या विशेष जांच मॉडल चुनें।",
+    "batch_csv_btn": "बैच CSV द्वारा जांच",
+    "csv_template_btn": "CSV टेम्पलेट डाउनलोड",
+    "select_and_open_model": "यह मॉडल चुनें और खोलें",
+    "switch_to_standard": "मानक मॉडल पर लौटें",
+    
+    "sec_demographics": "1. मरीज की जानकारी और आवश्यक माप",
+    "sec_urinalysis": "2. पेशाब जांच बायोमार्कर",
+    "sec_chemistry": "3. गुर्दा रसायन और इलेक्ट्रोलाइट्स",
+    "sec_hematology": "4. रक्त जांच (सीबीसी)",
+    "sec_comorbidities": "5. संबंधित बीमारियां और लक्षण",
+    "sec_nhanes_demographics": "1. मरीज की जानकारी और शारीरिक जांच",
+    "sec_nhanes_metabolic": "2. संपूर्ण मेटाबॉलिक और गुर्दा पैनल",
+    "sec_nhanes_biochemistry": "3. बायोकेमिस्ट्री और सीरम इलेक्ट्रोलाइट्स",
+    "sec_nhanes_hematology": "4. रक्त परीक्षण पैरामीटर (CBC)",
+    "sec_nhanes_comorbidities": "5. मेडिकल इतिहास और संबंधित बीमारियां",
+    
+    "lbl_patient_id": "मरीज पहचान संख्या (Patient ID)",
+    "hint_patient_id": "अस्पताल या स्वास्थ्य शिविर की विशिष्ट संख्या",
+    "lbl_patient_name": "मरीज का नाम (वैकल्पिक)",
+    "hint_patient_name": "गोपनीय स्थानीय रिकॉर्ड",
+    "lbl_age": "उम्र (वर्ष)",
+    "lbl_sex": "लिंग",
+    "lbl_male": "पुरुष",
+    "lbl_female": "महिला",
+    "lbl_other": "अन्य",
+    "lbl_bp": "रक्तचाप (Diastolic BP)",
+    "lbl_sbp": "ऊपरी रक्तचाप (Systolic SBP)",
+    "lbl_dbp": "निचला रक्तचाप (Diastolic DBP)",
+    "lbl_bmi": "बॉडी मास इंडेक्स (BMI)",
+    "lbl_algorithm": "विश्लेषण एल्गोरिदम",
+    "lbl_rf": "रैंडम फॉरेस्ट (सर्वश्रेष्ठ सटीकता)",
+    "lbl_dt": "डिसीजन ट्री (सरल वृक्ष विधि)",
+    "lbl_email": "मरीज का ईमेल (वैकल्पिक)",
+    "hint_email": "वैकल्पिक। इस ईमेल पर रिपोर्ट का डाउनलोड लिंक भेजा जाएगा।",
+    "lbl_consent": "मैं दिए गए ईमेल पते पर अपनी रिपोर्ट प्राप्त करने की सहमति देता/देती हूँ।",
+    
+    "lbl_sg": "विशिष्ट गुरुत्व (sg)",
+    "lbl_al": "यूरिन एल्बुमिन / प्रोटीन (al)",
+    "lbl_su": "यूरिन शुगर / ग्लूकोज (su)",
+    "lbl_rbc": "लाल रक्त कोशिकाएं (rbc)",
+    "lbl_pc": "मवाद कोशिकाएं (pc)",
+    "lbl_pcc": "मवाद कोशिकाओं के गुच्छे (pcc)",
+    "lbl_ba": "बैक्टीरिया (ba)",
+    "lbl_bgr": "रैंडम ब्लड ग्लूकोज / शुगर (bgr)",
+    "lbl_bu": "ब्लड यूरिया (bu)",
+    "lbl_sc": "सीरम क्रिएटिनिन (sc - मुख्य गुर्दा जांच)",
+    "lbl_sod": "सीरम सोडियम (sod)",
+    "lbl_pot": "सीरम पोटेशियम (pot)",
+    "lbl_tot_protein": "कुल प्रोटीन (Total Protein)",
+    "lbl_serum_alb": "सीरम एल्बुमिन",
+    "lbl_uric_acid": "सीरम यूरिक एसिड",
+    "lbl_hba1c": "ग्लाइकोहेमोग्लोबिन (HbA1c - 3 महीने की शुगर)",
+    "lbl_hemo": "हीमोग्लोबिन (खून की मात्रा)",
+    "lbl_pcv": "पैक्ड सेल वॉल्यूम (pcv)",
+    "lbl_wc": "सफेद रक्त कोशिकाएं (wc)",
+    "lbl_rc": "लाल रक्त कणिकाएं (rc)",
+    "lbl_htn": "हाई ब्लड प्रेशर (उच्च रक्तचाप)",
+    "lbl_dm": "मधुमेह (शुगर / डायबिटीज)",
+    "lbl_cad": "हृदय रोग (Coronary Artery Disease)",
+    "lbl_appet": "भूख (Appetite)",
+    "lbl_pe": "पैरों में सूजन (Pedal Edema)",
+    "lbl_ane": "एनीमिया (खून की कमी)",
+    
+    "opt_yes": "हाँ",
+    "opt_no": "नहीं",
+    "opt_normal": "सामान्य",
+    "opt_abnormal": "असामान्य",
+    "opt_present": "उपस्थित",
+    "opt_notpresent": "अनुपस्थित",
+    "opt_good": "अच्छी",
+    "opt_poor": "कमजोर / खराब",
+    
+    "btn_review_submit_standard": "समीक्षा करें और जांचें (मानक मॉडल)",
+    "btn_review_submit_expanded": "समीक्षा करें और जांचें (विस्तारित मॉडल)",
+    "modal_confirm_title": "दर्ज की गई रिपोर्ट की पुष्टि करें",
+    "modal_edit": "बदलाव करें",
+    "modal_confirm": "पुष्टि करें और मूल्यांकन करें",
+    
+    "result_headline_detected": "गुर्दे की बीमारी के संकेतक मिले हैं – आगे डॉक्टर से परामर्श की सलाह दी जाती है।",
+    "result_headline_clear": "इस मॉडल द्वारा गुर्दे की बीमारी के लक्षण नहीं मिले हैं – यह पूर्णतः सामान्य होने की गारंटी नहीं है।",
+    "stat_tier_label": "सांख्यिकीय जोखिम स्तर:",
+    "tier_low": "कम जोखिम स्तर (Low Risk)",
+    "tier_moderate": "मध्यम जोखिम स्तर (Moderate Risk)",
+    "tier_high": "उच्च जोखिम स्तर (High Risk)",
+    "primary_evaluator": "मुख्य मॉडल:",
+    "model_confidence": "मॉडल विश्वास प्रतिशत:",
+    "stat_indication": "गुर्दा जोखिम संभावना:",
+    "screening_timestamp": "जांच का समय:",
+    "dual_eval_title": "दोहरा मॉडल तुलनात्मक मूल्यांकन",
+    "consensus_agree": "पूर्ण सहमति (दोनों मॉडल सहमत हैं)",
+    "consensus_divergent": "भिन्न परिणाम",
+    "clinical_guidance_title": "चिकित्सा मार्गदर्शन और सलाह",
+    "guidance_detected": "मरीज की रिपोर्ट में गुर्दे की समस्या के संकेत मिले हैं। कृपया तुरंत किसी योग्य डॉक्टर या नेफ्रोलॉजिस्ट (गुर्दा रोग विशेषज्ञ) से संपर्क करें और अतिरिक्त जांच कराएं।",
+    "guidance_clear": "मरीज की रिपोर्ट सामान्य सीमा में पाई गई है। नियमित रूप से स्वास्थ्य की निगरानी रखें और समय-समय पर रक्तचाप व शुगर की जांच कराते रहें।",
+    "download_pdf_report": "आधिकारिक पीडीएफ रिपोर्ट डाउनलोड करें",
+    "new_screening": "नए मरीज की जांच करें",
+    "return_dashboard": "डैशबोर्ड पर वापस जाएं",
+    "screening_history": "जांच का इतिहास",
+    
+    "dash_title": "प्राथमिक स्वास्थ्य जांच डैशबोर्ड",
+    "dash_desc": "सक्रिय डेटाबेस से प्राप्त सांख्यिकीय आंकड़े और हाल की जांच गतिविधियां।",
+    "total_screened": "कुल जांचे गए मरीज",
+    "flagged_evaluation": "जोखिम वाले मरीज",
+    "routine_baseline": "सामान्य स्वस्थ मरीज",
+    "active_pipelines": "सक्रिय एमएल मॉडल",
+    "screening_breakdown": "जांच परिणामों का प्रतिशत विभाजन",
+    "screening_activity": "समय के साथ जांच गतिविधि",
+    "recent_activity": "हाल के मरीजों की जांच सूची",
+    "multi_dataset_comparison": "मल्टी-डेटासेट मॉडल तुलना और ऑडिट",
+    "cohort_distinction_notice": "आबादी एवं डेटासेट अंतर सूचना",
+    
+    "history_title": "मरीज जांच इतिहास",
+    "history_desc": "स्वास्थ्य केंद्र में जांचे गए सभी मरीजों का सुरक्षित रिकॉर्ड।",
+    "search_placeholder": "मरीज संख्या या नाम से खोजें...",
+    "all_outcomes": "सभी परिणाम",
+    "flagged_only": "केवल जोखिम वाले मरीज",
+    "clear_only": "केवल सामान्य मरीज",
+    "export_csv": "CSV फाइल डाउनलोड करें",
+    
+    "easy_mode_banner": "सरल मोड सक्रिय है: बड़े अक्षर और आसान भाषा में मेडिकल शब्दों का अर्थ।",
+    "easy_creatinine": "सीरम क्रिएटिनिन: गुर्दे के फिल्टर का टेस्ट। यह नंबर बढ़ने का मतलब है गुर्दा कचरा साफ नहीं कर पा रहा।",
+    "easy_bp": "रक्तचाप (BP): नसों और दिल पर खून के दबाव की माप। अधिक बीपी गुर्दे को नुकसान पहुंचाता है।",
+    "easy_hemo": "हीमोग्लोबिन: खून में ताकत और ऑक्सीजन की मात्रा। कम होने पर कमजोरी और थकान होती है।",
+    "easy_glucose": "ब्लड शुगर: खून में मीठे की मात्रा। ज्यादा शुगर गुर्दे को धीरे-धीरे खराब करती है।",
+    "easy_urine": "पेशाब जांच: पेशाब में प्रोटीन या खून का रिसाव देखने की जांच।",
+    
+    "disclaimer_title": "शैक्षिक एवं प्राथमिक जांच सूचना",
+    "disclaimer_text": "यह प्रणाली प्राथमिक स्वास्थ्य कार्यकर्ताओं की मदद के लिए बनाई गई एक शैक्षिक स्क्रीनिंग सहायता है, यह कोई अंतिम मेडिकल डायग्नोस्टिक उपकरण नहीं है। किसी भी जोखिम की पुष्टि के लिए योग्य डॉक्टर से विधिवत जांच कराना अनिवार्य है।"
+})
+
+# 2. BENGALI (বাংলা)
+BN = create_lang_dict(EN, {
+    "app_name": "RenalCare (রিনালকেয়ার)",
+    "tagline": "সচেতন পরীক্ষা • দ্রুত সতর্কতা",
+    "academic_bar_left": "দয়ানন্দ সাগর কলেজ অফ ইঞ্জিনিয়ারিং, বেঙ্গালুরু | এআই ও মেশিন লার্নিং বিভাগ • BCP308 কমিউনিটি প্রজেক্ট • টিম A-12",
+    "academic_bar_right": "প্রাথমিক স্বাস্থ্যকেন্দ্র ও গ্রামীণ স্বাস্থ্য শিবিরের জন্য",
+    
+    "nav_home": "হোম",
+    "nav_language": "ভাষা (Language)",
+    "nav_how_it_works": "পদ্ধতি",
+    "nav_screening": "রোগীর পরীক্ষা",
+    "nav_research": "গবেষণা ও এআই",
+    "nav_dashboard": "ড্যাশবোর্ড",
+    "nav_history": "ইতিহাস",
+    "nav_start_screening": "পরীক্ষা শুরু করুন",
+    "nav_easy_mode": "সহজ মোড (Easy Mode)",
+    "nav_normal_mode": "সাধারণ মোড (Standard Mode)",
+    
+    "welcome_title": "RenalCare (রিনালকেয়ার)-এ স্বাগতম",
+    "welcome_subtitle": "আপনার পছন্দসই ভাষা নির্বাচন করুন।",
+    "welcome_continue": "RenalCare-এ এগিয়ে যান",
+    "welcome_change_note": "আপনি যে কোনো সময় ওপরের মেনু থেকে ভাষা পরিবর্তন করতে পারেন।",
+    
+    "hero_eyebrow": "কমিউনিটি কিডনি স্বাস্থ্য উদ্যোগ",
+    "hero_title": "কিডনির সুস্থতা শুরু হয় সঠিক সময়ের সতর্কতায়",
+    "hero_subtitle": "একটি মেশিন লার্নিং সিদ্ধান্ত-সহায়ক প্ল্যাটফর্ম যা প্রাথমিক স্বাস্থ্য কেন্দ্র এবং গ্রামীণ শিবিরে স্বাস্থ্যকর্মীদের ক্রনিক কিডনি রোগের প্রাথমিক লক্ষণ শনাক্ত করতে সাহায্য করে।",
+    "hero_btn_screen": "রোগীর পরীক্ষা শুরু করুন",
+    "hero_btn_dashboard": "ড্যাশবোর্ড দেখুন",
+    "hero_listen": "নির্দেশনা শুনুন (Audio)",
+    "hero_stop": "থামুন",
+    
+    "sample_normal": "নমুনা: সম্পূর্ণ সুস্থ ব্যক্তি",
+    "sample_moderate": "নমুনা: মাঝারি ঝুঁকির লক্ষণ",
+    "sample_high": "নমুনা: উচ্চ ঝুঁকির কিডনি প্রোফাইল",
+    "sample_reset": "ফর্ম পরিষ্কার করুন",
+    "camp_mode_title": "কমিউনিটি ডায়াগনস্টিক ক্যাম্প মোড:",
+    "camp_mode_desc": "একসাথে অনেক রোগীর পরীক্ষা? ১০০ রোগীর CSV ফাইল আপলোড করুন অথবা বিশেষ মডেল নির্বাচন করুন।",
+    "batch_csv_btn": "ব্যাচ CSV পরীক্ষা",
+    "csv_template_btn": "CSV টেমপ্লেট ডাউনলোড",
+    
+    "lbl_patient_id": "রোগী নম্বর (Patient ID)",
+    "lbl_patient_name": "রোগীর নাম (ঐচ্ছিক)",
+    "lbl_age": "বয়স (বছর)",
+    "lbl_sex": "লিঙ্গ",
+    "lbl_male": "পুরুষ",
+    "lbl_female": "মহিলা",
+    
+    "result_headline_detected": "কিডনি রোগের লক্ষণ পাওয়া গেছে – অবিলম্বে ডাক্তারের পরামর্শ নিন।",
+    "result_headline_clear": "এই মডেলে কিডনি রোগের লক্ষণ মেলেনি – তবে এটি রোগমুক্তির চূড়ান্ত প্রমাণ নয়।",
+    "download_pdf_report": "অফিসিয়াল PDF রিপোর্ট ডাউনলোড করুন",
+    "new_screening": "নতুন রোগীর পরীক্ষা",
+    
+    "easy_mode_banner": "সহজ মোড চালু আছে: বড় লেখা ও সাধারণ ভাষায় চিকিৎসা তথ্যের ব্যাখ্যা।",
+    "easy_creatinine": "সিরাম ক্রিয়েটিনিন: কিডনির বর্জ্য ফিল্টারের টেস্ট। সংখ্যা বেশি হলে কিডনির কাজের ঘাটতি বোঝায়।",
+    "easy_bp": "রক্তচাপ (BP): শিরা ও হৃদযন্ত্রে রক্তের চাপ। উচ্চ রক্তচাপ কিডনির ক্ষতি করে।",
+    "easy_hemo": "হিমোগ্লোবিন: রক্তে শক্তির মাত্রা। কম হলে দুর্বলতা ও রক্তস্বল্পতা হয়।"
+})
+
+# 3. MARATHI (मराठी)
+MR = create_lang_dict(EN, {
+    "app_name": "RenalCare (रीनलकेअर)",
+    "tagline": "स्मार्ट तपासणी • वेळेवर जागरूकता",
+    "academic_bar_left": "दयानंद सागर कॉलेज ऑफ इंजिनिअरिंग, बेंगळुरू | एआय व मशीन लर्निंग विभाग • BCP308 कम्युनिटी प्रोजेक्ट • टीम A-12",
+    "academic_bar_right": "प्राथमिक आरोग्य केंद्र आणि आरोग्य शिबिरांसाठी",
+    
+    "nav_home": "मुख्यपृष्ठ",
+    "nav_language": "भाषा (Language)",
+    "nav_how_it_works": "हे कसे कार्य करते",
+    "nav_screening": "रुग्ण तपासणी",
+    "nav_research": "संशोधन व एआय",
+    "nav_dashboard": "डॅशबोर्ड",
+    "nav_history": "इतिहास",
+    "nav_start_screening": "तपासणी सुरू करा",
+    "nav_easy_mode": "सोपा मोड (Easy Mode)",
+    "nav_normal_mode": "प्रमाणित मोड (Standard Mode)",
+    
+    "welcome_title": "RenalCare (रीनलकेअर) मध्ये आपले स्वागत आहे",
+    "welcome_subtitle": "आपल्या सोयीनुसार भाषा निवडा.",
+    "welcome_continue": "RenalCare वर पुढे जा",
+    "welcome_change_note": "तुम्ही वरील मेनूवरून कधीही भाषा बदलू शकता.",
+    
+    "hero_eyebrow": "सामुदायिक मूत्रपिंड आरोग्य पुढाकार",
+    "hero_title": "चांगले मूत्रपिंड आरोग्य वेळेवर जागरूकतेने सुरू होते",
+    "hero_subtitle": "प्राथमिक आरोग्य केंद्रांमध्ये आणि ग्रामीण शिबिरांमध्ये आरोग्य कार्यकर्त्यांना मूत्रपिंडाच्या आजाराची सुरुवातीची लक्षणे ओळखण्यासाठी मदत करणारी एआय प्रणाली.",
+    "hero_btn_screen": "रुग्ण तपासणी सुरू करा",
+    "hero_btn_dashboard": "डॅशबोर्ड पहा",
+    "hero_listen": "सूचना ऐका (Audio)",
+    "hero_stop": "आवाज थांबवा",
+    
+    "sample_normal": "नमुना: सामान्य निरोगी व्यक्ती",
+    "sample_moderate": "नमुना: मध्यम धोका लक्षणे",
+    "sample_high": "नमुना: उच्च धोका प्रोफाइल",
+    "sample_reset": "फॉर्म रिसेट करा",
+    "camp_mode_title": "सामुदायिक आरोग्य शिबिर मोड (Camp Mode):",
+    
+    "lbl_patient_id": "रुग्ण ओळख क्रमांक (Patient ID)",
+    "lbl_patient_name": "रुग्णाचे नाव (पर्यायी)",
+    "lbl_age": "वय (वर्षे)",
+    "lbl_sex": "लिंग",
+    "lbl_male": "पुरुष",
+    "lbl_female": "स्त्री",
+    
+    "result_headline_detected": "मूत्रपिंडाच्या आजाराचे संकेत आढळले आहेत – पुढील वैद्यकीय सल्ल्याची शिफारस केली जाते.",
+    "result_headline_clear": "मूत्रपिंडाच्या आजाराचे संकेत आढळले नाहीत – हे संपूर्ण आरोग्याची खात्री देत नाही.",
+    "download_pdf_report": "अधिकृत पीडीएफ अहवाल डाउनलोड करा",
+    "new_screening": "नवीन रुग्णाची तपासणी करा",
+    
+    "easy_mode_banner": "सोपा मोड सक्रिय: मोठे अक्षर आणि सोप्या भाषेत वैद्यकीय शब्दांचा अर्थ.",
+    "easy_creatinine": "सीरम क्रिएटिनिन: मूत्रपिंडाच्या फिल्टरची तपासणी. संख्या वाढणे म्हणजे मूत्रपिंडावर ताण आहे.",
+    "easy_bp": "रक्तदाब (BP): नसांवर रक्ताचा दबाव. वाढलेला रक्तदाब मूत्रपिंडाचे नुकसान करतो.",
+    "easy_hemo": "हिमोग्लोबिन: रक्ताचे प्रमाण आणि ऑक्सिजन पातळी. कमी असल्यास अशक्तपणा येतो."
+})
+
+# 4. TELUGU (తెలుగు)
+TE = create_lang_dict(EN, {
+    "app_name": "RenalCare (రీనల్‌కేర్)",
+    "tagline": "మెరుగైన స్క్రీనింగ్ • ముందస్తు అవగాహన",
+    "academic_bar_left": "దయానంద సాగర్ కాలేజ్ ఆఫ్ ఇంజనీరింగ్, బెంగళూరు | ఏఐ & మెషిన్ లెర్నింగ్ విభాగం • BCP308 కమ్యూనిటీ ప్రాజెక్ట్ • టీమ్ A-12",
+    "academic_bar_right": "ప్రాథమిక ఆరోగ్య కేంద్రాలు & గ్రామీణ ఆరోగ్య శిబిరాల కోసం",
+    
+    "nav_home": "హోమ్",
+    "nav_language": "భాష (Language)",
+    "nav_how_it_works": "పనితీరు",
+    "nav_screening": "పేషెంట్ స్క్రీనింగ్",
+    "nav_research": "పరిశోధన & ఏఐ",
+    "nav_dashboard": "డ్యాష్‌బోర్డ్",
+    "nav_history": "చరిత్ర",
+    "nav_start_screening": "స్క్రీనింగ్ ప్రారంభించండి",
+    "nav_easy_mode": "సులభమైన మోడ్ (Easy Mode)",
+    "nav_normal_mode": "సాధారణ మోడ్ (Standard Mode)",
+    
+    "welcome_title": "RenalCare కు స్వాగతం",
+    "welcome_subtitle": "మీకు సౌకర్యవంతమైన భాషను ఎంచుకోండి.",
+    "welcome_continue": "RenalCare లోకి కొనసాగండి",
+    "welcome_change_note": "మీరు ఎప్పుడైనా ఎగువ మెనూ నుండి భాషను మార్చుకోవచ్చు.",
+    
+    "hero_eyebrow": "కమ్యూనిటీ కిడ్నీ ఆరోగ్య కార్యక్రమం",
+    "hero_title": "కిడ్నీల ఆరోగ్యం ముందస్తు అవగాహనతోనే సాధ్యం",
+    "hero_subtitle": "ప్రాథమిక ఆరోగ్య కేంద్రాలు మరియు గ్రామీణ శిబిరాల్లోని ఆరోగ్య కార్యకర్తలకు కిడ్నీ వ్యాధి ప్రారంభ సంకేతాలను గుర్తించడంలో సహాయపడే మెషిన్ లెర్నింగ్ వ్యవస్థ.",
+    "hero_btn_screen": "పేషెంట్ స్క్రీనింగ్ ప్రారంభించండి",
+    "hero_btn_dashboard": "డ్యాష్‌బోర్డ్ చూడండి",
+    "hero_listen": "సూచనలు వినండి (Audio)",
+    "hero_stop": "ఆపండి",
+    
+    "sample_normal": "నమూనా: సాధారణ ఆరోగ్యవంతుడు",
+    "sample_moderate": "నమూనా: మధ్యస్థ రిస్క్ లక్షణాలు",
+    "sample_high": "నమూనా: అధిక రిస్క్ ప్రొఫైల్",
+    "sample_reset": "ఫారమ్ రీసెట్ చేయండి",
+    "camp_mode_title": "కమ్యూనిటీ డయాగ్నస్టిక్ క్యాంప్ మోడ్:",
+    
+    "lbl_patient_id": "పేషెంట్ ఐడీ (Patient ID)",
+    "lbl_patient_name": "పేషెంట్ పేరు (ఐచ్ఛికం)",
+    "lbl_age": "వయస్సు (సంవత్సరాలు)",
+    "lbl_sex": "లింగం",
+    "lbl_male": "పురుషుడు",
+    "lbl_female": "మహిళ",
+    
+    "result_headline_detected": "కిడ్నీ వ్యాధి సూచనలు గుర్తించబడ్డాయి – తదుపరి వైద్య సలహా సిఫార్సు చేయబడింది.",
+    "result_headline_clear": "కిడ్నీ సమస్యల సంకేతాలు కనిపించలేదు – ఇది పూర్తి ఆరోగ్యానికి హామీ కాదు.",
+    "download_pdf_report": "అధికారిక PDF రిపోర్ట్ డౌన్‌లోడ్ చేసుకోండి",
+    "new_screening": "కొత్త పేషెంట్ స్క్రీనింగ్",
+    
+    "easy_mode_banner": "సులభమైన మోడ్ యాక్టివ్‌గా ఉంది: పెద్ద అక్షరాలు మరియు సులభమైన పదాలు.",
+    "easy_creatinine": "సీరమ్ క్రియాటినిన్: కిడ్నీ ఫిల్టర్ పరీక్ష. విలువ పెరిగితే కిడ్నీపై ఒత్తిడి ఉన్నట్లు అర్థం.",
+    "easy_bp": "రక్తపోటు (BP): రక్తనాళాలపై ఒత్తిడి. అధిక రక్తపోటు కిడ్నీలను దెబ్బతీస్తుంది.",
+    "easy_hemo": "హిమోగ్లోబిన్: రక్తంలో శక్తి మరియు ఆక్సిజన్ స్థాయి. తక్కువగా ఉంటే బలహీనత వస్తుంది."
+})
+
+# 5. TAMIL (தமிழ்)
+TA = create_lang_dict(EN, {
+    "app_name": "RenalCare (ரினல்கேர்)",
+    "tagline": "சிறந்த பரிசோதனை • ஆரம்ப விழிப்புணர்வு",
+    "academic_bar_left": "தயானந்த சாகர் பொறியியல் கல்லூரி, பெங்களூரு | AI & ML துறை • BCP308 சமுதாய திட்டம் • குழு A-12",
+    "academic_bar_right": "ஆரம்ப சுகாதார நிலையங்கள் மற்றும் கிராமப்புற முகாம்களுக்காக",
+    
+    "nav_home": "முகப்பு",
+    "nav_language": "மொழி (Language)",
+    "nav_how_it_works": "செயல்முறை",
+    "nav_screening": "நோயாளி பரிசோதனை",
+    "nav_research": "ஆராய்ச்சி & AI",
+    "nav_dashboard": "டாஷ்போர்டு",
+    "nav_history": "வரலாறு",
+    "nav_start_screening": "பரிசோதனை தொடங்குக",
+    "nav_easy_mode": "எளிய முறை (Easy Mode)",
+    "nav_normal_mode": "வழக்கமான முறை (Standard Mode)",
+    
+    "welcome_title": "RenalCare-க்கு நல்வரவு",
+    "welcome_subtitle": "உங்களுக்கு வசதியான மொழியைத் தேர்வுசெய்யவும்.",
+    "welcome_continue": "RenalCare-ல் தொடரவும்",
+    "welcome_change_note": "மேல் மெனுவிலிருந்து எந்த நேரத்திலும் மொழியை மாற்றிக்கொள்ளலாம்.",
+    
+    "hero_eyebrow": "சமூக சிறுநீரக சுகாதார முயற்சி",
+    "hero_title": "சிறுநீரக நலம் ஆரம்ப விழிப்புணர்வில் தொடங்குகிறது",
+    "hero_subtitle": "கிராமப்புற மற்றும் ஆரம்ப சுகாதார நிலையங்களில் உள்ள சுகாதாரப் பணியாளர்கள் சிறுநீரக நோயின் ஆரம்ப அறிகுறிகளைக் கண்டறிய உதவும் மெஷின் லேர்னிங் தளம்.",
+    "hero_btn_screen": "பரிசோதனை தொடங்குக",
+    "hero_btn_dashboard": "டாஷ்போர்டு பார்க்க",
+    "hero_listen": "வழிமுறைகளைக் கேளுங்கள் (Audio)",
+    "hero_stop": "நிறுத்து",
+    
+    "sample_normal": "மாதிரி: ஆரோக்கியமான நபர்",
+    "sample_moderate": "மாதிரி: நடுத்தர அபாய அறிகுறிகள்",
+    "sample_high": "மாதிரி: அதிக ஆபத்து விவரம்",
+    "sample_reset": "படிவத்தை மீட்டமை",
+    "camp_mode_title": "சமூக சுகாதார முகாம் முறை (Camp Mode):",
+    
+    "lbl_patient_id": "நோயாளி அடையாள எண் (Patient ID)",
+    "lbl_patient_name": "நோயாளி பெயர் (விருப்பத்திற்குரியது)",
+    "lbl_age": "வயது (ஆண்டுகள்)",
+    "lbl_sex": "பாலினம்",
+    "lbl_male": "ஆண்",
+    "lbl_female": "பெண்",
+    
+    "result_headline_detected": "சிறுநீரக பாதிப்பு அறிகுறிகள் கண்டறியப்பட்டன – மருத்துவ ஆலோசனை பெற பரிந்துரைக்கப்படுகிறது.",
+    "result_headline_clear": "சிறுநீரக பாதிப்பு அறிகுறிகள் இல்லை – இது முழுமையான ஆரோக்கியத்திற்கான உத்தரவாதம் அல்ல.",
+    "download_pdf_report": "அதிகாரப்பூர்வ PDF அறிக்கையைப் பதிவிறக்கவும்",
+    "new_screening": "புதிய நோயாளி பரிசோதனை",
+    
+    "easy_mode_banner": "எளிய முறை இயக்கத்தில் உள்ளது: பெரிய எழுத்துக்கள் மற்றும் எளிய மருத்துவ விளக்கங்கள்.",
+    "easy_creatinine": "சீரம் கிரியேட்டினின்: சிறுநீரக கழிவு வடிகட்டுதல் சோதனை. அளவு அதிகரித்தால் சிறுநீரகத்தில் பாதிப்பு உள்ளது.",
+    "easy_bp": "இரத்த அழுத்தம் (BP): உயர் இரத்த அழுத்தம் சிறுநீரகத்தை பாதிக்கும்.",
+    "easy_hemo": "ஹீமோகுளோபின்: இரத்த அளவு மற்றும் ஆக்ஸிஜன் அளவு. குறைவாக இருந்தால் சோர்வு ஏற்படும்."
+})
+
+# 6. URDU (اردو - RTL)
+UR = create_lang_dict(EN, {
+    "app_name": "RenalCare (رینل کیئر)",
+    "tagline": "بہتر اسکریننگ • بروقت آگاہی",
+    "academic_bar_left": "دیانند ساگر کالج آف انجینئرنگ، بنگلور | شعبہ مصنوعی ذہانت اور مشین لرننگ • ٹیم A-12",
+    "academic_bar_right": "بنیادی ہیلتھ سینٹرز اور میڈیکل کیمپس کے لیے",
+    
+    "nav_home": "ہوم",
+    "nav_language": "زبان (Language)",
+    "nav_how_it_works": "طریقہ کار",
+    "nav_screening": "مریض کی جانچ",
+    "nav_research": "تحقیق و اے آئی",
+    "nav_dashboard": "ڈیش بورڈ",
+    "nav_history": "تاریخچہ",
+    "nav_start_screening": "جانچ شروع کریں",
+    "nav_easy_mode": "آسان موڈ (Easy Mode)",
+    "nav_normal_mode": "معیاری موڈ (Standard Mode)",
+    
+    "welcome_title": "RenalCare میں خوش آمدید",
+    "welcome_subtitle": "اپنی پسندیدہ زبان منتخب کریں۔",
+    "welcome_continue": "RenalCare میں آگے بڑھیں",
+    "welcome_change_note": "آپ اوپر دیے گئے مینو سے کسی بھی وقت زبان تبدیل کر سکتے ہیں۔",
+    
+    "hero_eyebrow": "کمیونٹی گردے کی صحت کی مہم",
+    "hero_title": "گردوں کی بہتر صحت بروقت آگاہی سے شروع ہوتی ہے",
+    "hero_subtitle": "پرائمری ہیلتھ سینٹرز اور دیہی کیمپوں میں ہیلتھ ورکرز کی مدد کے لیے ایک جدید مشین لرننگ سسٹم جو گردے کی بیماری کے ابتدائی اثرات کو پہچانتا ہے۔",
+    "hero_btn_screen": "مریض کی جانچ شروع کریں",
+    "hero_btn_dashboard": "ڈیش بورڈ دیکھیں",
+    "hero_listen": "ہدایات سنیں (Audio)",
+    "hero_stop": "روکیں",
+    
+    "sample_normal": "نمونہ: بالکل تندرست شخص",
+    "sample_moderate": "نمونہ: درمیانے درجے کا خطرہ",
+    "sample_high": "نمونہ: زیادہ خطرے کی رپورٹ",
+    "sample_reset": "فارم دوبارہ ترتیب دیں",
+    "camp_mode_title": "کمیونٹی ڈائیگنوسٹک کیمپ موڈ:",
+    
+    "lbl_patient_id": "مریض کا شناختی نمبر (Patient ID)",
+    "lbl_patient_name": "مریض کا نام (اختیاری)",
+    "lbl_age": "عمر (سال)",
+    "lbl_sex": "جنس",
+    "lbl_male": "مرد",
+    "lbl_female": "عورت",
+    
+    "result_headline_detected": "گردے کی بیماری کے اثرات پائے گئے ہیں – ڈاکٹر سے مزید معائنے کا مشورہ دیا جاتا ہے۔",
+    "result_headline_clear": "گردے کی بیماری کے اثرات نہیں پائے گئے – یہ مکمل تندرستی کی حتمی سند نہیں ہے۔",
+    "download_pdf_report": "سرکاری پی ڈی ایف رپورٹ ڈاؤن لوڈ کریں",
+    "new_screening": "نئے مریض کی جانچ کریں",
+    
+    "easy_mode_banner": "آسان موڈ فعال ہے: بڑے حروف اور آسان زبان میں طبی الفاظ کی وضاحت۔",
+    "easy_creatinine": "سیرم کریٹینائن: گردے کے فلٹر کا ٹیسٹ۔ یہ زیادہ ہونے کا مطلب ہے کہ گردہ صحیح سے کام نہیں کر رہا۔",
+    "easy_bp": "بلڈ پریشر (BP): رگوں پر خون کا دباؤ۔ زیادہ بلڈ پریشر گردوں کو نقصان پہنچاتا ہے۔",
+    "easy_hemo": "ہیموگلوبن: خون میں طاقت کی مقدار۔ کم ہونے پر کمزوری محسوس ہوتی ہے۔"
+})
+
+# 7. GUJARATI (ગુજરાતી)
+GU = create_lang_dict(EN, {
+    "app_name": "RenalCare (રીનલકેર)",
+    "tagline": "ચોક્કસ તપાસ • વહેલી જાગૃતિ",
+    "academic_bar_left": "દયાનંદ સાગર કોલેજ ઓફ એન્જિનિયરિંગ, બેંગલુરુ | AI અને મશીન લર્નિંગ વિભાગ • ટીમ A-12",
+    "academic_bar_right": "પ્રાથમિક આરોગ્ય કેન્દ્રો અને ગ્રામીણ કેમ્પ માટે",
+    
+    "nav_home": "હોમ",
+    "nav_language": "ભાષા (Language)",
+    "nav_how_it_works": "તે કેવી રીતે કાર્ય કરે છે",
+    "nav_screening": "દર્દીની તપાસ",
+    "nav_research": "સંશોધન અને AI",
+    "nav_dashboard": "ડેશબોર્ડ",
+    "nav_history": "ઇતિહાસ",
+    "nav_start_screening": "તપાસ શરૂ કરો",
+    "nav_easy_mode": "સરળ મોડ (Easy Mode)",
+    "nav_normal_mode": "સામાન્ય મોડ (Standard Mode)",
+    
+    "welcome_title": "RenalCare માં આપનું સ્વાગત છે",
+    "welcome_subtitle": "તમારી અનુકૂળતા મુજબ ભાષા પસંદ કરો.",
+    "welcome_continue": "RenalCare પર આગળ વધો",
+    "welcome_change_note": "તમે ઉપરના મેનુમાંથી ગમે ત્યારે ભાષા બદલી શકો છો.",
+    
+    "hero_eyebrow": "સામુદાયિક કીડની આરોગ્ય પહેલ",
+    "hero_title": "સારું કીડની સ્વાસ્થ્ય વહેલી જાગૃતિથી શરૂ થાય છે",
+    "hero_subtitle": "પ્રાથમિક આરોગ્ય કેન્દ્રો અને ગ્રામીણ કેમ્પોમાં આરોગ્ય કાર્યકરોને કીડનીની બીમારીના પ્રારંભિક લક્ષણો ઓળખવામાં મદદ કરતું મશીન લર્નિંગ પ્લેટફોર્મ.",
+    "hero_btn_screen": "દર્દીની તપાસ શરૂ કરો",
+    "hero_btn_dashboard": "ડેશબોર્ડ જુઓ",
+    "hero_listen": "સૂચનાઓ સાંભળો (Audio)",
+    "hero_stop": "બંધ કરો",
+    
+    "sample_normal": "નમૂનો: સામાન્ય સ્વસ્થ વ્યક્તિ",
+    "sample_moderate": "નમૂનો: મધ્યમ જોખમ લક્ષણો",
+    "sample_high": "નમૂનો: ઉચ્ચ જોખમ પ્રોફાઇલ",
+    "sample_reset": "ફોર્મ રીસેટ કરો",
+    "camp_mode_title": "સામુદાયિક આરોગ્ય કેમ્પ મોડ:",
+    
+    "lbl_patient_id": "દર્દી ઓળખ નંબર (Patient ID)",
+    "lbl_patient_name": "દર્દીનું નામ (વૈકલ્પિક)",
+    "lbl_age": "ઉંમર (વર્ષ)",
+    "lbl_sex": "જાતિ",
+    "lbl_male": "પુરુષ",
+    "lbl_female": "સ્ત્રી",
+    
+    "result_headline_detected": "કીડનીની બીમારીના લક્ષણો જણાયા છે – ડૉક્ટર પાસે તપાસ કરાવવાની સલાહ છે.",
+    "result_headline_clear": "કીડનીની બીમારીના લક્ષણો મળ્યા નથી – આ સંપૂર્ણ સ્વસ્થતાની ખાતરી નથી.",
+    "download_pdf_report": "સત્તાવાર PDF રિપોર્ટ ડાઉનલોડ કરો",
+    "new_screening": "નવા દર્દીની તપાસ કરો",
+    
+    "easy_mode_banner": "સરળ મોડ સક્રિય: મોટા અક્ષરો અને સરળ ભાષામાં સમજૂતી.",
+    "easy_creatinine": "સીરમ ક્રિએટિનાઇન: કીડની ફિલ્ટર ટેસ્ટ. વધે તો કીડની પર દબાણ દર્શાવે છે.",
+    "easy_bp": "બ્લડ પ્રેશર (BP): વધુ બીપી કીડનીને નુકસાન પહોંચાડે છે.",
+    "easy_hemo": "હિમોગ્લોબિન: લોહીમાં ઓક્સિજનનું પ્રમાણ. ઓછું હોય તો નબળાઈ આવે છે."
+})
+
+ALL_DICTS = {
+    'en': EN,
+    'hi': HI,
+    'bn': BN,
+    'mr': MR,
+    'te': TE,
+    'ta': TA,
+    'ur': UR,
+    'gu': GU
+}
+
+def main():
+    for lang, d in ALL_DICTS.items():
+        out_path = os.path.join(TRANSLATIONS_DIR, f"{lang}.json")
+        with open(out_path, 'w', encoding='utf-8') as f:
+            json.dump(d, f, ensure_ascii=False, indent=2)
+        print(f"Generated {out_path} with {len(d)} keys.")
+
+    # Also generate a consolidated JS file so frontend can translate instantaneously without network requests
+    js_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'js', 'translations_data.js')
+    with open(js_path, 'w', encoding='utf-8') as f:
+        f.write("// Auto-generated translations data bundle for RenalCare\n")
+        f.write("window.RENALCARE_LANG_META = " + json.dumps(LANG_META, ensure_ascii=False, indent=2) + ";\n")
+        f.write("window.RENALCARE_TRANSLATIONS = " + json.dumps(ALL_DICTS, ensure_ascii=False, indent=2) + ";\n")
+    print(f"Generated {js_path}")
+
+if __name__ == '__main__':
+    main()

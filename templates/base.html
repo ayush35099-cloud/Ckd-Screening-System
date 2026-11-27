@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}RenalCare — Chronic Kidney Disease Screening{% endblock %}</title>
   
-  <!-- Google Fonts: Editorial Serif + Modern Clean Sans -->
+  <!-- Google Fonts: Editorial Serif + Modern Clean Sans + Indic Scripts + Urdu -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&family=Noto+Sans+Telugu:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&family=Noto+Sans+Gujarati:wght@400;600;700&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
   
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -24,11 +24,10 @@
   <!-- Top Academic & Institution Notice Bar -->
   <div class="top-notice-bar">
     <div>
-      <strong>Dayananda Sagar College of Engineering, Bengaluru</strong> &nbsp;|&nbsp;
-      <span>Dept. of Artificial Intelligence & Machine Learning &bull; BCP308 Community Project &bull; Team A-12</span>
+      <strong data-i18n="academic_bar_left">Dayananda Sagar College of Engineering, Bengaluru &nbsp;|&nbsp; Dept. of Artificial Intelligence & Machine Learning &bull; BCP308 Community Project &bull; Team A-12</strong>
     </div>
     <div>
-      <span style="opacity: 0.85;">For Primary Health Centres & Community Diagnostic Camps</span>
+      <span style="opacity: 0.85;" data-i18n="academic_bar_right">For Primary Health Centres & Community Diagnostic Camps</span>
     </div>
   </div>
 
@@ -40,24 +39,75 @@
           <i data-lucide="activity"></i>
         </div>
         <div class="brand-text">
-          <span class="brand-title">RenalCare</span>
-          <span class="brand-subtitle">Smarter Screening &bull; Earlier Awareness</span>
+          <span class="brand-title" data-i18n="app_name">RenalCare</span>
+          <span class="brand-subtitle" data-i18n="tagline">Smarter Screening &bull; Earlier Awareness</span>
         </div>
       </a>
 
       <!-- Navigation Links -->
       <ul class="nav-links" id="navLinks">
-        <li><a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Home</a></li>
-        <li><a href="{{ url_for('index') }}#about-ckd" class="nav-link">About CKD</a></li>
-        <li><a href="{{ url_for('index') }}#how-it-works" class="nav-link">How It Works</a></li>
-        <li><a href="{{ url_for('screen_view') }}" class="nav-link {% if request.endpoint in ['screen_view', 'batch_screen_view'] %}active{% endif %}">Screening</a></li>
-        <li><a href="{{ url_for('research_view') }}" class="nav-link {% if request.endpoint == 'research_view' %}active{% endif %}">Research & ML</a></li>
-        <li><a href="{{ url_for('dashboard_view') }}" class="nav-link {% if request.endpoint == 'dashboard_view' %}active{% endif %}">Dashboard</a></li>
-        <li><a href="{{ url_for('history_view') }}" class="nav-link {% if request.endpoint == 'history_view' %}active{% endif %}">History</a></li>
+        <li><a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" data-i18n="nav_home">Home</a></li>
+        
+        <!-- Language Selector Dropdown (Replaces About CKD) -->
+        <li class="nav-lang-item">
+          <button type="button" class="nav-lang-btn" id="navLangToggle" aria-haspopup="true" aria-expanded="false" title="Change Language">
+            <i data-lucide="globe"></i>
+            <span id="currentLangLabel">English</span>
+            <i data-lucide="chevron-down" style="width: 14px; height: 14px; margin-left: 2px;"></i>
+          </button>
+          <div class="nav-lang-dropdown" id="navLangDropdown" role="menu">
+            <div class="lang-dropdown-grid">
+              <button type="button" class="lang-dropdown-item active" data-lang="en" role="menuitem">
+                <span class="lang-item-native">English</span>
+                <span class="lang-item-badge">EN</span>
+              </button>
+              <button type="button" class="lang-dropdown-item" data-lang="hi" role="menuitem">
+                <span class="lang-item-native">हिन्दी</span>
+                <span class="lang-item-badge">Hindi</span>
+              </button>
+              <button type="button" class="lang-dropdown-item" data-lang="bn" role="menuitem">
+                <span class="lang-item-native">বাংলা</span>
+                <span class="lang-item-badge">Bengali</span>
+              </button>
+              <button type="button" class="lang-dropdown-item" data-lang="mr" role="menuitem">
+                <span class="lang-item-native">मराठी</span>
+                <span class="lang-item-badge">Marathi</span>
+              </button>
+              <button type="button" class="lang-dropdown-item" data-lang="te" role="menuitem">
+                <span class="lang-item-native">తెలుగు</span>
+                <span class="lang-item-badge">Telugu</span>
+              </button>
+              <button type="button" class="lang-dropdown-item" data-lang="ta" role="menuitem">
+                <span class="lang-item-native">தமிழ்</span>
+                <span class="lang-item-badge">Tamil</span>
+              </button>
+              <button type="button" class="lang-dropdown-item" data-lang="ur" role="menuitem">
+                <span class="lang-item-native">اردو</span>
+                <span class="lang-item-badge">Urdu</span>
+              </button>
+              <button type="button" class="lang-dropdown-item" data-lang="gu" role="menuitem">
+                <span class="lang-item-native">ગુજરાતી</span>
+                <span class="lang-item-badge">Gujarati</span>
+              </button>
+            </div>
+          </div>
+        </li>
+
+        <li><a href="{{ url_for('index') }}#how-it-works" class="nav-link" data-i18n="nav_how_it_works">How It Works</a></li>
+        <li><a href="{{ url_for('screen_view') }}" class="nav-link {% if request.endpoint in ['screen_view', 'batch_screen_view'] %}active{% endif %}" data-i18n="nav_screening">Screening</a></li>
+        <li><a href="{{ url_for('research_view') }}" class="nav-link {% if request.endpoint == 'research_view' %}active{% endif %}" data-i18n="nav_research">Research & ML</a></li>
+        <li><a href="{{ url_for('dashboard_view') }}" class="nav-link {% if request.endpoint == 'dashboard_view' %}active{% endif %}" data-i18n="nav_dashboard">Dashboard</a></li>
+        <li><a href="{{ url_for('history_view') }}" class="nav-link {% if request.endpoint == 'history_view' %}active{% endif %}" data-i18n="nav_history">History</a></li>
       </ul>
 
-      <!-- Action Area: Theme Toggle & Primary Button -->
+      <!-- Action Area: Theme Toggle, Easy Mode & Primary Button -->
       <div class="nav-actions">
+        <!-- Easy Mode / Rural Accessibility Toggle -->
+        <button type="button" class="btn-easy-toggle" id="btnEasyModeToggle" aria-pressed="false" title="Toggle Easy Mode (Larger text & simplified explanations)">
+          <i data-lucide="eye"></i>
+          <span class="easy-toggle-label" data-i18n="nav_easy_mode">Easy Mode</span>
+        </button>
+
         <button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="Toggle light or dark theme" title="Toggle theme">
           <i data-lucide="moon" class="icon-sun"></i>
           <i data-lucide="sun" class="icon-moon"></i>
@@ -65,7 +115,7 @@
 
         <a href="{{ url_for('screen_view') }}" class="btn-renal btn-renal-primary">
           <i data-lucide="stethoscope"></i>
-          <span>Start Screening</span>
+          <span data-i18n="nav_start_screening">Start Screening</span>
         </a>
 
         <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open mobile menu" aria-expanded="false">
@@ -74,6 +124,85 @@
       </div>
     </div>
   </nav>
+
+  <!-- Easy Mode Sticky Notification Banner -->
+  <div id="easyModeBanner" style="display: none; background-color: var(--color-primary); color: #ffffff; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 500;">
+    <div class="container-wide" style="display: flex; align-items: center; justify-content: space-between;">
+      <span data-i18n="easy_mode_banner"><i data-lucide="eye" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;"></i> Easy Mode Active: Simplified explanations and larger buttons for easier reading.</span>
+      <button type="button" onclick="window.RenalCareI18n.toggleEasyMode()" style="background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.6); border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; cursor: pointer;">Standard Mode</button>
+    </div>
+  </div>
+
+  <!-- First-Time Visitor Full-Screen Language Selection Modal -->
+  <div class="welcome-modal-overlay" id="welcomeLanguageModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+    <div class="welcome-modal-card">
+      <div class="welcome-header">
+        <div class="brand-wrapper" style="justify-content: center; margin-bottom: 0.75rem;">
+          <div class="brand-logo-icon">
+            <i data-lucide="activity"></i>
+          </div>
+          <div class="brand-text" style="text-align: left;">
+            <span class="brand-title" data-i18n="app_name">RenalCare</span>
+            <span class="brand-subtitle" data-i18n="tagline">Smarter Screening &bull; Earlier Awareness</span>
+          </div>
+        </div>
+        <h2 id="welcomeTitle" class="welcome-title" data-i18n="welcome_title">Welcome to RenalCare</h2>
+        <p class="welcome-subtitle" data-i18n="welcome_subtitle">Choose the language you are comfortable with.</p>
+      </div>
+
+      <div class="welcome-lang-grid">
+        <div class="welcome-lang-card active" data-lang="en">
+          <div class="welcome-lang-icon">EN</div>
+          <div class="welcome-lang-native">English</div>
+          <div class="welcome-lang-english">English</div>
+        </div>
+        <div class="welcome-lang-card" data-lang="hi">
+          <div class="welcome-lang-icon">अ</div>
+          <div class="welcome-lang-native">हिन्दी</div>
+          <div class="welcome-lang-english">Hindi</div>
+        </div>
+        <div class="welcome-lang-card" data-lang="bn">
+          <div class="welcome-lang-icon">অ</div>
+          <div class="welcome-lang-native">বাংলা</div>
+          <div class="welcome-lang-english">Bengali</div>
+        </div>
+        <div class="welcome-lang-card" data-lang="mr">
+          <div class="welcome-lang-icon">म</div>
+          <div class="welcome-lang-native">मराठी</div>
+          <div class="welcome-lang-english">Marathi</div>
+        </div>
+        <div class="welcome-lang-card" data-lang="te">
+          <div class="welcome-lang-icon">తె</div>
+          <div class="welcome-lang-native">తెలుగు</div>
+          <div class="welcome-lang-english">Telugu</div>
+        </div>
+        <div class="welcome-lang-card" data-lang="ta">
+          <div class="welcome-lang-icon">த</div>
+          <div class="welcome-lang-native">தமிழ்</div>
+          <div class="welcome-lang-english">Tamil</div>
+        </div>
+        <div class="welcome-lang-card" data-lang="ur">
+          <div class="welcome-lang-icon">اردو</div>
+          <div class="welcome-lang-native">اردو</div>
+          <div class="welcome-lang-english">Urdu</div>
+        </div>
+        <div class="welcome-lang-card" data-lang="gu">
+          <div class="welcome-lang-icon">ગુ</div>
+          <div class="welcome-lang-native">ગુજરાતી</div>
+          <div class="welcome-lang-english">Gujarati</div>
+        </div>
+      </div>
+
+      <div class="welcome-actions">
+        <button type="button" class="btn-renal btn-renal-primary btn-welcome-continue" id="btnWelcomeContinue" data-i18n="welcome_continue">
+          Continue to RenalCare
+        </button>
+        <p class="welcome-change-note" data-i18n="welcome_change_note">
+          You can change your language anytime from the top navigation bar.
+        </p>
+      </div>
+    </div>
+  </div>
 
   <!-- Flash Messages -->
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -146,8 +275,8 @@
     <!-- Mandatory Medical Disclaimer -->
     <div class="footer-bottom">
       <div style="max-width: 800px; text-align: left;">
-        <strong style="color: var(--text-main);">Educational & Screening Disclaimer:</strong>
-        This application is an educational decision-support screening aid and is <strong>NOT</strong> a medical diagnostic device. It does not diagnose, cure, mitigate, or treat Chronic Kidney Disease. Any flagged indicator must be independently verified by a licensed medical practitioner through standard diagnostic nephrology protocols.
+        <strong style="color: var(--text-main);" data-i18n="disclaimer_title">Educational & Screening Disclaimer:</strong>
+        <span data-i18n="disclaimer_text">This application is an educational decision-support screening aid and is <strong>NOT</strong> a medical diagnostic device. It does not diagnose, cure, mitigate, or treat Chronic Kidney Disease. Any flagged indicator must be independently verified by a licensed medical practitioner through standard diagnostic nephrology protocols.</span>
       </div>
       <div>
         &copy; 2026 RenalCare &bull; DSCE AIML
@@ -155,6 +284,9 @@
     </div>
   </footer>
 
+  <!-- Multilingual & Accessibility Scripts -->
+  <script src="{{ url_for('static', filename='js/translations_data.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
   <!-- Scripts -->
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   {% block extra_scripts %}{% endblock %}

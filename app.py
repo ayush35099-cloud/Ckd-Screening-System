@@ -34,6 +34,30 @@ from email_service import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Supported Multilingual Options
+SUPPORTED_LANGUAGES = {
+    'en': {'name': 'English', 'native': 'English', 'dir': 'ltr', 'code': 'en'},
+    'hi': {'name': 'Hindi', 'native': 'हिन्दी', 'dir': 'ltr', 'code': 'hi'},
+    'bn': {'name': 'Bengali', 'native': 'বাংলা', 'dir': 'ltr', 'code': 'bn'},
+    'mr': {'name': 'Marathi', 'native': 'मराठी', 'dir': 'ltr', 'code': 'mr'},
+    'te': {'name': 'Telugu', 'native': 'తెలుగు', 'dir': 'ltr', 'code': 'te'},
+    'ta': {'name': 'Tamil', 'native': 'தமிழ்', 'dir': 'ltr', 'code': 'ta'},
+    'ur': {'name': 'Urdu', 'native': 'اردو', 'dir': 'rtl', 'code': 'ur'},
+    'gu': {'name': 'Gujarati', 'native': 'ગુજરાતી', 'dir': 'ltr', 'code': 'gu'}
+}
+
+TRANSLATIONS = {}
+TRANSLATIONS_DIR = os.path.join(os.path.dirname(__file__), 'translations')
+if os.path.isdir(TRANSLATIONS_DIR):
+    for _code in SUPPORTED_LANGUAGES:
+        _path = os.path.join(TRANSLATIONS_DIR, f"{_code}.json")
+        if os.path.exists(_path):
+            try:
+                with open(_path, 'r', encoding='utf-8') as _f:
+                    TRANSLATIONS[_code] = json.load(_f)
+            except Exception:
+                TRANSLATIONS[_code] = {}
+
 _RATE_LIMIT_LOCK = threading.Lock()
 _RATE_LIMIT_STORE = {}
 
@@ -92,7 +116,21 @@ def create_app(config_class=Config):
 
     @app.context_processor
     def inject_security_helpers():
-        return {'csrf_token': _get_or_create_csrf_token}
+        lang = request.args.get('lang') or request.cookies.get('renalcare_lang') or 'en'
+        if lang not in SUPPORTED_LANGUAGES:
+            lang = 'en'
+        def translate(key, default=None):
+            lang_dict = TRANSLATIONS.get(lang, {})
+            en_dict = TRANSLATIONS.get('en', {})
+            return lang_dict.get(key) or en_dict.get(key) or default or key
+
+        return {
+            'csrf_token': _get_or_create_csrf_token,
+            'current_lang': lang,
+            'supported_languages': SUPPORTED_LANGUAGES,
+            'lang_meta': SUPPORTED_LANGUAGES.get(lang, SUPPORTED_LANGUAGES['en']),
+            '_t': translate
+        }
 
     def _validate_csrf():
         expected = session.get('csrf_token') or ''
@@ -637,7 +675,8 @@ def create_app(config_class=Config):
         if not record:
             abort(404, description="Screening record not found")
 
-        pdf_bytes = generate_pdf_report(record)
+        lang = request.args.get('lang') or request.cookies.get('renalcare_lang') or 'en'
+        pdf_bytes = generate_pdf_report(record, lang=lang)
         filename = f"RenalCare_Screening_{record['patient_id']}_{screening_uuid[:8]}.pdf"
 
         return send_file(
@@ -661,7 +700,8 @@ def create_app(config_class=Config):
 
         increment_token_download(delivery['id'])
 
-        pdf_bytes = generate_pdf_report(record)
+        lang = request.args.get('lang') or request.cookies.get('renalcare_lang') or 'en'
+        pdf_bytes = generate_pdf_report(record, lang=lang)
         filename = f"RenalCare_Screening_{record['screening_uuid'][:8]}.pdf"
 
         response = send_file(

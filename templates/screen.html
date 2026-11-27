@@ -6,18 +6,24 @@
 <div class="form-page-layout">
   <!-- Form Hero Header -->
   <div class="form-hero-header">
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+      <button type="button" class="btn-tts" data-tts-target=".form-hero-header" title="Listen to instructions">
+        <i data-lucide="volume-2"></i>
+        <span class="tts-label" data-i18n="hero_listen">Listen to Instructions</span>
+      </button>
+    </div>
     <span class="section-eyebrow">Decision-Support Workflow</span>
-    <h1>Patient Screening Evaluation</h1>
-    <p style="max-width: 620px; margin: 0 auto; color: var(--text-muted);">
+    <h1 data-i18n="screen_heading">Patient Screening Evaluation</h1>
+    <p style="max-width: 620px; margin: 0 auto; color: var(--text-muted);" data-i18n="screen_subtitle">
       Select an independent machine learning model, enter patient clinical indicators, and evaluate Chronic Kidney Disease risk.
     </p>
 
     <!-- Step 1: Model Selection Section -->
     <div class="model-selection-section" id="modelSelectionSection">
       <div class="model-selection-header">
-        <span class="step-badge">Step 1: Choose Evaluation Pipeline</span>
-        <h2>Select Clinical Screening Model</h2>
-        <p>Choose between the standard clinical benchmark model (UCI) and the expanded population survey model (CDC NHANES).</p>
+        <span class="step-badge" data-i18n="step1_choose_pipeline">Step 1: Choose Evaluation Pipeline</span>
+        <h2 data-i18n="select_screening_model">Select Clinical Screening Model</h2>
+        <p data-i18n="model_selection_desc">Choose between the standard clinical benchmark model (UCI) and the expanded population survey model (CDC NHANES).</p>
       </div>
 
       <div class="model-cards-grid">
@@ -28,19 +34,19 @@
               <input type="radio" name="selected_model_radio" id="radioModel1" value="model_1" checked>
             </div>
             <div>
-              <h3 class="model-card-title">Standard CKD Model</h3>
-              <span class="model-card-dataset">Dataset: UCI Chronic Kidney Disease (N=400)</span>
+              <h3 class="model-card-title" data-i18n="model1_title">Standard CKD Model</h3>
+              <span class="model-card-dataset" data-i18n="model1_dataset">Dataset: UCI Chronic Kidney Disease (N=400)</span>
             </div>
-            <span class="ref-pill" style="background-color: var(--status-clear-bg); color: var(--status-clear-text); border-color: var(--status-clear-border); margin-left: auto;">24 Features</span>
+            <span class="ref-pill" style="background-color: var(--status-clear-bg); color: var(--status-clear-text); border-color: var(--status-clear-border); margin-left: auto;" data-i18n="model1_features">24 Features</span>
           </div>
-          <p class="model-card-desc">
+          <p class="model-card-desc" data-i18n="model1_desc">
             Standard clinical benchmark. Evaluates routine blood chemistry, urinalysis dipsticks (albumin, sugar, specific gravity), urine microscopy (RBC/pus cells), and clinical comorbidities.
           </p>
           <div class="model-card-tags">
-            <span class="model-tag">Urinalysis Dipstick</span>
-            <span class="model-tag">Urine Microscopy</span>
-            <span class="model-tag">Blood Chemistry</span>
-            <span class="model-tag">100% Test Sensitivity</span>
+            <span class="model-tag" data-i18n="tag_urinalysis">Urinalysis Dipstick</span>
+            <span class="model-tag" data-i18n="tag_microscopy">Urine Microscopy</span>
+            <span class="model-tag" data-i18n="tag_chemistry">Blood Chemistry</span>
+            <span class="model-tag" data-i18n="tag_sensitivity">100% Test Sensitivity</span>
           </div>
         </div>
 
@@ -51,26 +57,26 @@
               <input type="radio" name="selected_model_radio" id="radioModel2" value="model_2">
             </div>
             <div>
-              <h3 class="model-card-title">Expanded CKD Model</h3>
-              <span class="model-card-dataset">Dataset: CDC NHANES 2017–2018 (N=5,063)</span>
+              <h3 class="model-card-title" data-i18n="model2_title">Expanded CKD Model</h3>
+              <span class="model-card-dataset" data-i18n="model2_dataset">Dataset: CDC NHANES 2017–2018 (N=5,063)</span>
             </div>
-            <span class="ref-pill" style="background-color: var(--status-moderate-bg); color: var(--status-moderate-text); border-color: var(--status-moderate-border); margin-left: auto;">19 Features</span>
+            <span class="ref-pill" style="background-color: var(--status-moderate-bg); color: var(--status-moderate-text); border-color: var(--status-moderate-border); margin-left: auto;" data-i18n="model2_features">19 Features</span>
           </div>
-          <p class="model-card-desc">
+          <p class="model-card-desc" data-i18n="model2_desc">
             National survey model. Evaluates 19 non-invasive markers: vitals (SBP/DBP/BMI), comprehensive metabolic panel, HbA1c, uric acid, and CBC without requiring dipstick microscopy.
           </p>
           <div class="model-card-tags">
-            <span class="model-tag">No Urine Dipstick Needed</span>
-            <span class="model-tag">Metabolic Panel & HbA1c</span>
-            <span class="model-tag">Vitals (BP & BMI)</span>
-            <span class="model-tag">CDC Survey Population</span>
+            <span class="model-tag" data-i18n="tag_no_dipstick">No Urine Dipstick Needed</span>
+            <span class="model-tag" data-i18n="tag_metabolic_hba1c">Metabolic Panel & HbA1c</span>
+            <span class="model-tag" data-i18n="tag_vitals">Vitals (BP & BMI)</span>
+            <span class="model-tag" data-i18n="tag_cdc_population">CDC Survey Population</span>
           </div>
         </div>
       </div>
 
       <div class="model-selection-action">
         <button type="button" class="btn-renal btn-renal-primary" id="btnConfirmModel" style="padding: 0.75rem 1.75rem;">
-          <span>Continue to Screening Form</span>
+          <span data-i18n="btn_continue_to_form">Continue to Screening Form</span>
           <i data-lucide="arrow-down"></i>
         </button>
       </div>
@@ -81,13 +87,13 @@
       <div style="display: flex; align-items: center; gap: 0.6rem;">
         <i data-lucide="check-circle" style="color: var(--color-primary); width: 18px; height: 18px;"></i>
         <div>
-          <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); display: block;">Active Screening Model</span>
+          <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); display: block;" data-i18n="active_model_label">Active Screening Model</span>
           <strong id="activeModelLabel" style="color: var(--color-primary); font-size: 0.95rem;">Standard CKD Model (UCI CKD • 24 Features)</strong>
         </div>
       </div>
       <button type="button" class="btn-renal btn-renal-outline btn-sm" id="btnSwitchModel">
         <i data-lucide="refresh-cw"></i>
-        <span>Switch Model</span>
+        <span data-i18n="switch_model">Switch Model</span>
       </button>
     </div>
   </div>
@@ -100,19 +106,19 @@
     <div class="quick-fill-bar">
       <button type="button" class="btn-renal btn-sample-normal btn-sm" id="btnFillNormal" title="Pre-populate with representative healthy laboratory values">
         <i data-lucide="check"></i>
-        <span>Sample: Normal Baseline</span>
+        <span data-i18n="sample_normal">Sample: Normal Baseline</span>
       </button>
       <button type="button" class="btn-renal btn-sample-moderate btn-sm" id="btnFillModerate" title="Pre-populate with representative moderate CKD laboratory values">
         <i data-lucide="alert-circle"></i>
-        <span>Sample: Moderate CKD Indicators</span>
+        <span data-i18n="sample_moderate">Sample: Moderate CKD Indicators</span>
       </button>
       <button type="button" class="btn-renal btn-sample-high btn-sm" id="btnFillHighRisk" title="Pre-populate with representative high-risk / CKD indicators">
         <i data-lucide="alert-triangle"></i>
-        <span>Sample: High-Risk CKD Profile</span>
+        <span data-i18n="sample_high">Sample: High-Risk CKD Profile</span>
       </button>
       <button type="button" class="btn-renal btn-renal-outline btn-sm" id="btnResetForm">
         <i data-lucide="rotate-ccw"></i>
-        <span>Reset Form</span>
+        <span data-i18n="sample_reset">Reset Form</span>
       </button>
     </div>
 
@@ -122,18 +128,18 @@
         <div style="text-align: left;">
           <strong style="color: var(--color-primary); font-size: 0.925rem; display: flex; align-items: center; gap: 0.4rem;">
             <i data-lucide="layers" style="width: 16px; height: 16px;"></i>
-            <span>Community Diagnostic Camp Mode:</span>
+            <span data-i18n="camp_mode_title">Community Diagnostic Camp Mode:</span>
           </strong>
-          <span style="font-size: 0.8125rem; color: var(--text-muted); display: block; margin-top: 0.15rem;">Evaluating multiple patients? Upload a batch CSV of up to 100 records or select a specialized screening model below.</span>
+          <span style="font-size: 0.8125rem; color: var(--text-muted); display: block; margin-top: 0.15rem;" data-i18n="camp_mode_desc">Evaluating multiple patients? Upload a batch CSV of up to 100 records or select a specialized screening model below.</span>
         </div>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
           <a href="{{ url_for('batch_screen_view') }}" class="btn-renal btn-renal-secondary btn-sm">
             <i data-lucide="upload-cloud"></i>
-            <span>Batch CSV Screening</span>
+            <span data-i18n="batch_csv_btn">Batch CSV Screening</span>
           </a>
           <a href="{{ url_for('batch_template') }}" class="btn-renal btn-renal-outline btn-sm" title="Download standard CSV template">
             <i data-lucide="download"></i>
-            <span>CSV Template</span>
+            <span data-i18n="csv_template_btn">CSV Template</span>
           </a>
         </div>
       </div>
@@ -147,8 +153,8 @@
             </div>
             <div>
               <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                <h4 class="camp-card-title">Expanded CKD Model</h4>
-                <span class="ref-pill" style="background-color: var(--status-moderate-bg); color: var(--status-moderate-text); border-color: var(--status-moderate-border); font-size: 0.6875rem; font-weight: 600;">19 Features</span>
+                <h4 class="camp-card-title" data-i18n="model2_title">Expanded CKD Model</h4>
+                <span class="ref-pill" style="background-color: var(--status-moderate-bg); color: var(--status-moderate-text); border-color: var(--status-moderate-border); font-size: 0.6875rem; font-weight: 600;" data-i18n="model2_features">19 Features</span>
               </div>
               <div class="camp-card-meta">
                 <span><strong>Dataset:</strong> CDC NHANES 2017–2018</span>
@@ -160,20 +166,20 @@
             </div>
           </div>
           <button type="button" class="btn-renal btn-renal-outline btn-sm camp-card-action-btn" id="btnCampOpenAction">
-            <span>Select & Open Model</span>
+            <span data-i18n="select_and_open_model">Select & Open Model</span>
             <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
           </button>
         </div>
 
-        <p class="camp-card-desc">
+        <p class="camp-card-desc" data-i18n="model2_desc">
           National survey model. Evaluates 19 non-invasive markers: vitals (SBP/DBP/BMI), comprehensive metabolic panel, HbA1c, uric acid, and CBC without requiring dipstick microscopy.
         </p>
 
         <div class="camp-card-tags">
-          <span class="model-tag">No Urine Dipstick Needed</span>
-          <span class="model-tag">Metabolic Panel & HbA1c</span>
-          <span class="model-tag">Vitals (BP & BMI)</span>
-          <span class="model-tag">CDC Survey Population</span>
+          <span class="model-tag" data-i18n="tag_no_dipstick">No Urine Dipstick Needed</span>
+          <span class="model-tag" data-i18n="tag_metabolic_hba1c">Metabolic Panel & HbA1c</span>
+          <span class="model-tag" data-i18n="tag_vitals">Vitals (BP & BMI)</span>
+          <span class="model-tag" data-i18n="tag_cdc_population">CDC Survey Population</span>
         </div>
       </div>
     </div>
@@ -183,11 +189,14 @@
       <input type="hidden" name="model_id" value="model_1">
       
       <!-- 1. Patient Demographics & Vitals -->
+      <div class="easy-mode-helper" style="display: none;" data-i18n="easy_bp">
+        <strong>Blood Pressure:</strong> Checks pressure on heart and arteries.
+      </div>
       <fieldset class="clinical-fieldset">
         <div class="fieldset-header">
           <i data-lucide="user" style="color: var(--color-primary);"></i>
           <div>
-            <h2 style="margin-bottom: 0.15rem;">1. Patient Demographics & Vitals</h2>
+            <h2 style="margin-bottom: 0.15rem;" data-i18n="sec_demographics">1. Patient Demographics & Vitals</h2>
             <span style="font-size: 0.8125rem; color: var(--text-subtle); display: block;">Patient ID, Patient Name, Biological Sex, and optional Email are administrative metadata for record-keeping and report delivery.</span>
           </div>
         </div>
@@ -277,10 +286,13 @@
       </fieldset>
 
       <!-- 2. Urinalysis Parameters -->
+      <div class="easy-mode-helper" style="display: none;" data-i18n="easy_urine">
+        <strong>Urinalysis:</strong> Checks for protein leakage in urine.
+      </div>
       <fieldset class="clinical-fieldset">
         <div class="fieldset-header">
           <i data-lucide="droplet" style="color: var(--color-primary);"></i>
-          <h2>2. Urinalysis Biomarkers</h2>
+          <h2 data-i18n="sec_urinalysis">2. Urinalysis Biomarkers</h2>
         </div>
 
         <div class="form-row-grid">
@@ -376,10 +388,13 @@
       </fieldset>
 
       <!-- 3. Renal Chemistry & Electrolytes -->
+      <div class="easy-mode-helper" style="display: none;" data-i18n="easy_creatinine">
+        <strong>Serum Creatinine:</strong> Kidney waste filter test. High numbers show kidneys are under stress.
+      </div>
       <fieldset class="clinical-fieldset">
         <div class="fieldset-header">
           <i data-lucide="activity" style="color: var(--color-primary);"></i>
-          <h2>3. Renal Chemistry & Electrolytes</h2>
+          <h2 data-i18n="sec_chemistry">3. Renal Chemistry & Electrolytes</h2>
         </div>
 
         <div class="form-row-grid">
@@ -435,10 +450,13 @@
       </fieldset>
 
       <!-- 4. Hematology Panel -->
+      <div class="easy-mode-helper" style="display: none;" data-i18n="easy_hemo">
+        <strong>Hemoglobin:</strong> Measures blood strength and oxygen levels. Low levels cause weakness.
+      </div>
       <fieldset class="clinical-fieldset">
         <div class="fieldset-header">
           <i data-lucide="test-tube" style="color: var(--color-primary);"></i>
-          <h2>4. Hematological Parameters</h2>
+          <h2 data-i18n="sec_hematology">4. Hematological Parameters</h2>
         </div>
 
         <div class="form-row-grid-4">
@@ -485,7 +503,7 @@
       <fieldset class="clinical-fieldset">
         <div class="fieldset-header">
           <i data-lucide="file-text" style="color: var(--color-primary);"></i>
-          <h2>5. Clinical Comorbidities & Symptoms</h2>
+          <h2 data-i18n="sec_comorbidities">5. Clinical Comorbidities & Symptoms</h2>
         </div>
 
         <div class="form-row-grid">
@@ -560,7 +578,7 @@
         </a>
         <button type="submit" class="btn-renal btn-renal-primary" style="padding: 0.85rem 2rem; font-size: 1rem;">
           <i data-lucide="check-circle-2"></i>
-          <span>Review & Evaluate Screening (Standard Model)</span>
+          <span data-i18n="btn_review_submit_standard">Review & Evaluate Screening (Standard Model)</span>
         </button>
       </div>
     </form>
@@ -574,19 +592,19 @@
     <div class="quick-fill-bar">
       <button type="button" class="btn-renal btn-sample-normal btn-sm" id="btnFillNhanesNormal" title="Pre-populate with representative healthy NHANES population values">
         <i data-lucide="check"></i>
-        <span>Sample: Normal Baseline</span>
+        <span data-i18n="sample_normal">Sample: Normal Baseline</span>
       </button>
       <button type="button" class="btn-renal btn-sample-moderate btn-sm" id="btnFillNhanesModerate" title="Pre-populate with representative moderate CKD indicators from NHANES">
         <i data-lucide="alert-circle"></i>
-        <span>Sample: Moderate CKD Indicators</span>
+        <span data-i18n="sample_moderate">Sample: Moderate CKD Indicators</span>
       </button>
       <button type="button" class="btn-renal btn-sample-high btn-sm" id="btnFillNhanesHighRisk" title="Pre-populate with high-risk CKD indicators from NHANES">
         <i data-lucide="alert-triangle"></i>
-        <span>Sample: High-Risk CKD Profile</span>
+        <span data-i18n="sample_high">Sample: High-Risk CKD Profile</span>
       </button>
       <button type="button" class="btn-renal btn-renal-outline btn-sm" id="btnResetNhanesForm">
         <i data-lucide="rotate-ccw"></i>
-        <span>Reset Form</span>
+        <span data-i18n="sample_reset">Reset Form</span>
       </button>
     </div>
 
@@ -596,18 +614,18 @@
         <div style="text-align: left;">
           <strong style="color: var(--color-primary); font-size: 0.925rem; display: flex; align-items: center; gap: 0.4rem;">
             <i data-lucide="layers" style="width: 16px; height: 16px;"></i>
-            <span>Community Diagnostic Camp Mode:</span>
+            <span data-i18n="camp_mode_title">Community Diagnostic Camp Mode:</span>
           </strong>
-          <span style="font-size: 0.8125rem; color: var(--text-muted); display: block; margin-top: 0.15rem;">Evaluating multiple patients? Upload a batch CSV of up to 100 records or switch screening models.</span>
+          <span style="font-size: 0.8125rem; color: var(--text-muted); display: block; margin-top: 0.15rem;" data-i18n="camp_mode_desc">Evaluating multiple patients? Upload a batch CSV of up to 100 records or switch screening models.</span>
         </div>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
           <a href="{{ url_for('batch_screen_view') }}" class="btn-renal btn-renal-secondary btn-sm">
             <i data-lucide="upload-cloud"></i>
-            <span>Batch CSV Screening</span>
+            <span data-i18n="batch_csv_btn">Batch CSV Screening</span>
           </a>
           <a href="{{ url_for('batch_template') }}" class="btn-renal btn-renal-outline btn-sm" title="Download standard CSV template">
             <i data-lucide="download"></i>
-            <span>CSV Template</span>
+            <span data-i18n="csv_template_btn">CSV Template</span>
           </a>
         </div>
       </div>
@@ -621,9 +639,9 @@
             </div>
             <div>
               <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                <h4 class="camp-card-title">Expanded CKD Model</h4>
+                <h4 class="camp-card-title" data-i18n="model2_title">Expanded CKD Model</h4>
                 <span class="ref-pill" style="background-color: var(--status-clear-bg); color: var(--status-clear-text); border-color: var(--status-clear-border); font-size: 0.6875rem; font-weight: 600;">Active Model</span>
-                <span class="ref-pill" style="background-color: var(--status-moderate-bg); color: var(--status-moderate-text); border-color: var(--status-moderate-border); font-size: 0.6875rem; font-weight: 600;">19 Features</span>
+                <span class="ref-pill" style="background-color: var(--status-moderate-bg); color: var(--status-moderate-text); border-color: var(--status-moderate-border); font-size: 0.6875rem; font-weight: 600;" data-i18n="model2_features">19 Features</span>
               </div>
               <div class="camp-card-meta">
                 <span><strong>Dataset:</strong> CDC NHANES 2017–2018</span>
@@ -636,19 +654,19 @@
           </div>
           <button type="button" class="btn-renal btn-renal-outline btn-sm" id="btnCampSwitchToModel1">
             <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
-            <span>Switch to Standard Model</span>
+            <span data-i18n="switch_to_standard">Switch to Standard Model</span>
           </button>
         </div>
 
-        <p class="camp-card-desc">
+        <p class="camp-card-desc" data-i18n="model2_desc">
           National survey model. Evaluates 19 non-invasive markers: vitals (SBP/DBP/BMI), comprehensive metabolic panel, HbA1c, uric acid, and CBC without requiring dipstick microscopy.
         </p>
 
         <div class="camp-card-tags">
-          <span class="model-tag">No Urine Dipstick Needed</span>
-          <span class="model-tag">Metabolic Panel & HbA1c</span>
-          <span class="model-tag">Vitals (BP & BMI)</span>
-          <span class="model-tag">CDC Survey Population</span>
+          <span class="model-tag" data-i18n="tag_no_dipstick">No Urine Dipstick Needed</span>
+          <span class="model-tag" data-i18n="tag_metabolic_hba1c">Metabolic Panel & HbA1c</span>
+          <span class="model-tag" data-i18n="tag_vitals">Vitals (BP & BMI)</span>
+          <span class="model-tag" data-i18n="tag_cdc_population">CDC Survey Population</span>
         </div>
       </div>
     </div>
@@ -658,11 +676,14 @@
       <input type="hidden" name="model_id" value="model_2">
 
       <!-- 1. Patient Demographics & Vitals (NHANES) -->
+      <div class="easy-mode-helper" style="display: none;" data-i18n="easy_bp">
+        <strong>Blood Pressure:</strong> Checks pressure on heart and arteries.
+      </div>
       <fieldset class="clinical-fieldset">
         <div class="fieldset-header">
           <i data-lucide="user" style="color: var(--color-primary);"></i>
           <div>
-            <h2 style="margin-bottom: 0.15rem;">1. Patient Demographics & Physical Examination</h2>
+            <h2 style="margin-bottom: 0.15rem;" data-i18n="sec_nhanes_demographics">1. Patient Demographics & Physical Examination</h2>
             <span style="font-size: 0.8125rem; color: var(--text-subtle); display: block;">Standard survey examination parameters and patient administrative records.</span>
           </div>
         </div>
@@ -768,11 +789,14 @@
       </fieldset>
 
       <!-- 2. Metabolic & Renal Panel (NHANES) -->
+      <div class="easy-mode-helper" style="display: none;" data-i18n="easy_creatinine">
+        <strong>Serum Creatinine:</strong> Kidney waste filter test. High numbers show kidneys are under stress.
+      </div>
       <fieldset class="clinical-fieldset">
         <div class="fieldset-header">
           <i data-lucide="activity" style="color: var(--color-primary);"></i>
           <div>
-            <h2 style="margin-bottom: 0.15rem;">2. Comprehensive Metabolic & Renal Panel</h2>
+            <h2 style="margin-bottom: 0.15rem;" data-i18n="sec_nhanes_metabolic">2. Comprehensive Metabolic & Renal Panel</h2>
             <span style="font-size: 0.8125rem; color: var(--text-subtle); display: block;">Standardized serum biomarkers from biochemistry profile (BIOPRO_J & GHB_J).</span>
           </div>
         </div>
@@ -833,7 +857,7 @@
       <fieldset class="clinical-fieldset">
         <div class="fieldset-header">
           <i data-lucide="droplet" style="color: var(--color-primary);"></i>
-          <h2>3. Biochemistry & Serum Electrolytes</h2>
+          <h2 data-i18n="sec_nhanes_biochemistry">3. Biochemistry & Serum Electrolytes</h2>
         </div>
 
         <div class="form-row-grid-4">
@@ -877,10 +901,13 @@
       </fieldset>
 
       <!-- 4. Hematology Panel (NHANES) -->
+      <div class="easy-mode-helper" style="display: none;" data-i18n="easy_hemo">
+        <strong>Hemoglobin:</strong> Measures blood strength and oxygen levels. Low levels cause weakness.
+      </div>
       <fieldset class="clinical-fieldset">
         <div class="fieldset-header">
           <i data-lucide="test-tube" style="color: var(--color-primary);"></i>
-          <h2>4. Hematological Parameters (CBC_J)</h2>
+          <h2 data-i18n="sec_nhanes_hematology">4. Hematological Parameters (CBC_J)</h2>
         </div>
 
         <div class="form-row-grid">
@@ -918,7 +945,7 @@
       <fieldset class="clinical-fieldset">
         <div class="fieldset-header">
           <i data-lucide="file-text" style="color: var(--color-primary);"></i>
-          <h2>5. Clinical History & Comorbidities</h2>
+          <h2 data-i18n="sec_nhanes_comorbidities">5. Clinical History & Comorbidities</h2>
         </div>
 
         <div class="form-row-grid-2">
@@ -952,7 +979,7 @@
         </a>
         <button type="submit" class="btn-renal btn-renal-primary" style="padding: 0.85rem 2rem; font-size: 1rem;">
           <i data-lucide="check-circle-2"></i>
-          <span>Review & Evaluate Screening (Expanded Model)</span>
+          <span data-i18n="btn_review_submit_expanded">Review & Evaluate Screening (Expanded Model)</span>
         </button>
       </div>
     </form>
@@ -962,15 +989,15 @@
 <!-- Pre-submission Confirmation Modal -->
 <div id="reviewModal" style="display: none; position: fixed; inset: 0; background-color: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 1.5rem;">
   <div style="background-color: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 8px; max-width: 540px; width: 100%; padding: 2rem; box-shadow: var(--shadow-md);">
-    <h3 style="font-family: var(--font-serif); font-size: 1.4rem; margin-bottom: 0.75rem;">Confirm Clinical Screening Submission</h3>
+    <h3 style="font-family: var(--font-serif); font-size: 1.4rem; margin-bottom: 0.75rem;" data-i18n="modal_confirm_title">Confirm Clinical Screening Submission</h3>
     
     <div id="reviewSummaryContent">
       <!-- Injected by screening.js -->
     </div>
 
     <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
-      <button type="button" class="btn-renal btn-renal-secondary" id="btnCloseModal">Edit Values</button>
-      <button type="button" class="btn-renal btn-renal-primary" id="btnConfirmSubmit">Confirm & Evaluate</button>
+      <button type="button" class="btn-renal btn-renal-secondary" id="btnCloseModal" data-i18n="modal_edit">Edit Values</button>
+      <button type="button" class="btn-renal btn-renal-primary" id="btnConfirmSubmit" data-i18n="modal_confirm">Confirm & Evaluate</button>
     </div>
   </div>
 </div>

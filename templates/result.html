@@ -10,17 +10,23 @@
     
     <!-- Dynamic Outcome Banner -->
     <div class="result-banner {% if result.prediction_code == 'ckd' %}flagged{% else %}clear{% endif %}">
-      <div class="result-eyebrow">
-        Screening Assessment &bull; ID: {{ result.screening_uuid }}
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div class="result-eyebrow">
+          Screening Assessment &bull; ID: {{ result.screening_uuid }}
+        </div>
+        <button type="button" class="btn-tts" data-tts-target=".result-banner" title="Listen to screening outcome">
+          <i data-lucide="volume-2"></i>
+          <span class="tts-label" data-i18n="hero_listen">Listen to Instructions</span>
+        </button>
       </div>
-      <h1 class="result-headline" style="font-size: 1.85rem;">
+      <h1 class="result-headline" style="font-size: 1.85rem;" data-i18n="{% if result.prediction_code == 'ckd' %}result_headline_detected{% else %}result_headline_clear{% endif %}">
         {{ result.prediction_label }}
       </h1>
       <p class="result-subline">
-        Statistical Tier: <strong>{{ result.risk_level }}</strong> &nbsp;|&nbsp;
-        Primary Evaluator: <strong>{{ result.model_used }}</strong> &nbsp;|&nbsp;
-        Model Confidence: <strong>{{ result.confidence }}%</strong> &nbsp;|&nbsp;
-        Statistical Indication P(CKD): <strong>{{ result.probability_ckd }}%</strong> &nbsp;|&nbsp;
+        <span data-i18n="stat_tier_label">Statistical Tier:</span> <strong>{{ result.risk_level }}</strong> &nbsp;|&nbsp;
+        <span data-i18n="primary_evaluator">Primary Evaluator:</span> <strong>{{ result.model_used }}</strong> &nbsp;|&nbsp;
+        <span data-i18n="model_confidence">Model Confidence:</span> <strong>{{ result.confidence }}%</strong> &nbsp;|&nbsp;
+        <span data-i18n="stat_indication">Statistical Indication P(CKD):</span> <strong>{{ result.probability_ckd }}%</strong> &nbsp;|&nbsp;
         Date: <strong>{{ result.formatted_date }}</strong>
       </p>
     </div>
@@ -132,11 +138,17 @@
 
       <!-- Clinical Guidance & Recommendations -->
       <div style="margin-bottom: 2rem;">
-        <h3 style="font-family: var(--font-serif); font-size: 1.25rem; margin-bottom: 0.75rem;">
-          Clinical Screening Guidance
-        </h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+          <h3 style="font-family: var(--font-serif); font-size: 1.25rem; margin: 0;" data-i18n="clinical_guidance_title">
+            Clinical Screening Guidance
+          </h3>
+          <button type="button" class="btn-tts" data-tts-target="#clinicalGuidanceText" title="Listen to clinical guidance">
+            <i data-lucide="volume-2"></i>
+            <span class="tts-label" data-i18n="hero_listen">Listen</span>
+          </button>
+        </div>
         <div style="background-color: var(--bg-surface-subtle); border-left: 4px solid var(--color-primary); padding: 1.25rem 1.5rem; border-radius: 6px;">
-          <p style="color: var(--text-main); font-size: 0.9375rem; line-height: 1.6;">
+          <p id="clinicalGuidanceText" style="color: var(--text-main); font-size: 0.9375rem; line-height: 1.6;" data-i18n="{% if result.prediction_code == 'ckd' %}guidance_detected{% else %}guidance_clear{% endif %}">
             {{ result.recommendation }}
           </p>
           {% if result.probability_explanation %}
@@ -239,19 +251,19 @@
       <div class="result-actions-strip">
         <a href="{{ url_for('download_report', screening_uuid=result.screening_uuid) }}" class="btn-renal btn-renal-primary" style="padding: 0.8rem 1.5rem;">
           <i data-lucide="download"></i>
-          <span>Download Official PDF Report</span>
+          <span data-i18n="download_pdf_report">Download Official PDF Report</span>
         </a>
         <a href="{{ url_for('screen_view') }}" class="btn-renal btn-renal-outline" style="padding: 0.8rem 1.5rem;">
           <i data-lucide="plus-circle"></i>
-          <span>New Patient Screening</span>
+          <span data-i18n="new_screening">New Patient Screening</span>
         </a>
         <a href="{{ url_for('dashboard_view') }}" class="btn-renal btn-renal-secondary">
           <i data-lucide="layout-dashboard"></i>
-          <span>Return to Dashboard</span>
+          <span data-i18n="return_dashboard">Return to Dashboard</span>
         </a>
         <a href="{{ url_for('history_view') }}" class="btn-renal btn-renal-secondary">
           <i data-lucide="clock"></i>
-          <span>Screening History</span>
+          <span data-i18n="screening_history">Screening History</span>
         </a>
       </div>
 

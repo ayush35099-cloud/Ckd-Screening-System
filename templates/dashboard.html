@@ -7,13 +7,13 @@
   <!-- Dashboard Header -->
   <div class="dashboard-header">
     <div class="dashboard-title-group">
-      <h1>Primary Care Screening Dashboard</h1>
-      <p>Operational decision-support metrics and recent screening activity from the active database.</p>
+      <h1 data-i18n="dash_title">Primary Care Screening Dashboard</h1>
+      <p data-i18n="dash_desc">Operational decision-support metrics and recent screening activity from the active database.</p>
     </div>
     <div style="display: flex; gap: 0.75rem;">
       <a href="{{ url_for('screen_view') }}" class="btn-renal btn-renal-primary">
         <i data-lucide="plus-circle"></i>
-        <span>New Patient Screening</span>
+        <span data-i18n="new_screening">New Patient Screening</span>
       </a>
     </div>
   </div>
@@ -22,7 +22,7 @@
   <div class="metrics-summary-grid">
     <div class="metric-stat-card">
       <div class="stat-label">
-        <span>Total Screened</span>
+        <span data-i18n="total_screened">Total Screened</span>
         <i data-lucide="users" style="width: 16px; height: 16px; color: var(--color-primary);"></i>
       </div>
       <div class="stat-value">{{ summary.total }}</div>
@@ -31,7 +31,7 @@
 
     <div class="metric-stat-card">
       <div class="stat-label">
-        <span>Flagged for Evaluation</span>
+        <span data-i18n="flagged_evaluation">Flagged for Evaluation</span>
         <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: var(--status-flagged-text);"></i>
       </div>
       <div class="stat-value" style="color: var(--status-flagged-text);">{{ summary.flagged }}</div>
@@ -40,7 +40,7 @@
 
     <div class="metric-stat-card">
       <div class="stat-label">
-        <span>Routine Baseline</span>
+        <span data-i18n="routine_baseline">Routine Baseline</span>
         <i data-lucide="check-circle" style="width: 16px; height: 16px; color: var(--status-clear-text);"></i>
       </div>
       <div class="stat-value" style="color: var(--status-clear-text);">{{ summary.non_flagged }}</div>
@@ -49,7 +49,7 @@
 
     <div class="metric-stat-card">
       <div class="stat-label">
-        <span>Active ML Pipelines</span>
+        <span data-i18n="active_pipelines">Active ML Pipelines</span>
         <i data-lucide="cpu" style="width: 16px; height: 16px; color: var(--color-primary);"></i>
       </div>
       <div class="stat-value" style="font-size: 1.25rem; font-family: var(--font-sans); margin-top: 0.25rem;">
