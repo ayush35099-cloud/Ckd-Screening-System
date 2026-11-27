@@ -96,5 +96,36 @@ class TestPDFReportGenerator(unittest.TestCase):
         self.assertIsNotNone(pdf_bytes)
         self.assertTrue(pdf_bytes.startswith(b'%PDF'))
 
+    def test_pdf_generation_model_2(self):
+        sample_data = {
+            'screening_uuid': 'test-uuid-nhanes-001',
+            'patient_id': 'PT-NHANES-PDF-01',
+            'patient_name': 'NHANES Evaluation Subject',
+            'age': 62,
+            'sex': 'Female',
+            'prediction_label': 'CKD Indicators Detected by Population Model',
+            'prediction_code': 'ckd',
+            'probability': 84.5,
+            'risk_level': 'High',
+            'model_id': 'model_2',
+            'model_used': 'Random Forest',
+            'model_name': 'CDC NHANES General Population Screening Pipeline',
+            'formatted_date': 'Nov 27, 2026, 11:30 PM',
+            'recommendation': 'Comprehensive clinical evaluation and formal laboratory eGFR / uACR testing indicated.',
+            'findings': [
+                {'parameter': 'Serum Creatinine', 'value': '1.6 mg/dL', 'status': 'Elevated', 'detail': 'Above normal reference limit'},
+                {'parameter': 'Systolic Blood Pressure', 'value': '142 mmHg', 'status': 'Elevated', 'detail': 'Stage 2 Hypertension criteria'}
+            ],
+            'parameters': {
+                'age': 62, 'sex': 2, 'bmi': 31.2, 'sbp': 142, 'dbp': 88, 'bgr': 145, 'hba1c': 7.2,
+                'bu': 28, 'sc': 1.6, 'sod': 136, 'pot': 4.7, 'tot_protein': 6.8, 'serum_alb': 3.7,
+                'uric_acid': 7.1, 'hemo': 11.2, 'pcv': 34.0, 'wc': 8.9, 'htn': 1, 'dm': 1
+            }
+        }
+        pdf_bytes = generate_pdf_report(sample_data)
+        self.assertIsNotNone(pdf_bytes)
+        self.assertGreater(len(pdf_bytes), 1000)
+        self.assertTrue(pdf_bytes.startswith(b'%PDF'))
+
 if __name__ == '__main__':
     unittest.main()

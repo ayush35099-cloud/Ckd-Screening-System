@@ -306,35 +306,65 @@ def generate_pdf_report(screening_data, feature_meta=None):
         story.append(Spacer(1, 8))
 
     # 6. Complete Parameters Table (Clean 2-column breakdown)
-    story.append(Paragraph("Submitted Laboratory Parameters (UCI Standard 24-Feature Schema)", section_heading))
+    is_nhanes = (
+        screening_data.get('model_id') in ['model_2', 'nhanes', 'expanded'] or
+        'nhanes' in str(screening_data.get('model_used', '')).lower() or
+        'expanded' in str(screening_data.get('model_used', '')).lower()
+    )
+
     raw_params = screening_data.get('parameters') or {}
 
-    param_meta = {
-        'age': ('Age', '18 - 65 yrs'),
-        'bp': ('Blood Pressure', '70 - 80 mm/Hg'),
-        'sg': ('Specific Gravity', '1.015 - 1.025'),
-        'al': ('Albumin (Protein)', '0 (Negative)'),
-        'su': ('Sugar (Glucose)', '0 (Negative)'),
-        'bgr': ('Blood Glucose Random', '70 - 140 mg/dL'),
-        'bu': ('Blood Urea', '15 - 45 mg/dL'),
-        'sc': ('Serum Creatinine', '0.6 - 1.2 mg/dL'),
-        'sod': ('Sodium', '135 - 145 mEq/L'),
-        'pot': ('Potassium', '3.5 - 5.0 mEq/L'),
-        'hemo': ('Hemoglobin', '13.0 - 17.0 g/dL'),
-        'pcv': ('Packed Cell Volume', '38 - 50%'),
-        'wc': ('White Blood Cell Count', '4,000 - 11,000 /cumm'),
-        'rc': ('Red Blood Cell Count', '4.2 - 5.9 M/cmm'),
-        'rbc': ('Red Blood Cells (Urine)', 'normal'),
-        'pc': ('Pus Cells (Urine)', 'normal'),
-        'pcc': ('Pus Cell Clumps', 'notpresent'),
-        'ba': ('Bacteria', 'notpresent'),
-        'htn': ('Hypertension', 'no'),
-        'dm': ('Diabetes Mellitus', 'no'),
-        'cad': ('Coronary Artery Disease', 'no'),
-        'appet': ('Appetite', 'good'),
-        'pe': ('Pedal Edema', 'no'),
-        'ane': ('Anemia', 'no')
-    }
+    if is_nhanes:
+        story.append(Paragraph("Submitted Laboratory Parameters (CDC NHANES 19-Feature Schema)", section_heading))
+        param_meta = {
+            'age': ('Age', '18 - 85 yrs'),
+            'sex': ('Biological Sex', 'male / female'),
+            'bmi': ('Body Mass Index (BMI)', '18.5 - 24.9 kg/m²'),
+            'sbp': ('Systolic Blood Pressure', '90 - 120 mmHg'),
+            'dbp': ('Diastolic Blood Pressure', '60 - 80 mmHg'),
+            'bgr': ('Serum Glucose', '70 - 99 mg/dL'),
+            'hba1c': ('Glycohemoglobin (HbA1c)', '4.0 - 5.6%'),
+            'bu': ('Blood Urea Nitrogen (BUN)', '7 - 20 mg/dL'),
+            'sc': ('Serum Creatinine', '0.6 - 1.2 mg/dL'),
+            'sod': ('Serum Sodium', '135 - 145 mmol/L'),
+            'pot': ('Serum Potassium', '3.5 - 5.0 mmol/L'),
+            'tot_protein': ('Total Serum Protein', '6.0 - 8.3 g/dL'),
+            'serum_alb': ('Serum Albumin', '3.5 - 5.0 g/dL'),
+            'uric_acid': ('Serum Uric Acid', '3.5 - 7.2 mg/dL'),
+            'hemo': ('Hemoglobin', '12.0 - 17.0 g/dL'),
+            'pcv': ('Hematocrit / PCV', '37 - 50%'),
+            'wc': ('White Blood Cell Count', '4.0 - 11.0 10³/µL'),
+            'htn': ('Hypertension History', 'no'),
+            'dm': ('Diabetes History', 'no')
+        }
+    else:
+        story.append(Paragraph("Submitted Laboratory Parameters (UCI Standard 24-Feature Schema)", section_heading))
+        param_meta = {
+            'age': ('Age', '18 - 65 yrs'),
+            'bp': ('Blood Pressure', '70 - 80 mm/Hg'),
+            'sg': ('Specific Gravity', '1.015 - 1.025'),
+            'al': ('Albumin (Protein)', '0 (Negative)'),
+            'su': ('Sugar (Glucose)', '0 (Negative)'),
+            'bgr': ('Blood Glucose Random', '70 - 140 mg/dL'),
+            'bu': ('Blood Urea', '15 - 45 mg/dL'),
+            'sc': ('Serum Creatinine', '0.6 - 1.2 mg/dL'),
+            'sod': ('Sodium', '135 - 145 mEq/L'),
+            'pot': ('Potassium', '3.5 - 5.0 mEq/L'),
+            'hemo': ('Hemoglobin', '13.0 - 17.0 g/dL'),
+            'pcv': ('Packed Cell Volume', '38 - 50%'),
+            'wc': ('White Blood Cell Count', '4,000 - 11,000 /cumm'),
+            'rc': ('Red Blood Cell Count', '4.2 - 5.9 M/cmm'),
+            'rbc': ('Red Blood Cells (Urine)', 'normal'),
+            'pc': ('Pus Cells (Urine)', 'normal'),
+            'pcc': ('Pus Cell Clumps', 'notpresent'),
+            'ba': ('Bacteria', 'notpresent'),
+            'htn': ('Hypertension', 'no'),
+            'dm': ('Diabetes Mellitus', 'no'),
+            'cad': ('Coronary Artery Disease', 'no'),
+            'appet': ('Appetite', 'good'),
+            'pe': ('Pedal Edema', 'no'),
+            'ane': ('Anemia', 'no')
+        }
 
     items = list(param_meta.items())
     half = (len(items) + 1) // 2
@@ -374,23 +404,40 @@ def generate_pdf_report(screening_data, feature_meta=None):
     story.append(Spacer(1, 8))
 
     # 7. Model Performance & Regulatory Disclaimer Footer
-    disclaimer_block = [
-        Paragraph(
+    if is_nhanes:
+        disclaimer_text = (
+            "<b>IMPORTANT REGULATORY AND MEDICAL DISCLAIMER:</b><br/>"
+            "This document is an automated decision-support screening report produced by an educational machine learning model "
+            "trained on official CDC NHANES (National Health and Nutrition Examination Survey) cross-sectional data (N=5,063). "
+            "Derived indicators are based on KDIGO criteria (eGFR &lt; 60 mL/min/1.73m² or UACR &ge; 30 mg/g). "
+            "Because cross-sectional survey data cannot verify 3-month chronicity, <b>this report does NOT constitute a clinical diagnosis, "
+            "medical certificate, or treatment prescription.</b> The model does not definitively confirm or rule out kidney disease. "
+            "Comprehensive diagnostic follow-up by a physician or nephrologist is strongly recommended."
+        )
+        spec_text = (
+            "<b>Model Specification:</b> Expanded CKD Pipeline (CDC NHANES 2017-2018) &bull; "
+            "<b>Population Benchmark Testing:</b> 82.1% ROC-AUC on held-out test split (N=1,013) &bull; "
+            "<b>Institutional Affiliation:</b> Dept. of AIML, Dayananda Sagar College of Engineering, Bengaluru."
+        )
+    else:
+        disclaimer_text = (
             "<b>IMPORTANT REGULATORY AND MEDICAL DISCLAIMER:</b><br/>"
             "This document is an automated decision-support screening report produced by an educational machine learning model "
             "trained on the UCI Chronic Kidney Disease benchmark dataset. <b>This report does NOT constitute a clinical diagnosis, "
             "medical certificate, or treatment prescription.</b> The model does not diagnose or definitively rule out kidney disease. "
             "Kidney disease is multifactorial; any abnormal indicator must be investigated through comprehensive clinical nephrological evaluation "
-            "(e.g. formal eGFR calculation, inulin clearance, renal ultrasound). Independent prospective clinical validation has not been performed.",
-            disclaimer_style
-        ),
-        Spacer(1, 4),
-        Paragraph(
+            "(e.g. formal eGFR calculation, inulin clearance, renal ultrasound). Independent prospective clinical validation has not been performed."
+        )
+        spec_text = (
             "<b>Model Specification:</b> Random Forest / Decision Tree Pipeline &bull; "
             "<b>Academic Benchmark Testing:</b> 100.0% sensitivity on held-out UCI test split (N=80) &bull; "
-            "<b>Institutional Affiliation:</b> Dept. of AIML, Dayananda Sagar College of Engineering, Bengaluru.",
-            ParagraphStyle('DocFooterMeta', parent=styles['Normal'], fontSize=7, textColor=C_MUTED)
+            "<b>Institutional Affiliation:</b> Dept. of AIML, Dayananda Sagar College of Engineering, Bengaluru."
         )
+
+    disclaimer_block = [
+        Paragraph(disclaimer_text, disclaimer_style),
+        Spacer(1, 4),
+        Paragraph(spec_text, ParagraphStyle('DocFooterMeta', parent=styles['Normal'], fontSize=7, textColor=C_MUTED))
     ]
 
     disclaimer_table = Table([[disclaimer_block]], colWidths=[7.4 * inch])

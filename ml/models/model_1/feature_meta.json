@@ -1,0 +1,348 @@
+{
+  "features": {
+    "age": {
+      "label": "Age",
+      "type": "numerical",
+      "unit": "years",
+      "min": 1,
+      "max": 100,
+      "step": 1,
+      "normal_range": "18 - 65",
+      "default": 45,
+      "category": "demographic",
+      "description": "Patient age in completed years."
+    },
+    "bp": {
+      "label": "Blood Pressure (Diastolic)",
+      "type": "numerical",
+      "unit": "mm/Hg",
+      "min": 40,
+      "max": 200,
+      "step": 5,
+      "normal_range": "70 - 80 mm/Hg",
+      "default": 80,
+      "category": "vital",
+      "description": "Resting blood pressure measured in millimeters of mercury."
+    },
+    "sg": {
+      "label": "Specific Gravity",
+      "type": "numerical",
+      "unit": "",
+      "options": [
+        "1.005",
+        "1.010",
+        "1.015",
+        "1.020",
+        "1.025"
+      ],
+      "normal_range": "1.015 - 1.025",
+      "default": "1.020",
+      "category": "urinalysis",
+      "description": "Concentration of particles in urine, reflecting kidney concentrating ability."
+    },
+    "al": {
+      "label": "Albumin",
+      "type": "numerical",
+      "unit": "scale (0-5)",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "normal_range": "0 (Negative)",
+      "default": "0",
+      "category": "urinalysis",
+      "description": "Urine protein level. Values above 0 indicate proteinuria."
+    },
+    "su": {
+      "label": "Sugar",
+      "type": "numerical",
+      "unit": "scale (0-5)",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "normal_range": "0 (Negative)",
+      "default": "0",
+      "category": "urinalysis",
+      "description": "Urine glucose level. Elevated values suggest glycosuria."
+    },
+    "rbc": {
+      "label": "Red Blood Cells (Urine)",
+      "type": "categorical",
+      "unit": "",
+      "options": [
+        "normal",
+        "abnormal"
+      ],
+      "normal_range": "normal",
+      "default": "normal",
+      "category": "urinalysis",
+      "description": "Microscopic examination for hematuria in urine sediment."
+    },
+    "pc": {
+      "label": "Pus Cell (Urine)",
+      "type": "categorical",
+      "unit": "",
+      "options": [
+        "normal",
+        "abnormal"
+      ],
+      "normal_range": "normal",
+      "default": "normal",
+      "category": "urinalysis",
+      "description": "Presence of leukocytes indicating potential infection or inflammation."
+    },
+    "pcc": {
+      "label": "Pus Cell Clumps",
+      "type": "categorical",
+      "unit": "",
+      "options": [
+        "notpresent",
+        "present"
+      ],
+      "normal_range": "notpresent",
+      "default": "notpresent",
+      "category": "urinalysis",
+      "description": "Aggregated white blood cells in urine."
+    },
+    "ba": {
+      "label": "Bacteria",
+      "type": "categorical",
+      "unit": "",
+      "options": [
+        "notpresent",
+        "present"
+      ],
+      "normal_range": "notpresent",
+      "default": "notpresent",
+      "category": "urinalysis",
+      "description": "Bacterial colonization in urinary tract sample."
+    },
+    "bgr": {
+      "label": "Blood Glucose Random",
+      "type": "numerical",
+      "unit": "mg/dL",
+      "min": 50,
+      "max": 500,
+      "step": 1,
+      "normal_range": "70 - 140 mg/dL",
+      "default": 110,
+      "category": "blood_chemistry",
+      "description": "Random plasma glucose level."
+    },
+    "bu": {
+      "label": "Blood Urea",
+      "type": "numerical",
+      "unit": "mg/dL",
+      "min": 5,
+      "max": 400,
+      "step": 1,
+      "normal_range": "15 - 45 mg/dL",
+      "default": 35,
+      "category": "renal_function",
+      "description": "Waste product of protein metabolism filtered by kidneys."
+    },
+    "sc": {
+      "label": "Serum Creatinine",
+      "type": "numerical",
+      "unit": "mg/dL",
+      "min": 0.2,
+      "max": 20.0,
+      "step": 0.1,
+      "normal_range": "0.6 - 1.2 mg/dL",
+      "default": 0.9,
+      "category": "renal_function",
+      "description": "Crucial kidney biomarker reflecting glomerular filtration rate (GFR)."
+    },
+    "sod": {
+      "label": "Sodium",
+      "type": "numerical",
+      "unit": "mEq/L",
+      "min": 100,
+      "max": 170,
+      "step": 0.5,
+      "normal_range": "135 - 145 mEq/L",
+      "default": 138,
+      "category": "electrolytes",
+      "description": "Serum electrolyte critical for fluid balance and blood pressure."
+    },
+    "pot": {
+      "label": "Potassium",
+      "type": "numerical",
+      "unit": "mEq/L",
+      "min": 2.0,
+      "max": 10.0,
+      "step": 0.1,
+      "normal_range": "3.5 - 5.0 mEq/L",
+      "default": 4.2,
+      "category": "electrolytes",
+      "description": "Serum potassium level; elevated in advanced renal dysfunction."
+    },
+    "hemo": {
+      "label": "Hemoglobin",
+      "type": "numerical",
+      "unit": "g/dL",
+      "min": 3.0,
+      "max": 20.0,
+      "step": 0.1,
+      "normal_range": "13.0 - 17.0 (M) / 12.0 - 15.5 (F)",
+      "default": 14.5,
+      "category": "hematology",
+      "description": "Oxygen-carrying protein; kidneys produce erythropoietin regulating this."
+    },
+    "pcv": {
+      "label": "Packed Cell Volume (Hematocrit)",
+      "type": "numerical",
+      "unit": "%",
+      "min": 10,
+      "max": 60,
+      "step": 1,
+      "normal_range": "38 - 50%",
+      "default": 42,
+      "category": "hematology",
+      "description": "Percentage of whole blood volume composed of erythrocytes."
+    },
+    "wc": {
+      "label": "White Blood Cell Count",
+      "type": "numerical",
+      "unit": "cells/cumm",
+      "min": 2000,
+      "max": 30000,
+      "step": 100,
+      "normal_range": "4,000 - 11,000 cells/cumm",
+      "default": 7500,
+      "category": "hematology",
+      "description": "Total circulating leukocyte count."
+    },
+    "rc": {
+      "label": "Red Blood Cell Count",
+      "type": "numerical",
+      "unit": "millions/cmm",
+      "min": 1.5,
+      "max": 8.0,
+      "step": 0.1,
+      "normal_range": "4.2 - 5.9 millions/cmm",
+      "default": 4.8,
+      "category": "hematology",
+      "description": "Total erythrocyte count in circulating blood."
+    },
+    "htn": {
+      "label": "Hypertension",
+      "type": "categorical",
+      "unit": "",
+      "options": [
+        "no",
+        "yes"
+      ],
+      "normal_range": "no",
+      "default": "no",
+      "category": "clinical_history",
+      "description": "History of diagnosed high blood pressure."
+    },
+    "dm": {
+      "label": "Diabetes Mellitus",
+      "type": "categorical",
+      "unit": "",
+      "options": [
+        "no",
+        "yes"
+      ],
+      "normal_range": "no",
+      "default": "no",
+      "category": "clinical_history",
+      "description": "History of diagnosed diabetes (major risk factor for CKD)."
+    },
+    "cad": {
+      "label": "Coronary Artery Disease",
+      "type": "categorical",
+      "unit": "",
+      "options": [
+        "no",
+        "yes"
+      ],
+      "normal_range": "no",
+      "default": "no",
+      "category": "clinical_history",
+      "description": "History of ischemic cardiovascular heart disease."
+    },
+    "appet": {
+      "label": "Appetite",
+      "type": "categorical",
+      "unit": "",
+      "options": [
+        "good",
+        "poor"
+      ],
+      "normal_range": "good",
+      "default": "good",
+      "category": "symptoms",
+      "description": "Reported appetite status (poor appetite frequently indicates uremia)."
+    },
+    "pe": {
+      "label": "Pedal Edema",
+      "type": "categorical",
+      "unit": "",
+      "options": [
+        "no",
+        "yes"
+      ],
+      "normal_range": "no",
+      "default": "no",
+      "category": "symptoms",
+      "description": "Swelling in lower extremities indicating fluid retention."
+    },
+    "ane": {
+      "label": "Anemia",
+      "type": "categorical",
+      "unit": "",
+      "options": [
+        "no",
+        "yes"
+      ],
+      "normal_range": "no",
+      "default": "no",
+      "category": "symptoms",
+      "description": "Clinical diagnosis or manifestation of anemia."
+    }
+  },
+  "categories": [
+    {
+      "id": "demographic",
+      "name": "Demographics & Vitals",
+      "icon": "user"
+    },
+    {
+      "id": "urinalysis",
+      "name": "Urinalysis Parameters",
+      "icon": "droplet"
+    },
+    {
+      "id": "renal_function",
+      "name": "Renal Function & Electrolytes",
+      "icon": "activity"
+    },
+    {
+      "id": "hematology",
+      "name": "Hematology / Complete Blood Count",
+      "icon": "disc"
+    },
+    {
+      "id": "clinical_history",
+      "name": "Clinical History & Comorbidities",
+      "icon": "file-text"
+    },
+    {
+      "id": "symptoms",
+      "name": "Physical Signs & Symptoms",
+      "icon": "alert-circle"
+    }
+  ]
+}

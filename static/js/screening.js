@@ -1,14 +1,101 @@
 /**
  * RenalCare - Screening Form Logic
- * Interactive pre-fills, input validation, and submission confirmation
+ * Interactive model switching, pre-fills, input validation, and submission confirmation
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    initScreeningForm();
+    initModelSelection();
+    initModel1Workflow();
+    initModel2Workflow();
 });
 
-function initScreeningForm() {
+function initModelSelection() {
+    const cardModel1 = document.getElementById('cardModel1');
+    const cardModel2 = document.getElementById('cardModel2');
+    const radioModel1 = document.getElementById('radioModel1');
+    const radioModel2 = document.getElementById('radioModel2');
+    const btnConfirmModel = document.getElementById('btnConfirmModel');
+    const activeModelIndicator = document.getElementById('activeModelIndicator');
+    const activeModelLabel = document.getElementById('activeModelLabel');
+    const btnSwitchModel = document.getElementById('btnSwitchModel');
+    const modelSelectionSection = document.getElementById('modelSelectionSection');
+
+    const model1Workflow = document.getElementById('model1Workflow');
+    const model2Workflow = document.getElementById('model2Workflow');
+
+    function selectCard(modelId) {
+        if (modelId === 'model_2') {
+            if (radioModel2) radioModel2.checked = true;
+            if (cardModel2) cardModel2.classList.add('active');
+            if (cardModel1) cardModel1.classList.remove('active');
+        } else {
+            if (radioModel1) radioModel1.checked = true;
+            if (cardModel1) cardModel1.classList.add('active');
+            if (cardModel2) cardModel2.classList.remove('active');
+        }
+    }
+
+    if (cardModel1) {
+        cardModel1.addEventListener('click', () => selectCard('model_1'));
+    }
+    if (cardModel2) {
+        cardModel2.addEventListener('click', () => selectCard('model_2'));
+    }
+
+    function activateModel(modelId, smoothScroll = true) {
+        if (modelId === 'model_2') {
+            if (model1Workflow) model1Workflow.style.display = 'none';
+            if (model2Workflow) model2Workflow.style.display = 'block';
+            if (activeModelLabel) activeModelLabel.textContent = 'Expanded CKD Model (CDC NHANES • 19 Features)';
+            if (activeModelIndicator) activeModelIndicator.style.display = 'flex';
+            if (smoothScroll && model2Workflow) {
+                model2Workflow.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        } else {
+            if (model2Workflow) model2Workflow.style.display = 'none';
+            if (model1Workflow) model1Workflow.style.display = 'block';
+            if (activeModelLabel) activeModelLabel.textContent = 'Standard CKD Model (UCI CKD • 24 Features)';
+            if (activeModelIndicator) activeModelIndicator.style.display = 'flex';
+            if (smoothScroll && model1Workflow) {
+                model1Workflow.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    }
+
+    if (btnConfirmModel) {
+        btnConfirmModel.addEventListener('click', () => {
+            const selected = radioModel2 && radioModel2.checked ? 'model_2' : 'model_1';
+            activateModel(selected, true);
+        });
+    }
+
+    if (btnSwitchModel) {
+        btnSwitchModel.addEventListener('click', () => {
+            if (modelSelectionSection) {
+                modelSelectionSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    }
+
+    // Check URL parameters (e.g. ?model=model_2)
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramModel = urlParams.get('model');
+    if (paramModel === 'model_2' || paramModel === 'nhanes') {
+        selectCard('model_2');
+        activateModel('model_2', false);
+    } else if (paramModel === 'model_1' || paramModel === 'uci') {
+        selectCard('model_1');
+        activateModel('model_1', false);
+    }
+}
+
+function initModel1Workflow() {
     const form = document.getElementById('ckdScreeningForm');
+    if (!form) return;
+
     const btnFillNormal = document.getElementById('btnFillNormal');
     const btnFillModerate = document.getElementById('btnFillModerate');
     const btnFillHighRisk = document.getElementById('btnFillHighRisk');
@@ -17,7 +104,6 @@ function initScreeningForm() {
     const btnConfirmSubmit = document.getElementById('btnConfirmSubmit');
     const btnCloseModal = document.getElementById('btnCloseModal');
 
-    // Sample Datasets for Fast Field Testing / Camps (Neutral identifiers, never hardcoded personal names)
     function getNormalSample() {
         return {
             patient_id: 'PT-NORM-' + Math.floor(1000 + Math.random() * 9000),
@@ -117,192 +203,85 @@ function initScreeningForm() {
         };
     }
 
-    const normalSample = getNormalSample();
-    const moderateSample = getModerateSample();
-    const ckdSample = getHighRiskSample();
-
     function populateForm(data) {
         if (!form) return;
 
-        // Reset optional administrative email/consent fields when applying a sample
-        if (form.elements['patient_email']) {
-            form.elements['patient_email'].value = '';
-        }
-        if (form.elements['email_consent']) {
-            form.elements['email_consent'].checked = false;
-        }
+        if (form.elements['patient_email']) form.elements['patient_email'].value = '';
+        if (form.elements['email_consent']) form.elements['email_consent'].checked = false;
+
+        const profileBadge = document.getElementById('patientProfileBadge');
         if (profileBadge) profileBadge.style.display = 'none';
-        if (profileIdHint) profileIdHint.textContent = 'Unique PHC or camp record number';
-        if (emailHint) emailHint.textContent = 'Optional. Receives a secure, time-limited PDF report download link after screening.';
-        lastLookedUpId = null;
 
         for (const [key, val] of Object.entries(data)) {
             const el = form.elements[key];
-            if (el) {
-                el.value = val;
-            }
+            if (el) el.value = val;
         }
         checkClinicalWarnings();
     }
 
     if (btnFillNormal) {
-        btnFillNormal.addEventListener('click', () => {
-            populateForm(getNormalSample());
-        });
+        btnFillNormal.addEventListener('click', () => populateForm(getNormalSample()));
     }
-
     if (btnFillModerate) {
-        btnFillModerate.addEventListener('click', () => {
-            populateForm(getModerateSample());
-        });
+        btnFillModerate.addEventListener('click', () => populateForm(getModerateSample()));
     }
-
     if (btnFillHighRisk) {
-        btnFillHighRisk.addEventListener('click', () => {
-            populateForm(getHighRiskSample());
-        });
+        btnFillHighRisk.addEventListener('click', () => populateForm(getHighRiskSample()));
     }
-
     if (btnReset) {
         btnReset.addEventListener('click', () => {
             form.reset();
-            if (profileBadge) profileBadge.style.display = 'none';
-            if (profileIdHint) profileIdHint.textContent = 'Unique PHC or camp record number';
-            if (emailHint) emailHint.textContent = 'Optional. Receives a secure, time-limited PDF report download link after screening.';
-            lastLookedUpId = null;
-            setTimeout(checkClinicalWarnings, 50);
+            checkClinicalWarnings();
         });
     }
 
-    // Persistent Patient Profile Auto-Lookup (Phase 3)
-    const patientIdEl = form.elements['patient_id'];
-    const patientNameEl = form.elements['patient_name'];
-    const patientEmailEl = form.elements['patient_email'];
-    const emailConsentEl = form.elements['email_consent'];
-    const profileBadge = document.getElementById('patientProfileBadge');
-    const profileIdHint = document.getElementById('patientIdHint');
-    const emailHint = document.getElementById('patientEmailHint');
-
-    let profileLookupTimer = null;
-    let lastLookedUpId = null;
-
-    async function lookupPatientProfile(ptId) {
-        const cleanId = (ptId || '').trim();
-        if (!cleanId) {
-            if (profileBadge) profileBadge.style.display = 'none';
-            if (profileIdHint) profileIdHint.textContent = 'Unique PHC or camp record number';
-            if (emailHint) emailHint.textContent = 'Optional. Receives a secure, time-limited PDF report download link after screening.';
-            lastLookedUpId = null;
-            return;
-        }
-
-        if (cleanId === lastLookedUpId) return;
-        lastLookedUpId = cleanId;
-
-        try {
-            const resp = await fetch(`/api/patient/${encodeURIComponent(cleanId)}`);
-            if (!resp.ok) return;
-            const data = await resp.json();
-
-            if (data.found && data.profile) {
-                const profile = data.profile;
-
-                // Auto-fill patient name if field is currently blank
-                if (patientNameEl && !patientNameEl.value.trim() && profile.patient_name) {
-                    patientNameEl.value = profile.patient_name;
-                }
-
-                // Auto-fill patient email if field is currently blank
-                if (patientEmailEl && !patientEmailEl.value.trim() && profile.email) {
-                    patientEmailEl.value = profile.email;
-                }
-
-                // Auto-check consent if recorded on file and email exists
-                if (emailConsentEl && profile.consent_recorded && (profile.email || (patientEmailEl && patientEmailEl.value.trim()))) {
-                    emailConsentEl.checked = true;
-                }
-
-                // Visual confirmation
-                if (profileBadge) profileBadge.style.display = 'inline-block';
-                if (profileIdHint) {
-                    const nameLabel = profile.patient_name ? ` (${profile.patient_name})` : '';
-                    profileIdHint.innerHTML = `<span style="color: var(--status-clear-text); font-weight: 500;">Existing profile linked${nameLabel}</span>`;
-                }
-                if (emailHint && profile.email) {
-                    emailHint.innerHTML = `<span style="color: var(--status-clear-text); font-weight: 500;">Email retrieved from saved patient profile. You can keep or edit it.</span>`;
-                }
-            } else {
-                if (profileBadge) profileBadge.style.display = 'none';
-                if (profileIdHint) profileIdHint.textContent = 'New patient record will be created on submission';
-                if (emailHint) emailHint.textContent = 'Optional. Receives a secure, time-limited PDF report download link after screening.';
-            }
-        } catch (err) {
-            // Silently fall through on network failure
-        }
-    }
-
-    if (patientIdEl) {
-        patientIdEl.addEventListener('blur', () => {
-            lookupPatientProfile(patientIdEl.value);
-        });
-        patientIdEl.addEventListener('input', () => {
-            clearTimeout(profileLookupTimer);
-            profileLookupTimer = setTimeout(() => {
-                lookupPatientProfile(patientIdEl.value);
-            }, 400);
-        });
-    }
-
-    // Clinical Input Warnings Logic (Educational & Non-Diagnostic)
     function checkClinicalWarnings() {
-        if (!form) return;
-
-        // 1. Serum Creatinine (> 5.0 mg/dL)
+        // Serum Creatinine Warning
         const scEl = form.elements['sc'];
         const scWarn = document.getElementById('warning-sc');
         if (scEl && scWarn) {
             const val = parseFloat(scEl.value);
-            if (!isNaN(val) && val > 5.0) {
-                scWarn.innerHTML = '<strong>Lab Check:</strong> Creatinine > 5.0 mg/dL indicates severe elevation. Please verify test report values and laboratory calibration before submitting (does not prevent submission).';
+            if (!isNaN(val) && val > 3.0) {
+                scWarn.innerHTML = '<strong>Clinical Observation:</strong> Serum Creatinine > 3.0 mg/dL represents a marked elevation consistent with advanced impairment.';
                 scWarn.style.display = 'block';
             } else {
                 scWarn.style.display = 'none';
             }
         }
 
-        // 2. Diastolic Blood Pressure (> 120 mm/Hg)
+        // Blood Pressure Warning
         const bpEl = form.elements['bp'];
         const bpWarn = document.getElementById('warning-bp');
         if (bpEl && bpWarn) {
             const val = parseFloat(bpEl.value);
-            if (!isNaN(val) && val > 120) {
-                bpWarn.innerHTML = '<strong>Vitals Check:</strong> Diastolic BP > 120 mm/Hg represents severe hypertensive outlier. Please verify patient vitals reading.';
+            if (!isNaN(val) && val >= 100) {
+                bpWarn.innerHTML = '<strong>Vascular Check:</strong> Diastolic BP >= 100 mm/Hg indicates severe hypertension risk.';
                 bpWarn.style.display = 'block';
             } else {
                 bpWarn.style.display = 'none';
             }
         }
 
-        // 3. Potassium (> 6.0 or < 2.8 mEq/L)
+        // Potassium Warning
         const potEl = form.elements['pot'];
         const potWarn = document.getElementById('warning-pot');
         if (potEl && potWarn) {
             const val = parseFloat(potEl.value);
-            if (!isNaN(val) && val > 0 && (val > 6.0 || val < 2.8)) {
-                potWarn.innerHTML = '<strong>Electrolyte Check:</strong> Potassium outside 2.8 – 6.0 mEq/L is a critical outlier threshold. Please double-check lab assay report.';
+            if (!isNaN(val) && val >= 6.0) {
+                potWarn.innerHTML = '<strong>Critical Electrolyte Alert:</strong> Potassium >= 6.0 mEq/L (Hyperkalemia) requires urgent validation.';
                 potWarn.style.display = 'block';
             } else {
                 potWarn.style.display = 'none';
             }
         }
 
-        // 4. Hemoglobin (< 7.0 g/dL)
+        // Hemoglobin Warning
         const hemoEl = form.elements['hemo'];
         const hemoWarn = document.getElementById('warning-hemo');
         if (hemoEl && hemoWarn) {
             const val = parseFloat(hemoEl.value);
             if (!isNaN(val) && val > 0 && val < 7.0) {
-                hemoWarn.innerHTML = '<strong>Hematology Check:</strong> Hemoglobin < 7.0 g/dL represents severe anemia outlier. Please verify complete blood count panel.';
+                hemoWarn.innerHTML = '<strong>Hematology Check:</strong> Hemoglobin < 7.0 g/dL represents severe anemia outlier.';
                 hemoWarn.style.display = 'block';
             } else {
                 hemoWarn.style.display = 'none';
@@ -310,40 +289,35 @@ function initScreeningForm() {
         }
     }
 
-    // Attach listeners for real-time typing/changes
-    if (form) {
-        ['sc', 'bp', 'pot', 'hemo'].forEach(field => {
-            const el = form.elements[field];
-            if (el) {
-                el.addEventListener('input', checkClinicalWarnings);
-                el.addEventListener('change', checkClinicalWarnings);
-            }
-        });
-        checkClinicalWarnings();
-    }
+    ['sc', 'bp', 'pot', 'hemo'].forEach(field => {
+        const el = form.elements[field];
+        if (el) {
+            el.addEventListener('input', checkClinicalWarnings);
+            el.addEventListener('change', checkClinicalWarnings);
+        }
+    });
+    checkClinicalWarnings();
 
-    // Modal Confirmation Step
-    if (form) {
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            // Client-side HTML5 constraint validation
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-            buildReviewSummary();
-            if (reviewModal) {
-                reviewModal.style.display = 'flex';
-            }
-        });
-    }
+    // Modal Confirmation Step for Model 1
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        buildReviewSummary(form, 'Standard CKD Model (UCI CKD)');
+        if (reviewModal) reviewModal.style.display = 'flex';
+    });
 
     if (btnConfirmSubmit) {
         btnConfirmSubmit.addEventListener('click', () => {
-            if (form) {
+            const activeForm = document.getElementById('model2Workflow').style.display === 'block'
+                ? document.getElementById('ckdNhanesScreeningForm')
+                : document.getElementById('ckdScreeningForm');
+            if (activeForm) {
                 btnConfirmSubmit.disabled = true;
                 btnConfirmSubmit.innerHTML = '<span>Evaluating Laboratory Data...</span>';
-                form.submit();
+                activeForm.submit();
             }
         });
     }
@@ -353,45 +327,230 @@ function initScreeningForm() {
             if (reviewModal) reviewModal.style.display = 'none';
         });
     }
+}
 
-    function escapeHtml(str) {
-        return String(str || '').replace(/[&<>"']/g, function(ch) {
-            return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];
+function initModel2Workflow() {
+    const form = document.getElementById('ckdNhanesScreeningForm');
+    if (!form) return;
+
+    const btnFillNormal = document.getElementById('btnFillNhanesNormal');
+    const btnFillModerate = document.getElementById('btnFillNhanesModerate');
+    const btnFillHighRisk = document.getElementById('btnFillNhanesHighRisk');
+    const btnReset = document.getElementById('btnResetNhanesForm');
+    const reviewModal = document.getElementById('reviewModal');
+
+    function getNhanesNormalSample() {
+        return {
+            patient_id: 'PT-NH-NORM-' + Math.floor(1000 + Math.random() * 9000),
+            patient_name: 'Sample Baseline NHANES Patient',
+            age: 42,
+            sex: 'female',
+            model_choice: 'Random Forest',
+            bmi: 24.2,
+            sbp: 118,
+            dbp: 76,
+            bgr: 92,
+            hba1c: 5.2,
+            bu: 13,
+            sc: 0.8,
+            sod: 140,
+            pot: 4.2,
+            tot_protein: 7.2,
+            serum_alb: 4.4,
+            uric_acid: 4.9,
+            hemo: 14.2,
+            pcv: 42.0,
+            wc: 6.5,
+            htn: 'no',
+            dm: 'no'
+        };
+    }
+
+    function getNhanesModerateSample() {
+        return {
+            patient_id: 'PT-NH-MOD-' + Math.floor(1000 + Math.random() * 9000),
+            patient_name: 'Sample Moderate NHANES Patient',
+            age: 58,
+            sex: 'male',
+            model_choice: 'Random Forest',
+            bmi: 29.4,
+            sbp: 138,
+            dbp: 86,
+            bgr: 122,
+            hba1c: 6.2,
+            bu: 24,
+            sc: 1.45,
+            sod: 138,
+            pot: 4.6,
+            tot_protein: 6.8,
+            serum_alb: 3.8,
+            uric_acid: 7.4,
+            hemo: 12.4,
+            pcv: 37.0,
+            wc: 7.8,
+            htn: 'yes',
+            dm: 'no'
+        };
+    }
+
+    function getNhanesHighRiskSample() {
+        return {
+            patient_id: 'PT-NH-EVAL-' + Math.floor(1000 + Math.random() * 9000),
+            patient_name: 'Sample High-Risk NHANES Patient',
+            age: 69,
+            sex: 'female',
+            model_choice: 'Random Forest',
+            bmi: 33.8,
+            sbp: 156,
+            dbp: 92,
+            bgr: 195,
+            hba1c: 8.4,
+            bu: 38,
+            sc: 2.5,
+            sod: 134,
+            pot: 5.1,
+            tot_protein: 6.2,
+            serum_alb: 3.1,
+            uric_acid: 8.8,
+            hemo: 10.2,
+            pcv: 31.0,
+            wc: 9.8,
+            htn: 'yes',
+            dm: 'yes'
+        };
+    }
+
+    function populateNhanesForm(data) {
+        if (form.elements['patient_email']) form.elements['patient_email'].value = '';
+        if (form.elements['email_consent']) form.elements['email_consent'].checked = false;
+
+        for (const [key, val] of Object.entries(data)) {
+            const el = form.elements[key];
+            if (el) el.value = val;
+        }
+        checkNhanesWarnings();
+    }
+
+    if (btnFillNormal) {
+        btnFillNormal.addEventListener('click', () => populateNhanesForm(getNhanesNormalSample()));
+    }
+    if (btnFillModerate) {
+        btnFillModerate.addEventListener('click', () => populateNhanesForm(getNhanesModerateSample()));
+    }
+    if (btnFillHighRisk) {
+        btnFillHighRisk.addEventListener('click', () => populateNhanesForm(getNhanesHighRiskSample()));
+    }
+    if (btnReset) {
+        btnReset.addEventListener('click', () => {
+            form.reset();
+            checkNhanesWarnings();
         });
     }
 
-    function buildReviewSummary() {
-        const summaryContainer = document.getElementById('reviewSummaryContent');
-        if (!summaryContainer) return;
-
-        const formData = new FormData(form);
-        const ptId = escapeHtml(formData.get('patient_id') || 'Auto-assigned');
-        const age = escapeHtml(formData.get('age') || 'N/A');
-        const model = escapeHtml(formData.get('model_choice') || 'Random Forest');
-        const bp = escapeHtml(formData.get('bp') || 'N/A');
-        const sc = escapeHtml(formData.get('sc') || 'N/A');
-        const hemo = escapeHtml(formData.get('hemo') || 'N/A');
-        const al = escapeHtml(formData.get('al') || '0');
-        const rawEmail = (formData.get('patient_email') || '').trim();
-        const emailConsent = formData.get('email_consent') === 'yes';
-
-        let emailSummaryLine = 'Not provided (PDF downloadable locally)';
-        if (rawEmail) {
-            emailSummaryLine = emailConsent
-                ? `${escapeHtml(rawEmail)} (Consent recorded — auto-email enabled)`
-                : `${escapeHtml(rawEmail)} (Consent unchecked — email will NOT be sent)`;
+    function checkNhanesWarnings() {
+        const scEl = form.elements['sc'];
+        const scWarn = document.getElementById('warning-nh-sc');
+        if (scEl && scWarn) {
+            const val = parseFloat(scEl.value);
+            if (!isNaN(val) && val > 3.0) {
+                scWarn.innerHTML = '<strong>Serum Creatinine Check:</strong> Value > 3.0 mg/dL indicates marked elevation.';
+                scWarn.style.display = 'block';
+            } else {
+                scWarn.style.display = 'none';
+            }
         }
 
-        summaryContainer.innerHTML = `
-            <div style="background-color: var(--bg-surface-subtle); padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
-                <p style="margin-bottom: 0.25rem;"><strong>Patient ID:</strong> ${ptId} &nbsp;|&nbsp; <strong>Age:</strong> ${age}</p>
-                <p style="margin-bottom: 0.25rem;"><strong>Screening Model:</strong> ${model}</p>
-                <p style="margin-bottom: 0.25rem; font-size: 0.85rem;"><strong>Email Delivery:</strong> ${emailSummaryLine}</p>
-                <p style="font-size: 0.85rem; color: var(--text-subtle);">Key Lab Samples: Creatinine: ${sc} mg/dL, Hemoglobin: ${hemo} g/dL, Albumin: Grade ${al}, BP: ${bp} mm/Hg</p>
-            </div>
-            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">
-                Please verify that the routine blood and urine chemistry values match the patient laboratory report. The screening model will generate a calibrated risk evaluation.
-            </p>
-        `;
+        const sbpEl = form.elements['sbp'];
+        const sbpWarn = document.getElementById('warning-nh-sbp');
+        if (sbpEl && sbpWarn) {
+            const val = parseFloat(sbpEl.value);
+            if (!isNaN(val) && val >= 160) {
+                sbpWarn.innerHTML = '<strong>Vascular Alert:</strong> Systolic BP >= 160 mmHg indicates Stage 2 hypertension.';
+                sbpWarn.style.display = 'block';
+            } else {
+                sbpWarn.style.display = 'none';
+            }
+        }
+
+        const hba1cEl = form.elements['hba1c'];
+        const hba1cWarn = document.getElementById('warning-nh-hba1c');
+        if (hba1cEl && hba1cWarn) {
+            const val = parseFloat(hba1cEl.value);
+            if (!isNaN(val) && val >= 9.0) {
+                hba1cWarn.innerHTML = '<strong>Glycemic Check:</strong> HbA1c >= 9.0% represents significant chronic hyperglycemia.';
+                hba1cWarn.style.display = 'block';
+            } else {
+                hba1cWarn.style.display = 'none';
+            }
+        }
+
+        const hemoEl = form.elements['hemo'];
+        const hemoWarn = document.getElementById('warning-nh-hemo');
+        if (hemoEl && hemoWarn) {
+            const val = parseFloat(hemoEl.value);
+            if (!isNaN(val) && val > 0 && val < 7.0) {
+                hemoWarn.innerHTML = '<strong>Hematology Check:</strong> Hemoglobin < 7.0 g/dL signals severe anemia.';
+                hemoWarn.style.display = 'block';
+            } else {
+                hemoWarn.style.display = 'none';
+            }
+        }
     }
+
+    ['sc', 'sbp', 'hba1c', 'hemo', 'pot'].forEach(field => {
+        const el = form.elements[field];
+        if (el) {
+            el.addEventListener('input', checkNhanesWarnings);
+            el.addEventListener('change', checkNhanesWarnings);
+        }
+    });
+    checkNhanesWarnings();
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        buildReviewSummary(form, 'Expanded CKD Model (CDC NHANES)');
+        if (reviewModal) reviewModal.style.display = 'flex';
+    });
+}
+
+function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, function(ch) {
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];
+    });
+}
+
+function buildReviewSummary(formEl, modelTitle) {
+    const summaryContainer = document.getElementById('reviewSummaryContent');
+    if (!summaryContainer || !formEl) return;
+
+    const formData = new FormData(formEl);
+    const ptId = escapeHtml(formData.get('patient_id') || 'Auto-assigned');
+    const age = escapeHtml(formData.get('age') || 'N/A');
+    const model = escapeHtml(formData.get('model_choice') || 'Random Forest');
+    const sc = escapeHtml(formData.get('sc') || 'N/A');
+    const rawEmail = (formData.get('patient_email') || '').trim();
+    const emailConsent = formData.get('email_consent') === 'yes';
+
+    let emailSummaryLine = 'Not provided (PDF report downloadable locally)';
+    if (rawEmail) {
+        emailSummaryLine = emailConsent
+            ? `${escapeHtml(rawEmail)} (Consent recorded — automated email enabled)`
+            : `${escapeHtml(rawEmail)} (Consent unchecked — email will NOT be sent)`;
+    }
+
+    summaryContainer.innerHTML = `
+        <div style="background-color: var(--bg-surface-subtle); padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+            <p style="margin-bottom: 0.25rem;"><strong>Patient ID:</strong> ${ptId} &nbsp;|&nbsp; <strong>Age:</strong> ${age}</p>
+            <p style="margin-bottom: 0.25rem;"><strong>Screening Model:</strong> ${escapeHtml(modelTitle)} (${model})</p>
+            <p style="margin-bottom: 0.25rem; font-size: 0.85rem;"><strong>Email Delivery:</strong> ${emailSummaryLine}</p>
+            <p style="font-size: 0.85rem; color: var(--text-subtle);">Serum Creatinine: ${sc} mg/dL</p>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">
+            Please verify that the recorded parameters match the clinical laboratory report. The selected machine learning model will evaluate renal risk indicators.
+        </p>
+    `;
 }

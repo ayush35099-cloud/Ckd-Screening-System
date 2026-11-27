@@ -123,14 +123,31 @@ def create_app(config_class=Config):
     def dashboard_view():
         _grant_clinician_session()
         summary = get_dashboard_summary()
-        metrics = model_service.get_metrics()
-        return render_template('dashboard.html', summary=summary, metrics=metrics)
+        all_metrics = model_service.get_all_metrics()
+        metrics = all_metrics.get('model_1') or model_service.get_metrics('model_1')
+        nhanes_metrics = all_metrics.get('model_2') or model_service.get_metrics('model_2')
+        return render_template(
+            'dashboard.html',
+            summary=summary,
+            metrics=metrics,
+            nhanes_metrics=nhanes_metrics,
+            all_metrics=all_metrics
+        )
 
     @app.route('/screen', methods=['GET'])
     def screen_view():
         _grant_clinician_session()
-        meta = model_service.get_feature_metadata()
-        return render_template('screen.html', feature_meta=meta)
+        feature_meta_m1 = model_service.get_feature_metadata('model_1')
+        feature_meta_m2 = model_service.get_feature_metadata('model_2')
+        available_models = model_service.get_available_models()
+        return render_template(
+            'screen.html',
+            feature_meta=feature_meta_m1,
+            model_1_meta=feature_meta_m1,
+            model_2_meta=feature_meta_m2,
+            available_models=available_models,
+            model_2_available=model_service.is_model_2_available()
+        )
 
     def _is_csrf_enforced():
         if app.config.get('ENFORCE_CSRF'):
@@ -151,6 +168,20 @@ def create_app(config_class=Config):
             flash("Patient Identifier is required for clinical record keeping.", "danger")
             return redirect(url_for('screen_view'))
 
+        # Model Selection Validation
+        raw_model_id = form_data.get('model_id', 'model_1').strip().lower()
+        if raw_model_id in ['model_1', 'uci', 'standard', '1', 'model1']:
+            model_id = 'model_1'
+        elif raw_model_id in ['model_2', 'nhanes', 'expanded', '2', 'model2']:
+            model_id = 'model_2'
+        else:
+            flash(f"Invalid model selection '{raw_model_id}'. Please choose a valid screening model.", "danger")
+            return redirect(url_for('screen_view'))
+
+        if model_id == 'model_2' and not model_service.is_model_2_available():
+            flash("The Expanded CDC NHANES model is currently unavailable on this instance. Please use the Standard CKD Model.", "warning")
+            return redirect(url_for('screen_view'))
+
         raw_patient_name = form_data.get('patient_name', '').strip() or None
         patient_email = form_data.get('patient_email', '').strip()
         consent_raw = form_data.get('email_consent', '').strip().lower()
@@ -162,11 +193,6 @@ def create_app(config_class=Config):
         # Effective patient name: prefer form submission, fall back to stored profile
         effective_name = raw_patient_name or (existing_profile.get('patient_name') if existing_profile else None)
 
-        # Determine effective email and consent:
-        # 1. If form has email, use it directly.
-        # 2. If form email is empty, but patient has a stored email on file:
-        #    - If consent is explicitly checked for this screening, reuse the stored email.
-        #    - If consent is not checked, do not send an email for this screening.
         if patient_email:
             effective_email = patient_email
             effective_consent = email_consent
@@ -192,22 +218,30 @@ def create_app(config_class=Config):
 
         model_choice = form_data.get('model_choice', 'Random Forest')
 
-        # The 24 UCI dataset features strictly separated from patient administrative metadata
-        param_keys = [
-            'age', 'bp', 'sg', 'al', 'su', 'rbc', 'pc', 'pcc', 'ba',
-            'bgr', 'bu', 'sc', 'sod', 'pot', 'hemo', 'pcv', 'wc', 'rc',
-            'htn', 'dm', 'cad', 'appet', 'pe', 'ane'
-        ]
+        # Feature extraction based strictly on selected model schema
+        if model_id == 'model_2':
+            param_keys = [
+                'age', 'sex', 'bmi', 'sbp', 'dbp', 'bgr', 'hba1c', 'bu', 'sc',
+                'sod', 'pot', 'tot_protein', 'serum_alb', 'uric_acid', 'hemo',
+                'pcv', 'wc', 'htn', 'dm'
+            ]
+        else:
+            param_keys = [
+                'age', 'bp', 'sg', 'al', 'su', 'rbc', 'pc', 'pcc', 'ba',
+                'bgr', 'bu', 'sc', 'sod', 'pot', 'hemo', 'pcv', 'wc', 'rc',
+                'htn', 'dm', 'cad', 'appet', 'pe', 'ane'
+            ]
+
         input_params = {}
         for key in param_keys:
             val = form_data.get(key, '').strip()
             input_params[key] = val if val != '' else None
 
-        # Execute machine learning model prediction
+        # Execute machine learning model prediction with isolated pipeline
         try:
-            pred_result = model_service.predict(input_params, model_choice=model_choice)
+            pred_result = model_service.predict(input_params, model_choice=model_choice, model_id=model_id)
         except Exception as e:
-            logger.error(f"Prediction failed: {e}")
+            logger.error(f"Prediction failed for model {model_id}: {e}")
             flash(f"Screening evaluation error: {str(e)}", "danger")
             return redirect(url_for('screen_view'))
 
@@ -719,7 +753,10 @@ def create_app(config_class=Config):
             'database_persistence': persistence_mode,
             'models_loaded': {
                 'random_forest': model_service.rf_pipeline is not None,
-                'decision_tree': model_service.dt_pipeline is not None
+                'decision_tree': model_service.dt_pipeline is not None,
+                'nhanes_random_forest': model_service.nhanes_rf_pipeline is not None,
+                'nhanes_decision_tree': model_service.nhanes_dt_pipeline is not None,
+                'model_2_available': model_service.is_model_2_available()
             }
         }), 200
 
@@ -732,13 +769,14 @@ def create_app(config_class=Config):
     def api_predict():
         data = request.get_json(silent=True) or {}
         parameters = data.get('parameters', data)
-        model_choice = data.get('model', 'Random Forest')
+        model_choice = data.get('model', data.get('model_choice', 'Random Forest'))
+        model_id = data.get('model_id', 'model_1')
 
         if not isinstance(parameters, dict):
             return jsonify({'error': 'Invalid request: parameters must be a dictionary'}), 400
 
         try:
-            prediction = model_service.predict(parameters, model_choice=model_choice)
+            prediction = model_service.predict(parameters, model_choice=model_choice, model_id=model_id)
             
             saved_uuid = None
             if data.get('patient_id'):
@@ -755,6 +793,7 @@ def create_app(config_class=Config):
             return jsonify({
                 'success': True,
                 'screening_uuid': saved_uuid,
+                'model_id': model_id,
                 'prediction': prediction
             }), 200
         except Exception as e:

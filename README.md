@@ -44,10 +44,12 @@ RenalCare's user interface is inspired by premier healthcare institution design 
 
 ---
 
-## Dataset Description
+## Dataset Descriptions & Dual-Model Architecture
 
-The machine learning pipeline is trained and validated on the authentic **UCI Chronic Kidney Disease Benchmark Dataset** (contributed by Dr. P. Soundarapandian, Senior Consultant Nephrologist, Apollo Hospitals, Karaikudi, Tamil Nadu, India):
+RenalCare features a **Dual Independent Dataset & Model Architecture**, enabling healthcare workers to evaluate patients using either a clinical laboratory benchmark model or an expanded national population survey model:
 
+### 1. Model 1 (Standard): UCI Chronic Kidney Disease Benchmark
+Contributed by Dr. P. Soundarapandian, Senior Consultant Nephrologist, Apollo Hospitals, Karaikudi, Tamil Nadu, India:
 - **Total Records:** 400 patient instances (250 CKD positive, 150 non-CKD baseline).
 - **Features (24 Input Variables):**
   - **Urinalysis (7):** Specific Gravity (`sg`), Albumin / Proteinuria (`al`), Urine Sugar (`su`), Red Blood Cells (`rbc`), Pus Cells (`pc`), Pus Cell Clumps (`pcc`), Bacteria (`ba`).
@@ -55,6 +57,35 @@ The machine learning pipeline is trained and validated on the authentic **UCI Ch
   - **Hematology / CBC (4):** Hemoglobin (`hemo`), Packed Cell Volume / Hematocrit (`pcv`), White Blood Cell Count (`wc`), Red Blood Cell Count (`rc`).
   - **Systemic Comorbidities & Symptoms (7):** Hypertension (`htn`), Diabetes Mellitus (`dm`), Coronary Artery Disease (`cad`), Appetite (`appet`), Pedal Edema (`pe`), Anemia (`ane`).
   - **Target (1):** Classification (`ckd` vs `notckd`).
+
+### 2. Model 2 (Expanded): CDC NHANES (2017–2018 Survey Cycle)
+Derived from the official US Centers for Disease Control and Prevention (CDC) National Health and Nutrition Examination Survey:
+- **Total Adult Records:** 5,063 cleaned instances (939 CKD indicator positive, 4,124 baseline negative; 18.55% derived prevalence).
+- **Features (19 Non-Invasive Variables):**
+  - **Demographics & Examination (6):** Age, Sex, BMI, Systolic BP (`sbp`), Diastolic BP (`dbp`), Hypertension history (`htn`).
+  - **Comprehensive Metabolic Panel & Glycemia (6):** Blood Glucose (`bgr`), Blood Urea Nitrogen (`bu`), Serum Creatinine (`sc`), HbA1c (`hba1c`), Uric Acid (`uric_acid`), Diabetes history (`dm`).
+  - **Biochemistry & Serum Electrolytes (4):** Sodium (`sod`), Potassium (`pot`), Total Protein (`tot_protein`), Serum Albumin (`serum_alb`).
+  - **Complete Blood Count (3):** Hemoglobin (`hemo`), Packed Cell Volume / Hematocrit (`pcv`), White Blood Cell Count (`wc`).
+- **Target Derivation & Leakage Prevention:**
+  CKD indicator target is derived according to KDIGO guidelines: eGFR < 60 mL/min/1.73m² (computed via the 2021 CKD-EPI race-free equation) OR urine albumin-to-creatinine ratio (UACR) &ge; 30 mg/g. Neither eGFR nor UACR is present in the feature matrix, preventing target leakage.
+
+### Dataset Download & Model Training Instructions
+
+To reproduce or retrain both models independently from source:
+
+```bash
+# 1. Download official CDC NHANES XPT files and generate cleaned dataset:
+python ml/build_nhanes_dataset.py
+
+# 2. Train Model 2 (CDC NHANES Random Forest & Decision Tree):
+python ml/train_nhanes.py
+
+# 3. Train Model 1 (UCI CKD Random Forest & Decision Tree):
+python ml/train.py
+
+# 4. Run the complete automated test suite:
+python -m unittest discover -s tests -p "test_*.py"
+```
 
 ---
 

@@ -473,5 +473,127 @@ class TestFlaskRoutes(unittest.TestCase):
         # Should display findings indicating flags for elevated creatinine / mild anemia / albuminuria
         self.assertTrue('Serum Creatinine' in html or 'Creatinine' in html)
 
+    # -----------------------------------------------------------------------
+    # Phase 7 Tests: Model 2 (CDC NHANES) Routing, Selection & Comparison
+    # -----------------------------------------------------------------------
+    def test_screen_view_has_model_selection_cards(self):
+        resp = self.client.get('/screen')
+        self.assertEqual(resp.status_code, 200)
+        html = resp.data.decode('utf-8')
+        self.assertIn('id="cardModel1"', html)
+        self.assertIn('id="cardModel2"', html)
+        self.assertIn('id="btnConfirmModel"', html)
+        self.assertIn('id="model1Workflow"', html)
+        self.assertIn('id="model2Workflow"', html)
+        self.assertIn('Standard CKD Model', html)
+        self.assertIn('Expanded CKD Model', html)
+
+    def test_screen_submit_model_1_explicit(self):
+        form_data = {
+            'model_id': 'model_1',
+            'patient_id': 'PT-M1-TEST',
+            'patient_name': 'Model 1 Patient',
+            'age': '45',
+            'sex': 'Male',
+            'model_choice': 'Random Forest',
+            'bp': '80',
+            'sc': '0.9',
+            'hemo': '14.5'
+        }
+        resp = self.client.post('/screen', data=form_data, follow_redirects=True)
+        self.assertEqual(resp.status_code, 200)
+        html = resp.data.decode('utf-8')
+        self.assertIn('PT-M1-TEST', html)
+        self.assertIn('retrospective UCI training distribution', html)
+
+    def test_screen_submit_model_2_explicit(self):
+        nhanes_payload = {
+            'model_id': 'model_2',
+            'patient_id': 'PT-NHANES-ROUTE-01',
+            'patient_name': 'NHANES Route Patient',
+            'age': '56',
+            'sex': 'Female',
+            'model_choice': 'Random Forest',
+            'bmi': '27.4',
+            'sbp': '124',
+            'dbp': '76',
+            'bgr': '104',
+            'hba1c': '5.5',
+            'bu': '16',
+            'sc': '0.85',
+            'sod': '139',
+            'pot': '4.1',
+            'tot_protein': '7.2',
+            'serum_alb': '4.4',
+            'uric_acid': '4.8',
+            'hemo': '13.8',
+            'pcv': '41.2',
+            'wc': '6.4',
+            'htn': 'no',
+            'dm': 'no'
+        }
+        resp = self.client.post('/screen', data=nhanes_payload, follow_redirects=True)
+        self.assertEqual(resp.status_code, 200)
+        html = resp.data.decode('utf-8')
+        self.assertIn('PT-NHANES-ROUTE-01', html)
+        self.assertIn('CDC NHANES', html)
+
+    def test_screen_submit_invalid_model_rejected(self):
+        bad_payload = {
+            'model_id': 'unknown_unsupported_model',
+            'patient_id': 'PT-BAD-MODEL',
+            'patient_name': 'Invalid Model Patient',
+            'age': '45'
+        }
+        resp = self.client.post('/screen', data=bad_payload, follow_redirects=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'Invalid model selection', resp.data)
+
+    def test_api_predict_model_2(self):
+        payload = {
+            'model_id': 'model_2',
+            'patient_id': 'PT-API-M2-01',
+            'patient_name': 'API NHANES Patient',
+            'parameters': {
+                'age': 62,
+                'sex': 2,
+                'bmi': 31.2,
+                'sbp': 142,
+                'dbp': 88,
+                'bgr': 145,
+                'hba1c': 7.2,
+                'bu': 28,
+                'sc': 1.6,
+                'sod': 136,
+                'pot': 4.7,
+                'tot_protein': 6.8,
+                'serum_alb': 3.7,
+                'uric_acid': 7.1,
+                'hemo': 11.2,
+                'pcv': 34.0,
+                'wc': 8.9,
+                'htn': 1,
+                'dm': 1
+            }
+        }
+        resp = self.client.post('/api/predict', json=payload)
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.data)
+        self.assertTrue(data['success'])
+        self.assertEqual(data['model_id'], 'model_2')
+        self.assertIn('prediction', data)
+        self.assertTrue(data['prediction']['is_flagged'])
+        self.assertIn('CDC NHANES', data['prediction']['model_used'])
+        self.assertEqual(data['prediction']['dataset_source'], 'CDC NHANES 2017-2018 Survey')
+
+    def test_dashboard_model_comparison_rendered(self):
+        resp = self.client.get('/dashboard')
+        self.assertEqual(resp.status_code, 200)
+        html = resp.data.decode('utf-8')
+        self.assertIn('Multi-Dataset Model Comparison & Audit', html)
+        self.assertIn('CDC NHANES', html)
+        self.assertIn('Cohort & Population Distinction Notice', html)
+        self.assertIn('UCI Machine Learning Repository', html)
+
 if __name__ == '__main__':
     unittest.main()

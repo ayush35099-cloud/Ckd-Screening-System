@@ -1,0 +1,238 @@
+{
+  "model_name": "Expanded CKD Model (CDC NHANES)",
+  "model_id": "model_2",
+  "features": {
+    "age": {
+      "label": "Age",
+      "type": "numerical",
+      "unit": "years",
+      "min": 18,
+      "max": 85,
+      "step": 1,
+      "normal_range": "18 - 65 yrs",
+      "default": 50,
+      "category": "demographic",
+      "description": "Age in completed years."
+    },
+    "sex": {
+      "label": "Biological Sex",
+      "type": "categorical",
+      "unit": "",
+      "options": [
+        "female",
+        "male"
+      ],
+      "normal_range": "N/A",
+      "default": "female",
+      "category": "demographic",
+      "description": "Biological sex recorded during survey."
+    },
+    "bmi": {
+      "label": "Body Mass Index (BMI)",
+      "type": "numerical",
+      "unit": "kg/m\u00b2",
+      "min": 14.0,
+      "max": 60.0,
+      "step": 0.1,
+      "normal_range": "18.5 - 24.9 kg/m\u00b2",
+      "default": 26.5,
+      "category": "vital",
+      "description": "Body mass index from height and weight."
+    },
+    "sbp": {
+      "label": "Systolic Blood Pressure",
+      "type": "numerical",
+      "unit": "mmHg",
+      "min": 80,
+      "max": 230,
+      "step": 2,
+      "normal_range": "90 - 120 mmHg",
+      "default": 120,
+      "category": "vital",
+      "description": "Average resting systolic blood pressure."
+    },
+    "dbp": {
+      "label": "Diastolic Blood Pressure",
+      "type": "numerical",
+      "unit": "mmHg",
+      "min": 40,
+      "max": 140,
+      "step": 2,
+      "normal_range": "60 - 80 mmHg",
+      "default": 75,
+      "category": "vital",
+      "description": "Average resting diastolic blood pressure."
+    },
+    "bgr": {
+      "label": "Serum Glucose",
+      "type": "numerical",
+      "unit": "mg/dL",
+      "min": 50,
+      "max": 450,
+      "step": 1,
+      "normal_range": "70 - 99 mg/dL",
+      "default": 95,
+      "category": "metabolic",
+      "description": "Fasting/routine serum glucose concentration."
+    },
+    "hba1c": {
+      "label": "Glycohemoglobin (HbA1c)",
+      "type": "numerical",
+      "unit": "%",
+      "min": 4.0,
+      "max": 16.0,
+      "step": 0.1,
+      "normal_range": "4.0 - 5.6%",
+      "default": 5.4,
+      "category": "metabolic",
+      "description": "Glycated hemoglobin percentage reflecting 3-month glycemic control."
+    },
+    "bu": {
+      "label": "Blood Urea Nitrogen (BUN)",
+      "type": "numerical",
+      "unit": "mg/dL",
+      "min": 4.0,
+      "max": 100.0,
+      "step": 1.0,
+      "normal_range": "7 - 20 mg/dL",
+      "default": 13.0,
+      "category": "renal",
+      "description": "Circulating urea nitrogen concentration."
+    },
+    "sc": {
+      "label": "Serum Creatinine",
+      "type": "numerical",
+      "unit": "mg/dL",
+      "min": 0.3,
+      "max": 10.0,
+      "step": 0.05,
+      "normal_range": "0.6 - 1.2 mg/dL",
+      "default": 0.85,
+      "category": "renal",
+      "description": "Standardized serum creatinine from biochemistry panel."
+    },
+    "sod": {
+      "label": "Serum Sodium",
+      "type": "numerical",
+      "unit": "mmol/L",
+      "min": 120,
+      "max": 160,
+      "step": 1,
+      "normal_range": "135 - 145 mmol/L",
+      "default": 140,
+      "category": "electrolytes",
+      "description": "Circulating sodium concentration."
+    },
+    "pot": {
+      "label": "Serum Potassium",
+      "type": "numerical",
+      "unit": "mmol/L",
+      "min": 2.5,
+      "max": 7.5,
+      "step": 0.1,
+      "normal_range": "3.5 - 5.0 mmol/L",
+      "default": 4.1,
+      "category": "electrolytes",
+      "description": "Circulating potassium concentration."
+    },
+    "tot_protein": {
+      "label": "Total Serum Protein",
+      "type": "numerical",
+      "unit": "g/dL",
+      "min": 4.0,
+      "max": 10.0,
+      "step": 0.1,
+      "normal_range": "6.0 - 8.3 g/dL",
+      "default": 7.1,
+      "category": "biochemistry",
+      "description": "Total protein in circulating plasma."
+    },
+    "serum_alb": {
+      "label": "Serum Albumin",
+      "type": "numerical",
+      "unit": "g/dL",
+      "min": 2.0,
+      "max": 6.0,
+      "step": 0.1,
+      "normal_range": "3.5 - 5.0 g/dL",
+      "default": 4.2,
+      "category": "biochemistry",
+      "description": "Liver-synthesized circulating serum albumin."
+    },
+    "uric_acid": {
+      "label": "Serum Uric Acid",
+      "type": "numerical",
+      "unit": "mg/dL",
+      "min": 1.5,
+      "max": 14.0,
+      "step": 0.1,
+      "normal_range": "3.5 - 7.2 mg/dL",
+      "default": 5.2,
+      "category": "metabolic",
+      "description": "Metabolic byproduct of purine breakdown."
+    },
+    "hemo": {
+      "label": "Hemoglobin",
+      "type": "numerical",
+      "unit": "g/dL",
+      "min": 6.0,
+      "max": 20.0,
+      "step": 0.1,
+      "normal_range": "12.0 - 17.0 g/dL",
+      "default": 14.2,
+      "category": "hematology",
+      "description": "Whole blood hemoglobin from complete blood count."
+    },
+    "pcv": {
+      "label": "Hematocrit / PCV",
+      "type": "numerical",
+      "unit": "%",
+      "min": 20.0,
+      "max": 60.0,
+      "step": 0.5,
+      "normal_range": "37 - 50%",
+      "default": 42.0,
+      "category": "hematology",
+      "description": "Packed cell volume proportion."
+    },
+    "wc": {
+      "label": "White Blood Cell Count",
+      "type": "numerical",
+      "unit": "10\u00b3 /\u00b5L",
+      "min": 1.0,
+      "max": 30.0,
+      "step": 0.1,
+      "normal_range": "4.0 - 11.0 10\u00b3 /\u00b5L",
+      "default": 6.8,
+      "category": "hematology",
+      "description": "Total leukocyte count from CBC."
+    },
+    "htn": {
+      "label": "Hypertension History",
+      "type": "categorical",
+      "unit": "",
+      "options": [
+        "yes",
+        "no"
+      ],
+      "normal_range": "no",
+      "default": "no",
+      "category": "comorbidity",
+      "description": "Participant told had high blood pressure by healthcare provider."
+    },
+    "dm": {
+      "label": "Diabetes History",
+      "type": "categorical",
+      "unit": "",
+      "options": [
+        "yes",
+        "no",
+        "borderline"
+      ],
+      "normal_range": "no",
+      "default": "no",
+      "category": "comorbidity",
+      "description": "Participant told had diabetes by healthcare provider."
+    }
+  }
+}

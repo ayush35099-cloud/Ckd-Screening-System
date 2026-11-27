@@ -911,6 +911,150 @@ a:hover {
   box-shadow: var(--shadow-sm);
 }
 
+/* Model Selection Workflow Cards */
+.model-selection-section {
+  max-width: 860px;
+  margin: 1.5rem auto 1.5rem auto;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 1.5rem 1.75rem;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+
+.model-selection-header .step-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-primary);
+  background-color: var(--bg-surface-subtle);
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 0.4rem;
+}
+
+.model-selection-header h2 {
+  font-size: 1.35rem;
+  font-family: var(--font-serif);
+  color: var(--text-main);
+  margin-bottom: 0.25rem;
+}
+
+.model-selection-header p {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  max-width: 620px;
+  margin: 0 auto 1.25rem auto;
+}
+
+.model-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.25rem;
+  text-align: left;
+  margin-bottom: 1.25rem;
+}
+
+.model-card {
+  border: 2px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 1.25rem;
+  background-color: var(--bg-surface);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+}
+
+.model-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.model-card.active {
+  border-color: var(--color-primary);
+  background-color: var(--bg-surface-subtle);
+  box-shadow: 0 0 0 1px var(--color-primary), var(--shadow-sm);
+}
+
+.model-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.model-card-radio {
+  margin-top: 3px;
+}
+
+.model-card-radio input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.model-card-title {
+  font-size: 1.05rem;
+  font-family: var(--font-serif);
+  color: var(--color-primary);
+  margin: 0 0 0.15rem 0;
+}
+
+.model-card-dataset {
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+  display: block;
+}
+
+.model-card-desc {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 0.85rem;
+}
+
+.model-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.model-tag {
+  font-size: 0.6875rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-subtle);
+}
+
+.model-selection-action {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.active-model-indicator-bar {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
+  margin: 0 auto 1.5rem auto;
+  max-width: 860px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .clinical-fieldset {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);

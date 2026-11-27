@@ -1,0 +1,95 @@
+{
+  "project": "Chronic Kidney Disease Screening - Model 2",
+  "model_name": "Expanded CKD Model (CDC NHANES)",
+  "dataset": {
+    "name": "CDC NHANES 2017-2018 Continuous Survey",
+    "official_source": "https://wwwn.cdc.gov/nchs/nhanes/",
+    "total_samples": 5063,
+    "ckd_samples": 939,
+    "notckd_samples": 4124,
+    "features_count": 19,
+    "train_size": 4050,
+    "test_size": 1013,
+    "target_definition": "Derived CKD Indicator (eGFR < 60 mL/min/1.73m2 or UACR >= 30 mg/g)"
+  },
+  "champion_model": "Random Forest",
+  "models": {
+    "Decision Tree": {
+      "accuracy": 0.8065,
+      "sensitivity": 0.5638,
+      "specificity": 0.8618,
+      "precision": 0.4818,
+      "f1_score": 0.5196,
+      "roc_auc": 0.759,
+      "confusion_matrix": {
+        "tn": 711,
+        "fp": 114,
+        "fn": 82,
+        "tp": 106
+      },
+      "cv_accuracy_mean": 0.8106,
+      "cv_recall_mean": 0.6658,
+      "cv_roc_auc_mean": 0.7926
+    },
+    "Random Forest": {
+      "accuracy": 0.844,
+      "sensitivity": 0.5106,
+      "specificity": 0.92,
+      "precision": 0.5926,
+      "f1_score": 0.5486,
+      "roc_auc": 0.8208,
+      "confusion_matrix": {
+        "tn": 759,
+        "fp": 66,
+        "fn": 92,
+        "tp": 96
+      },
+      "cv_accuracy_mean": 0.8605,
+      "cv_recall_mean": 0.5859,
+      "cv_roc_auc_mean": 0.8437
+    }
+  },
+  "feature_importance_top10": [
+    [
+      "sc",
+      0.1906
+    ],
+    [
+      "age",
+      0.1344
+    ],
+    [
+      "bu",
+      0.0861
+    ],
+    [
+      "hba1c",
+      0.0749
+    ],
+    [
+      "sbp",
+      0.0682
+    ],
+    [
+      "htn_yes",
+      0.053
+    ],
+    [
+      "bgr",
+      0.0449
+    ],
+    [
+      "uric_acid",
+      0.0358
+    ],
+    [
+      "htn_no",
+      0.0336
+    ],
+    [
+      "dm_yes",
+      0.0327
+    ]
+  ],
+  "evaluation_methodology": "Stratified 80/20 train/test split with 5-fold cross-validation on training data. Features preprocessed via median/mode imputation and standard scaling. Evaluated on independent held-out test split of 1,013 participants. Metrics reflect general population screening performance where CKD prevalence is 18.55%."
+}

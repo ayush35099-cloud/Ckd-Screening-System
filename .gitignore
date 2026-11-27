@@ -40,7 +40,9 @@ venv.bak/
 *.sqlite3
 *.db
 
-# Operating System Files
+# Large raw survey download cache
+ml/dataset/nhanes_raw/
+*.xpt
 .DS_Store
 Thumbs.db
 ehthumbs.db

@@ -1,0 +1,67 @@
+{
+  "source": "CDC National Health and Nutrition Examination Survey (NHANES)",
+  "survey_cycle": "2017-2018 (Continuous NHANES)",
+  "official_url": "https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?BeginYear=2017",
+  "original_records": 9254,
+  "adult_records_age_gte_18": 5856,
+  "usable_records_with_confirmed_target": 5063,
+  "selected_features": {
+    "numerical": [
+      "age",
+      "bmi",
+      "sbp",
+      "dbp",
+      "bgr",
+      "hba1c",
+      "bu",
+      "sc",
+      "sod",
+      "pot",
+      "tot_protein",
+      "serum_alb",
+      "uric_acid",
+      "hemo",
+      "pcv",
+      "wc"
+    ],
+    "categorical": [
+      "sex",
+      "htn",
+      "dm"
+    ],
+    "total_count": 19
+  },
+  "missing_value_percentages": {
+    "age": 0.0,
+    "bmi": 1.19,
+    "sbp": 4.42,
+    "dbp": 4.42,
+    "bgr": 0.04,
+    "hba1c": 0.08,
+    "bu": 0.04,
+    "sc": 0.0,
+    "sod": 0.0,
+    "pot": 0.06,
+    "tot_protein": 0.04,
+    "serum_alb": 0.0,
+    "uric_acid": 0.04,
+    "hemo": 0.06,
+    "pcv": 0.06,
+    "wc": 0.06,
+    "sex": 0.0,
+    "htn": 0.0,
+    "dm": 0.0
+  },
+  "derived_target_methodology": "Derived CKD Indicator based on KDIGO 2012 guidelines and CKD-EPI 2021 race-free equation. Positive (1) if eGFR < 60 mL/min/1.73m2 OR Urine Albumin-to-Creatinine Ratio (UACR) >= 30 mg/g; Negative (0) if eGFR >= 60 mL/min/1.73m2 AND UACR < 30 mg/g. Participants lacking both laboratory measurements were excluded to prevent non-random label distortion. As cross-sectional survey data cannot verify 3-month chronicity, this label represents derived CKD indicators rather than clinically confirmed chronic disease.",
+  "class_distribution": {
+    "negative_non_ckd_0": 4124,
+    "positive_ckd_indicator_1": 939,
+    "positive_prevalence_pct": 18.55
+  },
+  "limitations_and_sources_of_bias": [
+    "Cross-sectional design: Single spot urine and serum measurements cannot establish 90-day persistence required for formal KDIGO diagnosis.",
+    "Survey weights: Model is trained on unweighted survey sample participants for clinical decision-support classification rather than population prevalence estimation.",
+    "Laboratory imputation: Missing clinical predictors are imputed with median/mode within the preprocessing pipeline during inference.",
+    "Generalizability: Dataset reflects non-institutionalized US civilian population; external validation in diverse primary care cohorts is required before diagnostic deployment."
+  ]
+}

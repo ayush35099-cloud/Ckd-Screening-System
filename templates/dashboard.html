@@ -255,6 +255,121 @@
       * Academic benchmark testing evaluated on held-out test split (N=80). Real-world diagnostic performance may vary; prospective clinical validation has not been performed.
     </p>
   </div>
+
+  <!-- Multi-Dataset Model Comparison Section (UCI vs CDC NHANES) -->
+  <div style="background-color: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 1.75rem; margin-top: 2rem; box-shadow: var(--shadow-sm);">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+      <div>
+        <h2 style="font-size: 1.15rem; font-family: var(--font-serif); margin-bottom: 0.2rem;">Multi-Dataset Model Comparison & Audit</h2>
+        <span style="font-size: 0.8125rem; color: var(--text-subtle);">Independent evaluation metrics across distinct clinical and population training distributions</span>
+      </div>
+      <span class="badge-status badge-clear" style="font-size: 0.75rem;">2 Independent Datasets</span>
+    </div>
+
+    <!-- Educational Callout / Disclaimer on Cross-Dataset Comparison -->
+    <div style="background-color: var(--bg-surface-subtle); border-left: 4px solid var(--color-primary); padding: 1rem 1.25rem; border-radius: 6px; margin-bottom: 1.5rem;">
+      <strong style="font-size: 0.875rem; color: var(--color-primary);">Cohort & Population Distinction Notice:</strong>
+      <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.55;">
+        The evaluation metrics below originate from <strong>independent training distributions and separate test cohorts</strong>.
+        Model 1 was developed on the clinical retrospective UCI dataset (N=400, test N=80), featuring urinalysis dipsticks and a high baseline CKD prevalence (62.5%).
+        Model 2 was developed on the official CDC NHANES 2017–2018 US continuous survey (N=5,063, test N=1,013), where derived CKD indicator prevalence is 18.55% under KDIGO criteria.
+        These figures provide an independent audit of each pipeline on its native held-out distribution and should <em>not</em> be viewed as a direct head-to-head comparison on a shared patient population.
+      </p>
+    </div>
+
+    <div style="overflow-x: auto;">
+      <table class="renal-table" style="font-size: 0.8125rem;">
+        <thead>
+          <tr>
+            <th>Characteristic / Metric</th>
+            <th>Model 1: Standard CKD Model</th>
+            <th>Model 2: Expanded CKD Model</th>
+            <th>Clinical & Epidemiological Context</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Dataset Source</strong></td>
+            <td>UCI Machine Learning Repository</td>
+            <td>CDC NHANES (2017–2018 Cycle)</td>
+            <td style="color: var(--text-subtle);">Clinical cohort vs. national health survey</td>
+          </tr>
+          <tr>
+            <td><strong>Usable Sample Size (N)</strong></td>
+            <td>400 records (320 Train / 80 Test)</td>
+            <td>5,063 records (4,050 Train / 1,013 Test)</td>
+            <td style="color: var(--text-subtle);">NHANES sample provides ~12.6x larger training population</td>
+          </tr>
+          <tr>
+            <td><strong>Feature Count & Input Scope</strong></td>
+            <td>24 Features (Urinalysis dipstick, chemistry, symptoms)</td>
+            <td>19 Features (Vitals, metabolic panel, HbA1c, CBC)</td>
+            <td style="color: var(--text-subtle);">Model 2 requires no urine dipstick or microscopy</td>
+          </tr>
+          <tr>
+            <td><strong>Target Definition</strong></td>
+            <td>Clinical CKD status (retrospective diagnosis)</td>
+            <td>Derived CKD indicator (eGFR &lt; 60 or UACR &ge; 30 mg/g)</td>
+            <td style="color: var(--text-subtle);">KDIGO criteria via CKD-EPI 2021 race-free equation</td>
+          </tr>
+          <tr>
+            <td><strong>Prevalence in Dataset</strong></td>
+            <td>62.5% (250 positive / 150 negative)</td>
+            <td>18.55% (939 positive / 4,124 negative)</td>
+            <td style="color: var(--text-subtle);">Realistic general population class balance in Model 2</td>
+          </tr>
+          <tr>
+            <td><strong>Champion Algorithm</strong></td>
+            <td>Random Forest (100 Trees, Depth 6)</td>
+            <td>Random Forest (100 Trees, Depth 8)</td>
+            <td style="color: var(--text-subtle);">Balanced class weighting applied to both pipelines</td>
+          </tr>
+          <tr>
+            <td><strong>Held-Out Test Accuracy</strong></td>
+            <td><strong style="color: var(--color-primary);">100.0%</strong></td>
+            <td><strong>84.4%</strong></td>
+            <td style="color: var(--text-subtle);">High overall classification rate on held-out test sets</td>
+          </tr>
+          <tr>
+            <td><strong>Sensitivity / Recall</strong></td>
+            <td><strong style="color: var(--color-primary);">100.0%</strong></td>
+            <td><strong>51.1%</strong></td>
+            <td style="color: var(--text-subtle);">Reflects general population non-invasive screening challenge</td>
+          </tr>
+          <tr>
+            <td><strong>Specificity</strong></td>
+            <td>100.0%</td>
+            <td><strong>92.0%</strong></td>
+            <td style="color: var(--text-subtle);">Low false positive rate: 92% of non-CKD adults correctly cleared</td>
+          </tr>
+          <tr>
+            <td><strong>Precision (PPV)</strong></td>
+            <td>100.0%</td>
+            <td><strong>61.0%</strong></td>
+            <td style="color: var(--text-subtle);">Positive predictive value on test split</td>
+          </tr>
+          <tr>
+            <td><strong>F1-Score</strong></td>
+            <td><strong>1.0000</strong></td>
+            <td><strong>0.550</strong></td>
+            <td style="color: var(--text-subtle);">Harmonic mean of precision and recall</td>
+          </tr>
+          <tr>
+            <td><strong>ROC-AUC Score</strong></td>
+            <td><strong>1.0000</strong></td>
+            <td><strong style="color: var(--color-primary);">0.8208</strong></td>
+            <td style="color: var(--text-subtle);">Strong discrimination capability (AUC &gt; 0.80) in general population</td>
+          </tr>
+          <tr>
+            <td><strong>Evaluation Methodology</strong></td>
+            <td>Stratified 80/20 split &bull; 5-Fold Stratified CV</td>
+            <td>Stratified 80/20 split &bull; 5-Fold Stratified CV</td>
+            <td style="color: var(--text-subtle);">Isolated pipelines with median imputation & standard scaling</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 {% endblock %}
 

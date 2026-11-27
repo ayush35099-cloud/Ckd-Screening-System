@@ -169,7 +169,7 @@
       <!-- Parameter Matrix -->
       <div style="margin-bottom: 2rem;">
         <h3 style="font-family: var(--font-serif); font-size: 1.25rem; margin-bottom: 0.75rem;">
-          Submitted Laboratory Parameters (24 Features)
+          Submitted Clinical Parameters ({{ result.parameters|length }} Features)
         </h3>
         <div style="overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: 8px;">
           <table class="renal-table">
@@ -188,16 +188,23 @@
                   <td>{{ val if val is not none and val != '' else 'Unmeasured (Imputed)' }}</td>
                   <td style="color: var(--text-subtle); font-size: 0.8125rem;">
                     {% if key == 'sc' %}0.6 - 1.2 mg/dL
-                    {% elif key == 'hemo' %}13.0 - 17.0 g/dL
+                    {% elif key == 'hemo' %}12.0 - 17.0 g/dL
                     {% elif key == 'bp' %}70 - 80 mm/Hg
+                    {% elif key == 'sbp' %}90 - 120 mmHg
+                    {% elif key == 'dbp' %}60 - 80 mmHg
+                    {% elif key == 'bmi' %}18.5 - 24.9 kg/m²
+                    {% elif key == 'hba1c' %}4.0 - 5.6 %
+                    {% elif key == 'uric_acid' %}3.5 - 7.2 mg/dL
+                    {% elif key == 'tot_protein' %}6.0 - 8.3 g/dL
+                    {% elif key == 'serum_alb' %}3.5 - 5.0 g/dL
                     {% elif key == 'sg' %}1.015 - 1.025
                     {% elif key == 'al' %}0 (Negative)
                     {% elif key == 'su' %}0 (Negative)
-                    {% elif key == 'bgr' %}70 - 140 mg/dL
-                    {% elif key == 'bu' %}15 - 45 mg/dL
+                    {% elif key == 'bgr' %}70 - 140 mg/dL (Random) / 70 - 99 mg/dL (Fasting)
+                    {% elif key == 'bu' %}15 - 45 mg/dL (Urea) / 7 - 20 mg/dL (BUN)
                     {% elif key == 'sod' %}135 - 145 mEq/L
                     {% elif key == 'pot' %}3.5 - 5.0 mEq/L
-                    {% elif key == 'pcv' %}38 - 50 %
+                    {% elif key == 'pcv' %}37 - 50 %
                     {% elif key == 'wc' %}4,000 - 11,000 /cumm
                     {% elif key == 'rc' %}4.2 - 5.9 M/cmm
                     {% else %}Negative / Normal

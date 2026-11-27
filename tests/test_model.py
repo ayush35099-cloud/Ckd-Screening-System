@@ -176,5 +176,66 @@ class TestCKDModelService(unittest.TestCase):
         self.assertNotIn('sex', result['evaluated_parameters'])
         self.assertEqual(len(result['evaluated_parameters']), 24)
 
+    def test_model_2_artifacts_and_schema(self):
+        self.assertTrue(self.service.is_model_2_available())
+        self.assertIsNotNone(self.service.nhanes_rf_pipeline)
+        self.assertIsNotNone(self.service.nhanes_dt_pipeline)
+        self.assertIsNotNone(self.service.nhanes_metadata)
+        self.assertIsNotNone(self.service.nhanes_metrics)
+        self.assertEqual(len(self.service.nhanes_metadata['features']), 19)
+
+    def test_model_2_healthy_prediction(self):
+        nhanes_healthy = {
+            'age': 38, 'sex': 'female', 'bmi': 23.2, 'sbp': 116, 'dbp': 74,
+            'bgr': 92, 'hba1c': 5.1, 'bu': 12.0, 'sc': 0.75, 'sod': 140, 'pot': 4.1,
+            'tot_protein': 7.2, 'serum_alb': 4.4, 'uric_acid': 4.8, 'hemo': 14.0,
+            'pcv': 42.0, 'wc': 6.2, 'htn': 'no', 'dm': 'no'
+        }
+        result = self.service.predict(nhanes_healthy, model_choice='Random Forest', model_id='model_2')
+        self.assertEqual(result['model_id'], 'model_2')
+        self.assertFalse(result['is_flagged'])
+        self.assertEqual(result['prediction_code'], 'notckd')
+        self.assertIn('CDC NHANES', result['model_used'])
+        self.assertIn('CDC NHANES', result['dataset_source'])
+        self.assertGreater(result['confidence'], 50.0)
+
+    def test_model_2_flagged_prediction(self):
+        nhanes_ckd = {
+            'age': 71, 'sex': 'male', 'bmi': 32.5, 'sbp': 162, 'dbp': 94,
+            'bgr': 185, 'hba1c': 8.5, 'bu': 42.0, 'sc': 2.8, 'sod': 133, 'pot': 5.2,
+            'tot_protein': 6.1, 'serum_alb': 3.1, 'uric_acid': 8.9, 'hemo': 9.8,
+            'pcv': 30.0, 'wc': 9.9, 'htn': 'yes', 'dm': 'yes'
+        }
+        result = self.service.predict(nhanes_ckd, model_choice='Random Forest', model_id='model_2')
+        self.assertEqual(result['model_id'], 'model_2')
+        self.assertTrue(result['is_flagged'])
+        self.assertEqual(result['prediction_code'], 'ckd')
+        self.assertGreater(result['probability_ckd'], 50.0)
+        self.assertGreater(len(result['key_findings']), 0)
+
+    def test_model_selection_validation_rejects_unknown(self):
+        with self.assertRaises(ValueError):
+            self.service.predict(self.healthy_sample, model_id='unknown_model_identifier_xyz')
+
+    def test_model_2_graceful_fallback_when_unavailable(self):
+        # Save current state
+        orig_rf = self.service.nhanes_rf_pipeline
+        orig_avail = self.service.model_2_available
+        try:
+            self.service.nhanes_rf_pipeline = None
+            self.service.model_2_available = False
+
+            # Model 1 must still work completely fine
+            res1 = self.service.predict(self.healthy_sample, model_id='model_1')
+            self.assertEqual(res1['model_id'], 'model_1')
+            self.assertFalse(res1['is_flagged'])
+
+            # Model 2 must raise clear RuntimeError
+            with self.assertRaises(RuntimeError):
+                self.service.predict(self.healthy_sample, model_id='model_2')
+        finally:
+            self.service.nhanes_rf_pipeline = orig_rf
+            self.service.model_2_available = orig_avail
+
 if __name__ == '__main__':
     unittest.main()

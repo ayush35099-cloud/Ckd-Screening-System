@@ -89,7 +89,13 @@
                 <strong>{{ r.risk_level }}</strong>
                 <span style="font-size: 0.75rem; color: var(--text-subtle);">({{ r.probability }}%)</span>
               </td>
-              <td>{{ r.model_used }}</td>
+              <td>
+                {% if 'NHANES' in r.model_used %}
+                  <span class="badge-status badge-moderate" style="font-size: 0.72rem; padding: 2px 6px;">{{ r.model_used }}</span>
+                {% else %}
+                  <span class="badge-status" style="font-size: 0.72rem; padding: 2px 6px; background-color: var(--bg-surface-subtle); border-color: var(--border-subtle); color: var(--text-main);">{{ r.model_used }}</span>
+                {% endif %}
+              </td>
               <td style="text-align: right;">
                 <a href="{{ url_for('result_view', screening_uuid=r.screening_uuid) }}" class="btn-renal btn-renal-secondary btn-sm" title="View Result Summary">
                   <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
