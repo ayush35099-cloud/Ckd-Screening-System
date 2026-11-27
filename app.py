@@ -675,8 +675,8 @@ def create_app(config_class=Config):
         if not record:
             abort(404, description="Screening record not found")
 
-        lang = request.args.get('lang') or request.cookies.get('renalcare_lang') or 'en'
-        pdf_bytes = generate_pdf_report(record, lang=lang)
+        # Mandatory: All clinical PDF screening reports are ALWAYS generated in English
+        pdf_bytes = generate_pdf_report(record, lang='en')
         filename = f"RenalCare_Screening_{record['patient_id']}_{screening_uuid[:8]}.pdf"
 
         return send_file(
@@ -700,8 +700,8 @@ def create_app(config_class=Config):
 
         increment_token_download(delivery['id'])
 
-        lang = request.args.get('lang') or request.cookies.get('renalcare_lang') or 'en'
-        pdf_bytes = generate_pdf_report(record, lang=lang)
+        # Mandatory: All clinical PDF screening reports are ALWAYS generated in English
+        pdf_bytes = generate_pdf_report(record, lang='en')
         filename = f"RenalCare_Screening_{record['screening_uuid'][:8]}.pdf"
 
         response = send_file(

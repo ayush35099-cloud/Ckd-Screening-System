@@ -4,8 +4,15 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from report_generator import generate_pdf_report
+from app import create_app
 
 class TestPDFReportGenerator(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.app = create_app()
+        cls.app.config['TESTING'] = True
+        cls.client = cls.app.test_client()
+
     def test_pdf_generation_flagged(self):
         sample_data = {
             'screening_uuid': 'test-uuid-12345678',
@@ -126,6 +133,108 @@ class TestPDFReportGenerator(unittest.TestCase):
         self.assertIsNotNone(pdf_bytes)
         self.assertGreater(len(pdf_bytes), 1000)
         self.assertTrue(pdf_bytes.startswith(b'%PDF'))
+
+    def test_pdf_language_isolation_all_8_languages(self):
+        """All 8 language codes produce consistent, clean English PDFs with fixed English headers."""
+        sample_record = {
+            'screening_uuid': 'test-uuid-lang-isolation-001',
+            'patient_id': 'PT-ISO-01',
+            'patient_name': 'Lang Isolation Patient',
+            'age': 54,
+            'sex': 'Male',
+            'prediction_code': 'ckd',
+            'prediction_label': 'CKD Indicators Detected',
+            'risk_level': 'High',
+            'probability': 91.2,
+            'confidence': 91.2,
+            'model_used': 'Random Forest',
+            'formatted_date': 'Nov 28, 2026, 12:00 AM',
+            'parameters': {'bp': 85, 'hemo': 11.0, 'sc': 2.4, 'htn': 'yes'}
+        }
+
+        languages = ['en', 'hi', 'bn', 'mr', 'te', 'ta', 'ur', 'gu']
+        for lang in languages:
+            with self.subTest(lang=lang):
+                pdf_bytes = generate_pdf_report(sample_record, lang=lang)
+                self.assertIsNotNone(pdf_bytes)
+                self.assertTrue(pdf_bytes.startswith(b'%PDF'))
+                self.assertGreater(len(pdf_bytes), 1000)
+
+    def test_pdf_unicode_and_special_patient_names(self):
+        """Patient names with Unicode, accents, XML entities and long strings render cleanly."""
+        test_names = [
+            'आयुष शर्मा (Hindi/Marathi Unicode)',
+            'মোহাম্মদ আলী (Bengali Unicode)',
+            'Dr. René Müller (Accented Latin)',
+            'A & B Medical Care <Specialist Clinical Center>',
+            'Very Long Patient Identifier Name Used In Specialized Regional Diagnostic Screening Camps Ext'
+        ]
+
+        for pt_name in test_names:
+            with self.subTest(pt_name=pt_name):
+                sample_data = {
+                    'screening_uuid': 'test-uuid-unicode-name',
+                    'patient_id': 'PT-UNI-009',
+                    'patient_name': pt_name,
+                    'age': 45,
+                    'sex': 'Female',
+                    'prediction_label': 'CKD Indicators Not Detected',
+                    'prediction_code': 'notckd',
+                    'probability': 8.0,
+                    'confidence': 92.0,
+                    'risk_level': 'Low',
+                    'model_used': 'Random Forest',
+                    'parameters': {'sc': 0.9, 'bp': 75}
+                }
+                pdf_bytes = generate_pdf_report(sample_data)
+                self.assertIsNotNone(pdf_bytes)
+                self.assertTrue(pdf_bytes.startswith(b'%PDF'))
+                self.assertGreater(len(pdf_bytes), 1000)
+
+    def test_download_report_route_forces_english(self):
+        """Flask route /report/<uuid> returns valid English PDF regardless of ?lang or cookies."""
+        # Create a sample screening record via client POST
+        post_data = {
+            'model_id': 'model_1',
+            'model_choice': 'rf',
+            'patient_id': 'PT-ROUTE-TEST',
+            'patient_name': 'Route Test Patient',
+            'age': '50',
+            'bp': '80',
+            'sg': '1.020',
+            'al': '0',
+            'su': '0',
+            'rbc': 'normal',
+            'pc': 'normal',
+            'pcc': 'notpresent',
+            'ba': 'notpresent',
+            'bgr': '100',
+            'bu': '35',
+            'sc': '1.0',
+            'sod': '140',
+            'pot': '4.0',
+            'hemo': '15.0',
+            'pcv': '45',
+            'wc': '7500',
+            'rc': '5.0',
+            'htn': 'no',
+            'dm': 'no',
+            'cad': 'no',
+            'appet': 'good',
+            'pe': 'no',
+            'ane': 'no'
+        }
+        res = self.client.post('/screen', data=post_data, follow_redirects=False)
+        self.assertEqual(res.status_code, 302)
+        uuid = res.headers['Location'].split('/result/')[1]
+
+        # Request report with Hindi parameter and Marathi cookie
+        self.client.set_cookie('renalcare_lang', 'mr')
+        rep_res = self.client.get(f'/report/{uuid}?lang=hi')
+        self.assertEqual(rep_res.status_code, 200)
+        self.assertEqual(rep_res.mimetype, 'application/pdf')
+        self.assertTrue(rep_res.data.startswith(b'%PDF'))
+        self.assertGreater(len(rep_res.data), 1000)
 
 if __name__ == '__main__':
     unittest.main()

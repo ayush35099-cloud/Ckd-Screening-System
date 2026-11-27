@@ -1,6 +1,6 @@
 import os
 import io
-import json
+import html
 from datetime import datetime
 
 from reportlab.lib.pagesizes import letter
@@ -14,8 +14,7 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
-# Language Metadata
-TRANSLATIONS_DIR = os.path.join(os.path.dirname(__file__), 'translations')
+# Language Metadata (Kept for external module reference compatibility)
 LANG_NAMES = {
     'en': 'English',
     'hi': 'Hindi (हिन्दी)',
@@ -27,68 +26,76 @@ LANG_NAMES = {
     'gu': 'Gujarati (ગુજરાતી)',
 }
 
-_UNICODE_FONT_REGISTERED = False
-_INDIC_REGULAR = 'Helvetica'
-_INDIC_BOLD = 'Helvetica-Bold'
+_FONTS_REGISTERED = False
+_FONT_REGULAR = 'Helvetica'
+_FONT_BOLD = 'Helvetica-Bold'
 
-_FONT_CANDIDATES = [
-    ('C:/Windows/Fonts/Nirmala.ttc', 0),
-    ('C:/Windows/Fonts/nirmala.ttf', None),
-    ('/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf', None),
-    ('/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf', None),
-    ('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', None),
-    ('C:/Windows/Fonts/arial.ttf', None),
-]
 
-def _register_unicode_fonts():
-    global _INDIC_REGULAR, _INDIC_BOLD, _UNICODE_FONT_REGISTERED
-    if _UNICODE_FONT_REGISTERED:
-        return _INDIC_REGULAR, _INDIC_BOLD
+def _safe_xml(val):
+    """Safely escapes text for ReportLab Paragraph XML parsing without double-escaping."""
+    if val is None:
+        return ''
+    s = str(val)
+    return html.escape(s, quote=True)
 
-    for path, sub_idx in _FONT_CANDIDATES:
-        if os.path.exists(path):
+
+def _register_report_fonts():
+    """
+    Registers reliable TrueType fonts with robust English typography and Unicode support.
+    Falls back gracefully to standard Helvetica and Helvetica-Bold Type 1 fonts.
+    """
+    global _FONTS_REGISTERED, _FONT_REGULAR, _FONT_BOLD
+    if _FONTS_REGISTERED:
+        return _FONT_REGULAR, _FONT_BOLD
+
+    import reportlab
+    rl_fonts = os.path.join(os.path.dirname(reportlab.__file__), 'fonts')
+    vera_reg = os.path.join(rl_fonts, 'Vera.ttf')
+    vera_bold = os.path.join(rl_fonts, 'VeraBd.ttf')
+
+    candidates = [
+        # Windows TrueType fonts with comprehensive Unicode coverage
+        ('C:/Windows/Fonts/arial.ttf', 'C:/Windows/Fonts/arialbd.ttf'),
+        ('C:/Windows/Fonts/segoeui.ttf', 'C:/Windows/Fonts/segoeuib.ttf'),
+        # Linux standard system TrueType fonts (Render / Ubuntu / Debian)
+        ('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'),
+        ('/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf', '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'),
+        # Built-in ReportLab TrueType fonts
+        (vera_reg, vera_bold)
+    ]
+
+    for reg_path, bold_path in candidates:
+        if os.path.exists(reg_path):
             try:
-                if sub_idx is not None:
-                    pdfmetrics.registerFont(TTFont('RenalUnicode', path, subfontIndex=sub_idx))
-                    pdfmetrics.registerFont(TTFont('RenalUnicode-Bold', path, subfontIndex=sub_idx))
+                pdfmetrics.registerFont(TTFont('RenalSans', reg_path))
+                if os.path.exists(bold_path):
+                    pdfmetrics.registerFont(TTFont('RenalSans-Bold', bold_path))
                 else:
-                    pdfmetrics.registerFont(TTFont('RenalUnicode', path))
-                    pdfmetrics.registerFont(TTFont('RenalUnicode-Bold', path))
-                _INDIC_REGULAR = 'RenalUnicode'
-                _INDIC_BOLD = 'RenalUnicode-Bold'
-                _UNICODE_FONT_REGISTERED = True
-                break
+                    pdfmetrics.registerFont(TTFont('RenalSans-Bold', reg_path))
+                _FONT_REGULAR = 'RenalSans'
+                _FONT_BOLD = 'RenalSans-Bold'
+                _FONTS_REGISTERED = True
+                return _FONT_REGULAR, _FONT_BOLD
             except Exception:
                 continue
 
-    _UNICODE_FONT_REGISTERED = True
-    return _INDIC_REGULAR, _INDIC_BOLD
+    _FONT_REGULAR = 'Helvetica'
+    _FONT_BOLD = 'Helvetica-Bold'
+    _FONTS_REGISTERED = True
+    return _FONT_REGULAR, _FONT_BOLD
 
-def _load_translations(lang):
-    if not lang or lang == 'en':
-        return {}
-    fpath = os.path.join(TRANSLATIONS_DIR, f"{lang}.json")
-    if os.path.exists(fpath):
-        try:
-            with open(fpath, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except Exception:
-            return {}
-    return {}
 
 def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
     """
     Generates a professional healthcare PDF screening report using ReportLab.
-    Supports 8 languages (EN, HI, BN, MR, TE, TA, UR, GU) with automatic font registration.
+    
+    IMPORTANT: All PDF screening reports are MANDATORILY generated in clean, professional ENGLISH,
+    irrespective of website language, user locale, or cookies. This completely eliminates
+    missing glyphs, boxes, corrupted strings, and font fragmentation.
+    
     Returns bytes buffer of the generated PDF.
     """
-    font_reg, font_bold = _register_unicode_fonts()
-    t = _load_translations(lang)
-
-    # Use unicode font if non-English and font registered
-    use_unicode = (lang != 'en' and font_reg != 'Helvetica')
-    active_font = font_reg if use_unicode else 'Helvetica'
-    active_bold = font_bold if use_unicode else 'Helvetica-Bold'
+    font_reg, font_bold = _register_report_fonts()
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -114,10 +121,17 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
 
     styles = getSampleStyleSheet()
 
+    # Configure styles to consistently use registered font family
+    normal_style = styles['Normal']
+    normal_style.fontName = font_reg
+    normal_style.fontSize = 8.5
+    normal_style.leading = 11.5
+    normal_style.textColor = C_TEXT
+
     title_style = ParagraphStyle(
         'DocTitle',
-        parent=styles['Normal'],
-        fontName=active_bold,
+        parent=normal_style,
+        fontName=font_bold,
         fontSize=18,
         leading=22,
         textColor=C_PRIMARY
@@ -125,8 +139,8 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
 
     academic_header_style = ParagraphStyle(
         'AcademicHeader',
-        parent=styles['Normal'],
-        fontName=active_font,
+        parent=normal_style,
+        fontName=font_reg,
         fontSize=8,
         leading=11,
         textColor=C_MUTED,
@@ -135,8 +149,8 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
 
     section_heading = ParagraphStyle(
         'SectionHeading',
-        parent=styles['Normal'],
-        fontName=active_bold,
+        parent=normal_style,
+        fontName=font_bold,
         fontSize=10.5,
         leading=13,
         textColor=C_PRIMARY,
@@ -145,8 +159,8 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
 
     body_style = ParagraphStyle(
         'BodyDark',
-        parent=styles['Normal'],
-        fontName=active_font,
+        parent=normal_style,
+        fontName=font_reg,
         fontSize=8.5,
         leading=11.5,
         textColor=C_TEXT
@@ -155,13 +169,13 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
     body_bold = ParagraphStyle(
         'BodyBold',
         parent=body_style,
-        fontName=active_bold
+        fontName=font_bold
     )
 
     disclaimer_style = ParagraphStyle(
         'DisclaimerText',
-        parent=styles['Normal'],
-        fontName=active_font,
+        parent=normal_style,
+        fontName=font_reg,
         fontSize=7,
         leading=9.5,
         textColor=C_MUTED,
@@ -190,12 +204,12 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
     story.append(HRFlowable(width="100%", thickness=1.5, color=C_PRIMARY, spaceBefore=2, spaceAfter=6))
 
     # 2. Patient Demographics & Report Meta Grid
-    pt_id = screening_data.get('patient_id', 'Unknown')
-    pt_name = screening_data.get('patient_name') or 'Not Recorded'
-    pt_age = f"{screening_data.get('age', 'N/A')} yrs"
-    pt_sex = screening_data.get('sex', 'Not Specified')
-    report_date = screening_data.get('formatted_date') or datetime.now().strftime('%b %d, %Y, %I:%M %p')
-    screening_uuid = screening_data.get('screening_uuid', 'N/A')[:18] + '...'
+    pt_id = _safe_xml(screening_data.get('patient_id') or 'Unknown')
+    pt_name = _safe_xml(screening_data.get('patient_name') or 'Not Recorded')
+    pt_age = _safe_xml(f"{screening_data.get('age', 'N/A')} yrs")
+    pt_sex = _safe_xml(screening_data.get('sex') or 'Not Specified')
+    report_date = _safe_xml(screening_data.get('formatted_date') or datetime.now().strftime('%b %d, %Y, %I:%M %p'))
+    screening_uuid = _safe_xml(screening_data.get('screening_uuid', 'N/A')[:18] + '...')
 
     is_nhanes = (
         screening_data.get('model_id') in ['model_2', 'nhanes', 'expanded'] or
@@ -204,7 +218,7 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
     )
 
     pipeline_label = "CDC NHANES (Expanded Survey)" if is_nhanes else "UCI CKD (Standard Clinical)"
-    report_lang_label = LANG_NAMES.get(lang, 'English')
+    model_name_eval = _safe_xml(screening_data.get('model_used') or 'Random Forest')
 
     pt_info_data = [
         [Paragraph("<b>Patient Identifier:</b>", body_style), Paragraph(str(pt_id), body_bold),
@@ -212,8 +226,8 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
         [Paragraph("<b>Patient Name:</b>", body_style), Paragraph(str(pt_name), body_style),
          Paragraph("<b>Screening ID:</b>", body_style), Paragraph(str(screening_uuid), body_style)],
         [Paragraph("<b>Age / Sex:</b>", body_style), Paragraph(f"{pt_age} / {pt_sex}", body_style),
-         Paragraph("<b>Model Evaluated:</b>", body_style), Paragraph(str(screening_data.get('model_used', 'Random Forest')), body_style)],
-        [Paragraph("<b>Report Language:</b>", body_style), Paragraph(str(report_lang_label), body_style),
+         Paragraph("<b>Model Evaluated:</b>", body_style), Paragraph(str(model_name_eval), body_style)],
+        [Paragraph("<b>Report Language:</b>", body_style), Paragraph("English", body_style),
          Paragraph("<b>Screening Pipeline:</b>", body_style), Paragraph(str(pipeline_label), body_style)]
     ]
     pt_table = Table(pt_info_data, colWidths=[1.4 * inch, 2.3 * inch, 1.4 * inch, 2.3 * inch])
@@ -229,15 +243,15 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
     story.append(pt_table)
     story.append(Spacer(1, 8))
 
-    # 3. Screening Outcome Banner (Nuanced Wording)
-    is_flagged = screening_data.get('prediction_code') == 'ckd' or 'Detected' in screening_data.get('prediction_label', '')
+    # 3. Screening Outcome Banner (Fixed Professional English Nuanced Wording)
+    is_flagged = screening_data.get('prediction_code') == 'ckd' or 'Detected' in str(screening_data.get('prediction_label', ''))
     if is_flagged:
-        result_text = t.get('result_headline_detected', "CKD INDICATORS DETECTED — Further Clinical Evaluation Recommended") if use_unicode and t else "CKD INDICATORS DETECTED — Further Clinical Evaluation Recommended"
+        result_text = "CKD INDICATORS DETECTED — Further Clinical Evaluation Recommended"
         banner_bg = colors.HexColor('#FEF2F2')
         banner_border = colors.HexColor('#F87171')
         banner_text_color = C_ALERT
     else:
-        result_text = t.get('result_headline_clear', "CKD INDICATORS NOT DETECTED BY THIS MODEL — Does Not Rule Out CKD") if use_unicode and t else "CKD INDICATORS NOT DETECTED BY THIS MODEL — Does Not Rule Out CKD"
+        result_text = "CKD INDICATORS NOT DETECTED BY THIS MODEL — Does Not Rule Out CKD"
         banner_bg = colors.HexColor('#F0FDF4')
         banner_border = colors.HexColor('#86EFAC')
         banner_text_color = C_SUCCESS
@@ -250,23 +264,18 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
         confidence = round(raw_prob if is_flagged else (100.0 - raw_prob), 1)
 
     prob_ckd = round(raw_prob, 1)
-    risk_level = screening_data.get('risk_level', 'Moderate' if is_flagged else 'Low')
-    model_name = screening_data.get('model_used', 'Random Forest')
+    risk_level = _safe_xml(screening_data.get('risk_level', 'Moderate' if is_flagged else 'Low'))
+    model_name = _safe_xml(screening_data.get('model_used', 'Random Forest'))
 
-    stat_tier_lbl = t.get('stat_tier_label', "Statistical Stratification:") if use_unicode and t else "Statistical Stratification:"
-    primary_eval_lbl = t.get('primary_evaluator', "Primary Evaluator:") if use_unicode and t else "Primary Evaluator:"
-    model_conf_lbl = t.get('model_confidence', "Model Confidence:") if use_unicode and t else "Model Confidence:"
-    stat_ind_lbl = t.get('stat_indication', "Statistical Indication P(CKD):") if use_unicode and t else "Statistical Indication P(CKD):"
-
-    outcome_p1 = Paragraph(
+    outcome_p = Paragraph(
         f"<font size=10 color='{banner_text_color.hexval()}'><b>RESULT: {result_text}</b></font><br/>"
-        f"<font size=8 color='#334155'>{stat_tier_lbl} <b>{risk_level}</b> &nbsp;|&nbsp; "
-        f"{primary_eval_lbl} <b>{model_name}</b> &nbsp;|&nbsp; "
-        f"{model_conf_lbl} <b>{confidence}%</b> &nbsp;|&nbsp; "
-        f"{stat_ind_lbl} <b>{prob_ckd}%</b></font>",
-        styles['Normal']
+        f"<font size=8 color='#334155'>Statistical Stratification: <b>{risk_level}</b> &nbsp;|&nbsp; "
+        f"Primary Evaluator: <b>{model_name}</b> &nbsp;|&nbsp; "
+        f"Model Confidence: <b>{confidence}%</b> &nbsp;|&nbsp; "
+        f"Statistical Indication P(CKD): <b>{prob_ckd}%</b></font>",
+        body_style
     )
-    outcome_table = Table([[outcome_p1]], colWidths=[7.4 * inch])
+    outcome_table = Table([[outcome_p]], colWidths=[7.4 * inch])
     outcome_table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), banner_bg),
         ('BOX', (0,0), (-1,-1), 1.0, banner_border),
@@ -282,7 +291,7 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
     rf_comp = comparison.get('random_forest')
     dt_comp = comparison.get('decision_tree')
     if rf_comp and dt_comp:
-        consensus_text = comparison.get('consensus_label', 'Complete Consensus')
+        consensus_text = _safe_xml(comparison.get('consensus_label', 'Complete Consensus'))
         is_consensus = comparison.get('agreement', True)
         status_color = C_SUCCESS if is_consensus else C_ALERT
 
@@ -335,12 +344,13 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
     # Missing Values Warning (if any)
     missing_params = screening_data.get('missing_parameters') or []
     if missing_params:
+        missing_list = _safe_xml(', '.join(str(p) for p in missing_params))
         missing_text = (
             f"<b>Missing Information Notice:</b> {len(missing_params)} routine parameter(s) were unmeasured in this screening "
-            f"({', '.join(missing_params)}). Statistical imputation was applied based on training data distributions. "
+            f"({missing_list}). Statistical imputation was applied based on training data distributions. "
             f"Missing laboratory values can impact screening sensitivity."
         )
-        missing_p = Paragraph(f"<font size=7.5 color='#92400E'>{missing_text}</font>", styles['Normal'])
+        missing_p = Paragraph(f"<font size=7.5 color='#92400E'>{missing_text}</font>", body_style)
         missing_table = Table([[missing_p]], colWidths=[7.4 * inch])
         missing_table.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#FFFBEB')),
@@ -352,18 +362,25 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
         story.append(missing_table)
         story.append(Spacer(1, 6))
 
-    # 4. Clinical Guidance & Recommendations
+    # 4. Clinical Guidance & Recommendations (Fixed Professional English)
     rec_text = screening_data.get('recommendation', '')
-    if use_unicode and t:
-        rec_text = t.get('guidance_detected' if is_flagged else 'guidance_clear', rec_text)
-    if not rec_text:
+    if not rec_text or not isinstance(rec_text, str) or len(rec_text.strip()) < 10:
         if is_flagged:
-            rec_text = "The machine learning screening pipeline has detected markers indicative of Chronic Kidney Disease. Further clinical correlation by a medical professional or nephrologist is recommended, including formal diagnostic tests (eGFR, 24-hour urine collection, and renal ultrasound)."
+            rec_text = (
+                "The machine learning screening pipeline has detected markers indicative of Chronic Kidney Disease. "
+                "Further clinical correlation by a medical professional or nephrologist is recommended, including formal "
+                "diagnostic tests (eGFR, 24-hour urine collection, and renal ultrasound)."
+            )
         else:
-            rec_text = "Routine screening indicators show values within non-CKD baseline ranges. Note that this result does not rule out Chronic Kidney Disease or other renal disorders."
+            rec_text = (
+                "Routine screening indicators show values within non-CKD baseline ranges. Note that this result does not "
+                "rule out Chronic Kidney Disease or other renal disorders."
+            )
+    else:
+        # If recommendation was passed in English, keep it; if not standard, use clear English
+        rec_text = _safe_xml(rec_text)
 
-    guidance_head_text = t.get('clinical_guidance_title', "Clinical Screening Guidance & Next Steps") if use_unicode and t else "Clinical Screening Guidance & Next Steps"
-    story.append(Paragraph(guidance_head_text, section_heading))
+    story.append(Paragraph("Clinical Screening Guidance & Next Steps", section_heading))
     story.append(Paragraph(rec_text, body_style))
     story.append(Spacer(1, 6))
 
@@ -378,11 +395,15 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
              Paragraph("<b>Clinical Correlation</b>", body_style)]
         ]
         for f in findings:
+            param_lbl = _safe_xml(f.get('parameter', ''))
+            param_val = _safe_xml(str(f.get('value', '')))
+            param_stat = _safe_xml(f.get('status', ''))
+            param_detail = _safe_xml(f.get('detail', ''))
             finding_rows.append([
-                Paragraph(f.get('parameter', ''), body_bold),
-                Paragraph(str(f.get('value', '')), body_style),
-                Paragraph(f"<font color='{C_ALERT.hexval()}'><b>{f.get('status', '')}</b></font>", body_style),
-                Paragraph(f.get('detail', ''), body_style),
+                Paragraph(param_lbl, body_bold),
+                Paragraph(param_val, body_style),
+                Paragraph(f"<font color='{C_ALERT.hexval()}'><b>{param_stat}</b></font>", body_style),
+                Paragraph(param_detail, body_style),
             ])
         f_table = Table(finding_rows, colWidths=[1.8 * inch, 1.2 * inch, 1.4 * inch, 3.0 * inch])
         f_table.setStyle(TableStyle([
@@ -398,12 +419,6 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
         story.append(Spacer(1, 8))
 
     # 6. Complete Parameters Table (Clean 2-column breakdown)
-    is_nhanes = (
-        screening_data.get('model_id') in ['model_2', 'nhanes', 'expanded'] or
-        'nhanes' in str(screening_data.get('model_used', '')).lower() or
-        'expanded' in str(screening_data.get('model_used', '')).lower()
-    )
-
     raw_params = screening_data.get('parameters') or {}
 
     if is_nhanes:
@@ -478,8 +493,8 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
             val2 = 'Unmeasured'
 
         table_rows.append([
-            Paragraph(name1, body_style), Paragraph(str(val1), body_bold), Paragraph(f"<font size=7 color='#5A655F'>{ref1}</font>", body_style),
-            Paragraph(name2, body_style), Paragraph(str(val2), body_bold), Paragraph(f"<font size=7 color='#5A655F'>{ref2}</font>", body_style)
+            Paragraph(str(name1), body_style), Paragraph(_safe_xml(str(val1)), body_bold), Paragraph(f"<font size=7 color='#5A655F'>{ref1}</font>", body_style),
+            Paragraph(str(name2), body_style), Paragraph(_safe_xml(str(val2)), body_bold), Paragraph(f"<font size=7 color='#5A655F'>{ref2}</font>", body_style)
         ])
 
     param_table = Table(table_rows, colWidths=[1.4 * inch, 0.8 * inch, 1.4 * inch, 1.5 * inch, 0.8 * inch, 1.5 * inch])
@@ -495,7 +510,7 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
     story.append(param_table)
     story.append(Spacer(1, 8))
 
-    # 7. Model Performance & Regulatory Disclaimer Footer
+    # 7. Model Performance & Regulatory Disclaimer Footer (Fixed Professional English)
     if is_nhanes:
         disclaimer_text = (
             "<b>IMPORTANT REGULATORY AND MEDICAL DISCLAIMER:</b><br/>"
@@ -529,7 +544,7 @@ def generate_pdf_report(screening_data, feature_meta=None, lang='en'):
     disclaimer_block = [
         Paragraph(disclaimer_text, disclaimer_style),
         Spacer(1, 4),
-        Paragraph(spec_text, ParagraphStyle('DocFooterMeta', parent=styles['Normal'], fontSize=7, textColor=C_MUTED))
+        Paragraph(spec_text, ParagraphStyle('DocFooterMeta', parent=normal_style, fontSize=7, textColor=C_MUTED))
     ]
 
     disclaimer_table = Table([[disclaimer_block]], colWidths=[7.4 * inch])

@@ -78,9 +78,6 @@
         // Update active class in dropdown & modal
         updateLanguageSelectors(langCode);
 
-        // Update PDF report download links to include current language
-        updatePdfReportLinks(langCode);
-
         // Optional URL parameter update
         if (updateUrl && window.history && window.history.replaceState) {
             const url = new URL(window.location.href);
@@ -171,20 +168,6 @@
         if (currentLangLabel && window.RENALCARE_LANG_META && window.RENALCARE_LANG_META[langCode]) {
             currentLangLabel.textContent = window.RENALCARE_LANG_META[langCode].native;
         }
-    }
-
-    /**
-     * Update PDF download links to pass ?lang=...
-     */
-    function updatePdfReportLinks(langCode) {
-        document.querySelectorAll('a[href*="/report/"]').forEach(link => {
-            const href = link.getAttribute('href');
-            if (href && !href.startsWith('javascript:')) {
-                const url = new URL(href, window.location.origin);
-                url.searchParams.set('lang', langCode);
-                link.setAttribute('href', url.pathname + url.search);
-            }
-        });
     }
 
     /**
