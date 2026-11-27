@@ -100,14 +100,8 @@
         <li><a href="{{ url_for('history_view') }}" class="nav-link {% if request.endpoint == 'history_view' %}active{% endif %}" data-i18n="nav_history">History</a></li>
       </ul>
 
-      <!-- Action Area: Theme Toggle, Easy Mode & Primary Button -->
+      <!-- Action Area: Theme Toggle & Primary Button -->
       <div class="nav-actions">
-        <!-- Easy Mode / Rural Accessibility Toggle -->
-        <button type="button" class="btn-easy-toggle" id="btnEasyModeToggle" aria-pressed="false" title="Toggle Easy Mode (Larger text & simplified explanations)">
-          <i data-lucide="eye"></i>
-          <span class="easy-toggle-label" data-i18n="nav_easy_mode">Easy Mode</span>
-        </button>
-
         <button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="Toggle light or dark theme" title="Toggle theme">
           <i data-lucide="moon" class="icon-sun"></i>
           <i data-lucide="sun" class="icon-moon"></i>
@@ -124,14 +118,6 @@
       </div>
     </div>
   </nav>
-
-  <!-- Easy Mode Sticky Notification Banner -->
-  <div id="easyModeBanner" style="display: none; background-color: var(--color-primary); color: #ffffff; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 500;">
-    <div class="container-wide" style="display: flex; align-items: center; justify-content: space-between;">
-      <span data-i18n="easy_mode_banner"><i data-lucide="eye" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;"></i> Easy Mode Active: Simplified explanations and larger buttons for easier reading.</span>
-      <button type="button" onclick="window.RenalCareI18n.toggleEasyMode()" style="background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.6); border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; cursor: pointer;">Standard Mode</button>
-    </div>
-  </div>
 
   <!-- First-Time Visitor Full-Screen Language Selection Modal -->
   <div class="welcome-modal-overlay" id="welcomeLanguageModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">

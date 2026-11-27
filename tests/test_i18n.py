@@ -83,14 +83,21 @@ class TestMultilingualAccessibility(unittest.TestCase):
         self.assertIn('id="btnWelcomeContinue"', html)
         self.assertIn('class="welcome-lang-grid"', html)
 
-    def test_easy_mode_toggle_present(self):
-        """Verify Easy Mode / Rural Accessibility button is in the navigation bar."""
+    def test_easy_mode_completely_removed(self):
+        """Verify Easy Mode elements and toggles are completely removed from UI."""
         res = self.client.get('/screen')
         self.assertEqual(res.status_code, 200)
         html = res.get_data(as_text=True)
 
-        self.assertIn('id="btnEasyModeToggle"', html)
-        self.assertIn('class="btn-easy-toggle"', html)
+        self.assertNotIn('id="btnEasyModeToggle"', html)
+        self.assertNotIn('class="btn-easy-toggle"', html)
+        self.assertNotIn('id="easyModeBanner"', html)
+        self.assertNotIn('easy-mode-helper', html)
+
+        res_home = self.client.get('/')
+        html_home = res_home.get_data(as_text=True)
+        self.assertNotIn('id="btnEasyModeToggle"', html_home)
+        self.assertNotIn('id="easyModeBanner"', html_home)
 
     def test_voice_tts_button_present(self):
         """Verify Web Speech Voice TTS button is present on screening & landing pages."""

@@ -56,3 +56,6 @@ Desktop.ini
 
 # Local runtime logs
 *.log
+
+# Scratch scripts
+scratch/

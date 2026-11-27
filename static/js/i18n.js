@@ -1,5 +1,5 @@
 /**
- * RenalCare - Multilingual Translation, Accessibility (Easy Mode) & Speech Synthesis Engine
+ * RenalCare - Multilingual Translation & Speech Synthesis Engine
  * Supports 8 languages: English, Hindi, Bengali, Marathi, Telugu, Tamil, Urdu (RTL), Gujarati
  */
 
@@ -8,7 +8,6 @@
 
     const STORAGE_KEY_LANG = 'renalcare_lang';
     const STORAGE_KEY_FIRST_VISIT = 'renalcare_visited';
-    const STORAGE_KEY_EASY_MODE = 'renalcare_easy_mode';
 
     // Voice codes for SpeechSynthesis
     const LANG_VOICE_MAP = {
@@ -23,7 +22,6 @@
     };
 
     let currentLang = 'en';
-    let isEasyMode = false;
     let activeUtterance = null;
 
     /**
@@ -278,48 +276,6 @@
     }
 
     /**
-     * Easy Mode (Rural Accessibility)
-     */
-    function initEasyMode() {
-        const easyModeToggle = document.getElementById('btnEasyModeToggle');
-        const storedEasy = localStorage.getItem(STORAGE_KEY_EASY_MODE);
-        isEasyMode = storedEasy === 'true';
-
-        applyEasyMode(isEasyMode);
-
-        if (easyModeToggle) {
-            easyModeToggle.addEventListener('click', () => {
-                isEasyMode = !isEasyMode;
-                localStorage.setItem(STORAGE_KEY_EASY_MODE, isEasyMode ? 'true' : 'false');
-                applyEasyMode(isEasyMode);
-            });
-        }
-    }
-
-    function applyEasyMode(active) {
-        const easyModeToggle = document.getElementById('btnEasyModeToggle');
-        const banner = document.getElementById('easyModeBanner');
-
-        if (active) {
-            document.documentElement.setAttribute('data-easy-mode', 'true');
-            if (easyModeToggle) {
-                easyModeToggle.classList.add('active');
-                easyModeToggle.setAttribute('aria-pressed', 'true');
-            }
-            if (banner) banner.style.display = 'block';
-            document.querySelectorAll('.easy-mode-helper').forEach(h => h.style.display = 'block');
-        } else {
-            document.documentElement.removeAttribute('data-easy-mode');
-            if (easyModeToggle) {
-                easyModeToggle.classList.remove('active');
-                easyModeToggle.setAttribute('aria-pressed', 'false');
-            }
-            if (banner) banner.style.display = 'none';
-            document.querySelectorAll('.easy-mode-helper').forEach(h => h.style.display = 'none');
-        }
-    }
-
-    /**
      * SpeechSynthesis (Voice Instructions)
      */
     function initSpeechSynthesis() {
@@ -460,7 +416,6 @@
     document.addEventListener('DOMContentLoaded', () => {
         initWelcomeModal();
         initNavbarDropdown();
-        initEasyMode();
         initSpeechSynthesis();
 
         // Apply initially stored language or fallback to English
@@ -472,11 +427,6 @@
     window.RenalCareI18n = {
         setLanguage: setLanguage,
         getLanguage: () => currentLang,
-        toggleEasyMode: () => {
-            isEasyMode = !isEasyMode;
-            localStorage.setItem(STORAGE_KEY_EASY_MODE, isEasyMode ? 'true' : 'false');
-            applyEasyMode(isEasyMode);
-        },
         speak: speakText
     };
 
