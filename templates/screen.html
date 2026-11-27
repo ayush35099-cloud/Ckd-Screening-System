@@ -117,20 +117,64 @@
     </div>
 
     <!-- Community Camp Batch Screening Switch Card -->
-    <div style="background-color: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 0.85rem 1.25rem; margin: 1.25rem auto 1.5rem auto; max-width: 760px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-      <div style="text-align: left;">
-        <strong style="color: var(--color-primary); font-size: 0.9rem;">Community Diagnostic Camp Mode:</strong>
-        <span style="font-size: 0.8125rem; color: var(--text-muted); display: block;">Evaluating multiple patients? Upload a batch CSV of up to 100 records.</span>
+    <div class="camp-mode-section">
+      <div class="camp-mode-header">
+        <div style="text-align: left;">
+          <strong style="color: var(--color-primary); font-size: 0.925rem; display: flex; align-items: center; gap: 0.4rem;">
+            <i data-lucide="layers" style="width: 16px; height: 16px;"></i>
+            <span>Community Diagnostic Camp Mode:</span>
+          </strong>
+          <span style="font-size: 0.8125rem; color: var(--text-muted); display: block; margin-top: 0.15rem;">Evaluating multiple patients? Upload a batch CSV of up to 100 records or select a specialized screening model below.</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <a href="{{ url_for('batch_screen_view') }}" class="btn-renal btn-renal-secondary btn-sm">
+            <i data-lucide="upload-cloud"></i>
+            <span>Batch CSV Screening</span>
+          </a>
+          <a href="{{ url_for('batch_template') }}" class="btn-renal btn-renal-outline btn-sm" title="Download standard CSV template">
+            <i data-lucide="download"></i>
+            <span>CSV Template</span>
+          </a>
+        </div>
       </div>
-      <div style="display: flex; gap: 0.5rem;">
-        <a href="{{ url_for('batch_screen_view') }}" class="btn-renal btn-renal-secondary btn-sm">
-          <i data-lucide="upload-cloud"></i>
-          <span>Batch CSV Screening</span>
-        </a>
-        <a href="{{ url_for('batch_template') }}" class="btn-renal btn-renal-outline btn-sm" title="Download standard CSV template">
-          <i data-lucide="download"></i>
-          <span>CSV Template</span>
-        </a>
+
+      <!-- Selectable Expanded CKD Model Option Card inside Camp Mode Section -->
+      <div class="camp-expanded-card" id="btnCampSelectNhanes" role="button" tabindex="0" title="Click to open Expanded CKD Model screening workflow">
+        <div class="camp-card-top">
+          <div class="camp-card-title-group">
+            <div class="camp-card-badge-icon">
+              <i data-lucide="cpu" style="width: 18px; height: 18px; color: var(--color-primary);"></i>
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <h4 class="camp-card-title">Expanded CKD Model</h4>
+                <span class="ref-pill" style="background-color: var(--status-moderate-bg); color: var(--status-moderate-text); border-color: var(--status-moderate-border); font-size: 0.6875rem; font-weight: 600;">19 Features</span>
+              </div>
+              <div class="camp-card-meta">
+                <span><strong>Dataset:</strong> CDC NHANES 2017–2018</span>
+                <span class="meta-separator">&bull;</span>
+                <span><strong>Records:</strong> 5,063</span>
+                <span class="meta-separator">&bull;</span>
+                <span><strong>Features:</strong> 19</span>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn-renal btn-renal-outline btn-sm camp-card-action-btn" id="btnCampOpenAction">
+            <span>Select & Open Model</span>
+            <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+          </button>
+        </div>
+
+        <p class="camp-card-desc">
+          National survey model. Evaluates 19 non-invasive markers: vitals (SBP/DBP/BMI), comprehensive metabolic panel, HbA1c, uric acid, and CBC without requiring dipstick microscopy.
+        </p>
+
+        <div class="camp-card-tags">
+          <span class="model-tag">No Urine Dipstick Needed</span>
+          <span class="model-tag">Metabolic Panel & HbA1c</span>
+          <span class="model-tag">Vitals (BP & BMI)</span>
+          <span class="model-tag">CDC Survey Population</span>
+        </div>
       </div>
     </div>
 
@@ -544,6 +588,69 @@
         <i data-lucide="rotate-ccw"></i>
         <span>Reset Form</span>
       </button>
+    </div>
+
+    <!-- Community Camp Batch Screening Section (Model 2) -->
+    <div class="camp-mode-section">
+      <div class="camp-mode-header">
+        <div style="text-align: left;">
+          <strong style="color: var(--color-primary); font-size: 0.925rem; display: flex; align-items: center; gap: 0.4rem;">
+            <i data-lucide="layers" style="width: 16px; height: 16px;"></i>
+            <span>Community Diagnostic Camp Mode:</span>
+          </strong>
+          <span style="font-size: 0.8125rem; color: var(--text-muted); display: block; margin-top: 0.15rem;">Evaluating multiple patients? Upload a batch CSV of up to 100 records or switch screening models.</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <a href="{{ url_for('batch_screen_view') }}" class="btn-renal btn-renal-secondary btn-sm">
+            <i data-lucide="upload-cloud"></i>
+            <span>Batch CSV Screening</span>
+          </a>
+          <a href="{{ url_for('batch_template') }}" class="btn-renal btn-renal-outline btn-sm" title="Download standard CSV template">
+            <i data-lucide="download"></i>
+            <span>CSV Template</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Active Expanded Model indicator card inside Camp Mode -->
+      <div class="camp-expanded-card" style="border-color: var(--color-primary); background-color: var(--bg-surface-subtle); cursor: default;" title="Expanded CKD Model is currently active">
+        <div class="camp-card-top">
+          <div class="camp-card-title-group">
+            <div class="camp-card-badge-icon" style="background-color: var(--color-primary);">
+              <i data-lucide="check" style="width: 18px; height: 18px; color: #ffffff;"></i>
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <h4 class="camp-card-title">Expanded CKD Model</h4>
+                <span class="ref-pill" style="background-color: var(--status-clear-bg); color: var(--status-clear-text); border-color: var(--status-clear-border); font-size: 0.6875rem; font-weight: 600;">Active Model</span>
+                <span class="ref-pill" style="background-color: var(--status-moderate-bg); color: var(--status-moderate-text); border-color: var(--status-moderate-border); font-size: 0.6875rem; font-weight: 600;">19 Features</span>
+              </div>
+              <div class="camp-card-meta">
+                <span><strong>Dataset:</strong> CDC NHANES 2017–2018</span>
+                <span class="meta-separator">&bull;</span>
+                <span><strong>Records:</strong> 5,063</span>
+                <span class="meta-separator">&bull;</span>
+                <span><strong>Features:</strong> 19</span>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn-renal btn-renal-outline btn-sm" id="btnCampSwitchToModel1">
+            <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
+            <span>Switch to Standard Model</span>
+          </button>
+        </div>
+
+        <p class="camp-card-desc">
+          National survey model. Evaluates 19 non-invasive markers: vitals (SBP/DBP/BMI), comprehensive metabolic panel, HbA1c, uric acid, and CBC without requiring dipstick microscopy.
+        </p>
+
+        <div class="camp-card-tags">
+          <span class="model-tag">No Urine Dipstick Needed</span>
+          <span class="model-tag">Metabolic Panel & HbA1c</span>
+          <span class="model-tag">Vitals (BP & BMI)</span>
+          <span class="model-tag">CDC Survey Population</span>
+        </div>
+      </div>
     </div>
 
     <form id="ckdNhanesScreeningForm" action="{{ url_for('screen_submit') }}" method="POST">

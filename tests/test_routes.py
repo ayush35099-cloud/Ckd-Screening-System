@@ -488,6 +488,22 @@ class TestFlaskRoutes(unittest.TestCase):
         self.assertIn('Standard CKD Model', html)
         self.assertIn('Expanded CKD Model', html)
 
+    def test_screen_view_camp_mode_expanded_model_option(self):
+        resp = self.client.get('/screen')
+        self.assertEqual(resp.status_code, 200)
+        html = resp.data.decode('utf-8')
+        self.assertIn('Community Diagnostic Camp Mode:', html)
+        self.assertIn('Batch CSV Screening', html)
+        self.assertIn('CSV Template', html)
+        self.assertIn('id="btnCampSelectNhanes"', html)
+        self.assertIn('CDC NHANES 2017', html)
+        self.assertIn('5,063', html)
+        self.assertIn('Features:</strong> 19', html)
+        self.assertIn('No Urine Dipstick Needed', html)
+        self.assertIn('Metabolic Panel & HbA1c', html)
+        self.assertIn('Vitals (BP & BMI)', html)
+        self.assertIn('CDC Survey Population', html)
+
     def test_screen_submit_model_1_explicit(self):
         form_data = {
             'model_id': 'model_1',

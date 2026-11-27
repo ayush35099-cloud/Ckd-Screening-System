@@ -80,6 +80,31 @@ function initModelSelection() {
         });
     }
 
+    // Community Diagnostic Camp Mode Switch Handlers
+    const btnCampSelectNhanes = document.getElementById('btnCampSelectNhanes');
+    if (btnCampSelectNhanes) {
+        btnCampSelectNhanes.addEventListener('click', () => {
+            selectCard('model_2');
+            activateModel('model_2', true);
+        });
+        btnCampSelectNhanes.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                selectCard('model_2');
+                activateModel('model_2', true);
+            }
+        });
+    }
+
+    const btnCampSwitchToModel1 = document.getElementById('btnCampSwitchToModel1');
+    if (btnCampSwitchToModel1) {
+        btnCampSwitchToModel1.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectCard('model_1');
+            activateModel('model_1', true);
+        });
+    }
+
     // Check URL parameters (e.g. ?model=model_2)
     const urlParams = new URLSearchParams(window.location.search);
     const paramModel = urlParams.get('model');
